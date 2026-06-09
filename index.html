@@ -15,7 +15,9 @@
     <script src="https://unpkg.com/lucide-react@0.284.0/dist/umd/lucide-react.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700;900&display=swap');
+        /* 引入主流雲端中英字體，並加入毛筆、草書、鋼筆等多樣化精選字型 */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght=300;400;600;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700;900&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&family=Liu+Jian+Mao+Cao&family=Long+Cang&display=swap');
+        
         body { font-family: 'Outfit', 'Noto Sans TC', sans-serif; background-color: #F4F4F5; }
         .animate-in { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -98,12 +100,12 @@
             ExternalLink: { icon: ExternalLink, color: 'opacity-70' }
         };
 
-        // 🔥 更新為最新給定的 GAS_URL 編碼 (GAS_UR)
+        // GAS URL 解碼
         const _0x4a21 = "aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J5SnVrOVZ2c0phZWV2RXJ0dHJFR0xnTENEQTVTZ2xfNWE2WWNZTWktaDVuaEJxS0UxckwxX2d4bTJYT0lRMXpsVVl0dy9leGVj";
         const GAS_URL = atob(_0x4a21);
         const SECRET_KEY = "cd6ca599bdbb083d34a3012b84071c848cc4bca0698a53c3cc65a2c296dd3ddf";
 
-        // 🔥 HMAC-SHA256 生成器
+        // HMAC-SHA256 生成器
         async function generateSignature(message, secret) {
             const encoder = new TextEncoder();
             const keyData = encoder.encode(secret);
@@ -168,6 +170,8 @@
             footerBgColor: '#1A1412',
             bodyFont: 'Noto Sans TC', // 預設內頁字體
             titleFont: 'Noto Serif TC', // 預設標題字體
+            frontendLogoUrl: '', // 🔥 新增：前台 Logo 圖片設定
+            frontendName: '文史哲出版社', // 🔥 新增：前台官網名稱設定
             menuAbout: '關於我們',
             menuPresident: '關於社長',
             menuContact: '聯繫我們',
@@ -181,7 +185,6 @@
             sectionTitleFeatured: '精選好書',
             sectionTitleRecommendation: '編輯特別推薦',
             sectionMoreBooksBtn: '探索更多書籍',
-            footerBrandDesc: '創立於1971年，以出版大學院校研究論著及文史書籍為主。在多位名師的傳授與薰陶下，致力為文化出版事業奉獻，傳承千年智慧。',
             footerStoryBtn: '閱讀完整品牌故事',
             footerContactTitle: '聯絡我們',
             footerAddress: '10074 台北市羅斯福路一段七十二巷四號',
@@ -275,10 +278,10 @@
             const [aiLogs, setAiLogs] = useState([]); 
             const [kpis, setKpis] = useState([]); 
             const [settings, setSettings] = useState(defaultSettings); 
-            const [ui, setUi] = useState(defaultUI); // 🔥 前台 UI 動態自訂變數
+            const [ui, setUi] = useState(defaultUI); 
             
             const [activeTab, setActiveTab] = useState('dashboard');
-            const [settingSubTab, setSettingSubTab] = useState('backend'); // 🔥 外觀設定子分頁
+            const [settingSubTab, setSettingSubTab] = useState('backend'); 
             const [isSidebarOpen, setIsSidebarOpen] = useState(true);
             const [notification, setNotification] = useState(null);
             const [bookSearchQuery, setBookSearchQuery] = useState('');
@@ -349,7 +352,6 @@
                 return hh === '00' && min === '00' ? `${yyyy}/${mm}/${dd}` : `${yyyy}/${mm}/${dd} ${hh}:${min}`;
             };
 
-            // 🔥 解決中文加密雜湊不匹配的完美解法
             const syncWithGAS = async (action, payloadData = null) => {
                 try {
                     const currentOrigin = window.location.origin;
@@ -363,14 +365,11 @@
                         origin: safeOrigin
                     };
                     
-                    // 將包含中文的 JSON 轉為精準的 Base64 字串，消除環境編碼差異
                     const jsonStr = JSON.stringify(payloadObj);
                     const utf8Bytes = new TextEncoder().encode(jsonStr);
                     const payloadBase64 = btoa(String.fromCharCode(...utf8Bytes));
                     
                     const timestamp = Date.now().toString();
-                    
-                    // 針對純英文數字的 Base64 進行簽名，保證 100% 一致
                     const messageToSign = payloadBase64 + timestamp;
                     const signature = await generateSignature(messageToSign, SECRET_KEY);
 
@@ -648,7 +647,7 @@
                 }
             };
 
-            // 🔥 整併儲存 Settings 與 UI，此字體與樣式設定將同步寫入試算表 UI 與 Setting 分頁
+            // 儲存 Settings 與 UI，字體與樣式設定將同步寫入試算表 UI 與 Setting 分頁
             const handleSaveSettings = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -723,7 +722,7 @@
                                             name="account" 
                                             value={selectedAccount} 
                                             onChange={(e) => setSelectedAccount(e.target.value)}
-                                            className="w-full bg-transparent border p-4 rounded-2xl outline-none font-bold appearance-none cursor-pointer transition-colors shadow-sm"
+                                            className="w-full bg-transparent border p-4 rounded-2xl outline-none font-bold appearance-none cursor-pointer transition-colors shadow-sm text-sm"
                                             style={{ color: settings.loginTextColor, borderColor: 'rgba(128,128,128,0.2)' }}
                                         >
                                             {accountsList.map(acc => (
@@ -929,7 +928,7 @@
                                         <h3 className="text-xl font-black flex items-center gap-2" style={{ color: settings.mainTextColor }}><Palette style={{ color: settings.sidebarActiveColor }}/> 全域外觀與選單設定</h3>
                                     </div>
                                     
-                                    {/* 🔥 外觀管理子選單 (與前台優雅配對，功能超強防爆) */}
+                                    {/* 外觀管理子選單 */}
                                     <div className="flex flex-wrap gap-2 mb-6 border-b border-black/10 pb-4 font-sans">
                                         {settingSubTabs.map(subTab => (
                                             <button
@@ -1090,7 +1089,20 @@
                                         {/* 子頁籤 2: 🎨 前台視覺配色與字體 */}
                                         {settingSubTab === 'frontend_colors' && (
                                             <div className="space-y-6 animate-in">
-                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Palette size={16} className="text-amber-700" /> 前台官網 - 經典中式視覺調色盤 (CSS Variables)</h4>
+                                                {/* 🔥 新增：前台官網基本設定 (包含更改 Logo 與網頁名稱) */}
+                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Globe size={16} className="text-amber-700" /> 前台官網 - 基本設定 (網頁名稱與 Logo)</h4>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台網頁名稱 (Frontend Web Name)</label>
+                                                        <input name="frontendName" defaultValue={ui.frontendName || '文史哲出版社'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台官網 Logo 圖片 (Drive ID / URL)</label>
+                                                        <input name="frontendLogoUrl" defaultValue={ui.frontendLogoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則顯示預設拼音圖示" />
+                                                    </div>
+                                                </div>
+
+                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><Palette size={16} className="text-amber-700" /> 前台官網 - 經典中式視覺調色盤 (CSS Variables)</h4>
                                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台主特色色 (Theme Primary)</label>
@@ -1126,6 +1138,7 @@
                                                     </div>
                                                 </div>
 
+                                                {/* 🔥 新增字體選項：加入文鼎魏碑等精選華麗中式書法與人文字體 */}
                                                 <h4 className="text-sm font-black mb-5 pt-6 flex items-center gap-2 border-b border-black/10 pb-2"><FileText size={16} className="text-amber-700" /> 前台官網 - 經典中式字體選擇 (Font Family)</h4>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="space-y-2">
@@ -1133,6 +1146,12 @@
                                                         <select name="bodyFont" defaultValue={ui.bodyFont || 'Noto Sans TC'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none appearance-none" style={{ color: 'inherit' }}>
                                                             <option value="Noto Sans TC">思源黑體 (Noto Sans TC)</option>
                                                             <option value="Noto Serif TC">思源明體 (Noto Serif TC)</option>
+                                                            <option value="'Wending WeiBei', '文鼎魏碑', 'DFWaibei-W7-A', 'DFWaibei-W5', 'DFWaibei-W7', 'DFWaiBei-B5', 'DFKai-SB', 'KaiTi', serif">華康/文鼎 魏碑體 (WeiBei)</option>
+                                                            <option value="'Wending XingKai', '文鼎行楷', 'Long Cang', 'STKaiti', 'KaiTi', serif">古典文鼎行楷 (XingKai)</option>
+                                                            <option value="'Ma Shan Zheng', cursive">霸氣毛筆書法 (Ma Shan Zheng)</option>
+                                                            <option value="'Zhi Mang Xing', cursive">瀟灑草書書法 (Zhi Mang Xing)</option>
+                                                            <option value="'Liu Jian Mao Cao', cursive">狂草流線書法 (Liu Jian Mao Cao)</option>
+                                                            <option value="'Long Cang', cursive">極簡行楷鋼筆 (Long Cang)</option>
                                                             <option value="BiauKai, DFKai-SB, KaiTi">微軟/系統 標楷體 (BiauKai / KaiTi)</option>
                                                             <option value="FangSong, STFangsong">學術典雅 仿宋體 (FangSong)</option>
                                                             <option value="sans-serif">現代簡約 系統黑體 (Sans-Serif)</option>
@@ -1143,6 +1162,12 @@
                                                         <select name="titleFont" defaultValue={ui.titleFont || 'Noto Serif TC'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none appearance-none" style={{ color: 'inherit' }}>
                                                             <option value="Noto Serif TC">思源明體 (Noto Serif TC)</option>
                                                             <option value="Noto Sans TC">思源黑體 (Noto Sans TC)</option>
+                                                            <option value="'Wending WeiBei', '文鼎魏碑', 'DFWaibei-W7-A', 'DFWaibei-W5', 'DFWaibei-W7', 'DFWaiBei-B5', 'DFKai-SB', 'KaiTi', serif">華康/文鼎 魏碑體 (WeiBei)</option>
+                                                            <option value="'Wending XingKai', '文鼎行楷', 'Long Cang', 'STKaiti', 'KaiTi', serif">古典文鼎行楷 (XingKai)</option>
+                                                            <option value="'Ma Shan Zheng', cursive">霸氣毛筆書法 (Ma Shan Zheng)</option>
+                                                            <option value="'Zhi Mang Xing', cursive">瀟灑草書書法 (Zhi Mang Xing)</option>
+                                                            <option value="'Liu Jian Mao Cao', cursive">狂草流線書法 (Liu Jian Mao Cao)</option>
+                                                            <option value="'Long Cang', cursive">極簡行楷鋼筆 (Long Cang)</option>
                                                             <option value="BiauKai, DFKai-SB, KaiTi">微軟/系統 標楷體 (BiauKai / KaiTi)</option>
                                                             <option value="FangSong, STFangsong">學術典雅 仿宋體 (FangSong)</option>
                                                             <option value="serif">經典傳承 系統明體 (Serif)</option>
@@ -1412,7 +1437,7 @@
                                                         className="bg-black/5 border border-black/10 px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:bg-black/10 transition-colors flex items-center gap-2 mx-auto"
                                                         style={{ color: settings.cardTextColor }}
                                                     >
-                                                        向下載入更多書籍... (目前顯示 {adminVisibleCount} / 總共 {filteredAdminBooks.length}) <ChevronDown size={14} />
+                                                        下載入更多書籍... (目前顯示 {adminVisibleCount} / 總共 {filteredAdminBooks.length}) <ChevronDown size={14} />
                                                     </button>
                                                 </div>
                                             )}
@@ -1761,14 +1786,13 @@
                                     <button type="button" onClick={() => setIframeModal(prev => ({ ...prev, isOpen: false }))} className="bg-black/5 border border-black/10 hover:bg-black/10 px-4 py-2 rounded-full text-sm font-bold transition flex items-center gap-2 shadow-sm"><X size={16} /> 關閉</button>
                                 </div>
                                 <div className="flex-1 w-full relative overflow-y-auto sidebar-scroll" style={{ backgroundColor: '#ffffff' }}>
-                                    {/* 🔥 URL 若為空則不嘗試渲染 iframe src，避免 Location Error */}
                                     {iframeModal.url && <iframe src={iframeModal.url} className="w-full h-full border-0 min-h-[600px]"></iframe>}
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* 🔥 彈出通知 */}
+                    {/* 彈出通知 */}
                     {notification && <div className="fixed bottom-12 right-12 bg-zinc-900 text-white px-8 py-5 rounded-2xl shadow-2xl animate-in font-bold text-sm z-[200] flex items-center gap-3 border border-zinc-700"><CheckCircle size={20} className="text-emerald-400" /> {notification}</div>}
                 </div> 
             );
