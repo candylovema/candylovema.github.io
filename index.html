@@ -170,10 +170,8 @@
             footerBgColor: '#1A1412',
             bodyFont: 'Noto Sans TC', // 預設內頁字體
             titleFont: 'Noto Serif TC', // 預設標題字體
-            frontendLogoUrl: '', // 新增：前台 Logo 圖片設定
-            frontendName: '文史哲出版社', // 新增：前台官網名稱設定
-            bannerTitleColor: '#ffffff', // 🔥 全新追加：Banner 標題顏色
-            bannerDescColor: '#e4e4e7', // 🔥 全新追加：Banner 描述文字顏色
+            frontendLogoUrl: '', // 🔥 新增：前台 Logo 圖片設定
+            frontendName: '文史哲出版社', // 🔥 新增：前台官網名稱設定
             menuAbout: '關於我們',
             menuPresident: '關於社長',
             menuContact: '聯繫我們',
@@ -779,7 +777,7 @@
                                     <img src={formatImageUrl(settings.logoUrl)} className="w-full h-full object-cover" alt="Logo" onError={(e)=>{e.target.style.display='none'}} />
                                 ) : (
                                     <BookOpen size={24} className="text-white" />
-                                tracks)}
+                                )}
                             </div>
                             <div className="overflow-hidden flex flex-col justify-center gap-1 py-2">
                                 {settings.subLogoUrl ? (
@@ -844,7 +842,7 @@
                         </div>
                     </aside>
                     
-                    <main className="flex-1 main-panel flex flex-col h-screen overflow-hidden relative">
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
                         <header className={`h-20 backdrop-blur-xl border-b border-black/5 flex justify-between items-center z-40 relative shrink-0 transition-all ${isSidebarOpen ? 'px-6 lg:px-10' : 'pl-20 pr-6 lg:pr-10'}`} style={{ backgroundColor: `${settings.mainBgColor}E6` }}>
                             <div className="flex items-center gap-4">
                                 {isSidebarOpen && (
@@ -1017,7 +1015,7 @@
                                                     </div>
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂主 Logo 圖片 (Drive ID / URL)</label>
-                                                        <input name="logoUrl" defaultValue={settings.logoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" style={{ color: 'inherit' }} placeholder="留空則使用預設圖示" />
+                                                        <input name="logoUrl" defaultValue={settings.logoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則使用預設圖示" />
                                                     </div>
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂副標題圖片 (Sub Logo URL)</label>
@@ -1041,7 +1039,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 border-t border-zinc-200 pt-6">
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 border-t border-black/10 pt-6">
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">模組 1 名稱 (儀表板)</label>
                                                         <input name="menuDashName" defaultValue={settings.menuDashName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
@@ -1091,6 +1089,7 @@
                                         {/* 子頁籤 2: 🎨 前台視覺配色與字體 */}
                                         {settingSubTab === 'frontend_colors' && (
                                             <div className="space-y-6 animate-in">
+                                                {/* 🔥 新增：前台官網基本設定 (包含更改 Logo 與網頁名稱) */}
                                                 <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Globe size={16} className="text-amber-700" /> 前台官網 - 基本設定 (網頁名稱與 Logo)</h4>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="space-y-2">
@@ -1139,21 +1138,7 @@
                                                     </div>
                                                 </div>
 
-                                                {/* 🔥 全新追加：智慧橫幅輪播圖字體顏色控制區 */}
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2 text-indigo-600"><Star size={16} className="text-amber-500 animate-spin" /> 前台官網 - 輪播橫幅(Banner)字體顏色控制</h4>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 bg-zinc-50 p-5 rounded-2xl border border-zinc-200">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-zinc-500">輪播大標題顏色 (Banner Title)</label>
-                                                        <input type="color" name="bannerTitleColor" defaultValue={ui.bannerTitleColor || '#ffffff'} />
-                                                        <span className="text-[10px] text-zinc-400 block mt-1">預設為高對比純白色 (#ffffff)</span>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-zinc-500">輪播簡介描述顏色 (Banner Desc)</label>
-                                                        <input type="color" name="bannerDescColor" defaultValue={ui.bannerDescColor || '#e4e4e7'} />
-                                                        <span className="text-[10px] text-zinc-400 block mt-1">預設為精緻淺灰色 (#e4e4e7)</span>
-                                                    </div>
-                                                </div>
-
+                                                {/* 🔥 新增字體選項：加入文鼎魏碑等精選華麗中式書法與人文字體 */}
                                                 <h4 className="text-sm font-black mb-5 pt-6 flex items-center gap-2 border-b border-black/10 pb-2"><FileText size={16} className="text-amber-700" /> 前台官網 - 經典中式字體選擇 (Font Family)</h4>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="space-y-2">
@@ -1216,7 +1201,7 @@
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">迎賓主標題 1 (常規字體)</label><input name="heroHeading1" defaultValue={ui.heroHeading1} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">迎賓主標題 2 (高亮褐色)</label><input name="heroHeading2" defaultValue={ui.heroHeading2} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">迎賓副標題簡介</label><textarea name="heroSubheading" defaultValue={ui.heroSubheading} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-16 resize-none font-bold outline-none animate-in" /></div>
+                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">迎賓副標題簡介</label><textarea name="heroSubheading" defaultValue={ui.heroSubheading} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-16 resize-none font-bold outline-none" /></div>
                                                 </div>
 
                                                 <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><BookOpen size={16} className="opacity-50"/> 前台商品欄位標題</h4>
@@ -1309,12 +1294,12 @@
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">結帳處理中狀態</label><input name="cartCheckingOutBtn" defaultValue={ui.cartCheckingOutBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：店取付現</label><input name="cartOptionCash" defaultValue={ui.cartOptionCash} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：轉帳</label><input name="cartOptionTransfer" defaultValue={ui.cartOptionTransfer} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest opacity-60">付款：線上刷卡</label><input name="cartOptionCard" defaultValue={ui.cartOptionCard} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：線上刷卡</label><input name="cartOptionCard" defaultValue={ui.cartOptionCard} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">金額總計標籤</label><input name="cartTotalLabel" defaultValue={ui.cartTotalLabel} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">幾本書數量標籤 (支援 {"{count}"})</label><input name="cartBookCountLabel" defaultValue={ui.cartBookCountLabel} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                 </div>
 
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><Zap size={16} className="opacity-50" /> 前台狀態提示語 (Messages)</h4>
+                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><Zap size={16} className="opacity-50" /> 系統隨機推薦與前台狀態提示語 (Messages)</h4>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">隨機新書推薦標題</label><input name="newArrivalsTitle" defaultValue={ui.newArrivalsTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">更換新書按鈕文字</label><input name="newArrivalsBtnRefresh" defaultValue={ui.newArrivalsBtnRefresh} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
@@ -1444,6 +1429,7 @@
                                                     </tbody>
                                                 </table>
                                             </div>
+                                            {/* 向下載入按鈕 */}
                                             {filteredAdminBooks.length > adminVisibleCount && (
                                                 <div className="p-4 text-center border-t border-black/5" style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
                                                     <button type="button" 
@@ -1658,7 +1644,7 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div className="space-y-1.5 p-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl">
+                                        <div className="pt-6 pb-2">
                                             <button className="w-full text-white py-4 rounded-2xl font-bold shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 hover:opacity-90" style={{ backgroundColor: settings.sidebarActiveColor }}><Save size={18}/> 儲存訂單變更</button>
                                         </div>
                                     </form>
@@ -1683,6 +1669,7 @@
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                             <div className="space-y-1.5"><label className="text-[10px] font-black opacity-60 uppercase">標題 (Title)</label><input name="title" defaultValue={editingKpi?.title || ''} required className="w-full bg-white border border-black/10 p-2.5 rounded-xl text-sm font-bold outline-none" placeholder="例如: 本月訪客" style={{ color: 'inherit' }}/></div>
                                             <div className="space-y-1.5"><label className="text-[10px] font-black opacity-60 uppercase">數值 (Value)</label><input name="value" defaultValue={editingKpi?.value || ''} required className="w-full bg-white border border-black/10 p-2.5 rounded-xl text-sm font-bold outline-none" placeholder="例如: 12,345" style={{ color: 'inherit' }}/></div>
+                                            
                                             <div className="space-y-1.5">
                                                 <label className="text-[10px] font-black opacity-60 uppercase">單位 (Unit)</label>
                                                 <input 
@@ -1790,6 +1777,7 @@
                         </div>
                     )}
 
+                    {/* 外部 iframe 彈出視窗 */}
                     {iframeModal.isOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={() => setIframeModal(prev => ({ ...prev, isOpen: false }))}>
                             <div className="w-full max-w-5xl h-full max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in border border-black/10" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e) => e.stopPropagation()}>
@@ -1804,6 +1792,7 @@
                         </div>
                     )}
 
+                    {/* 彈出通知 */}
                     {notification && <div className="fixed bottom-12 right-12 bg-zinc-900 text-white px-8 py-5 rounded-2xl shadow-2xl animate-in font-bold text-sm z-[200] flex items-center gap-3 border border-zinc-700"><CheckCircle size={20} className="text-emerald-400" /> {notification}</div>}
                 </div> 
             );
