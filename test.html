@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文史哲出版社 - 數位營運中心 (Digital CMS)</title>
-    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
@@ -15,26 +14,22 @@
     <script src="https://unpkg.com/lucide-react@0.284.0/dist/umd/lucide-react.js"></script>
     
     <style>
-        /* 引入主流雲端中英字體，並加入毛筆、草書、鋼筆等多樣化精選字型 */
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght=300;400;600;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700;900&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&family=Liu+Jian+Mao+Cao&family=Long+Cang&display=swap');
         
         body { font-family: 'Outfit', 'Noto Sans TC', sans-serif; background-color: #F4F4F5; }
-        .animate-in { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-in { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* 🔥 明顯且粗大的上下、左右滾動條 */
         ::-webkit-scrollbar { width: 14px; height: 14px; }
         ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.04); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.4); border: 3px solid transparent; background-clip: padding-box; }
         
-        /* 側邊欄與 Modal 隱藏滾動條 */
         .sidebar-scroll::-webkit-scrollbar { display: none; }
         .sidebar-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         
         .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.5); }
 
-        /* 顏色選擇器美化 */
         input[type="color"] { -webkit-appearance: none; border: none; width: 100%; height: 40px; border-radius: 8px; cursor: pointer; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
@@ -57,6 +52,7 @@
         const Globe = lib.Globe || FallbackIcon;
         const Menu = lib.Menu || FallbackIcon;
         const ChevronRight = lib.ChevronRight || FallbackIcon;
+        const ChevronLeft = lib.ChevronLeft || FallbackIcon;
         const ChevronDown = lib.ChevronDown || FallbackIcon;
         const ExternalLink = lib.ExternalLink || FallbackIcon;
         const Plus = lib.Plus || FallbackIcon;
@@ -83,6 +79,7 @@
         const Palette = lib.Palette || FallbackIcon;
         const MapPin = lib.MapPin || FallbackIcon;
         const FileText = lib.FileText || FallbackIcon;
+        const ShieldAlert = lib.AlertTriangle || FallbackIcon;
 
         const availableIcons = {
             LayoutDashboard: { icon: LayoutDashboard, color: 'text-blue-500' },
@@ -100,63 +97,7 @@
             ExternalLink: { icon: ExternalLink, color: 'opacity-70' }
         };
 
-        // 🎯 已更新為您提供的後台專用 GAS Web App 部署網址（明碼宣告，方便維護）
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxSU2BOIeM9WMnxk3cRfDTYob6DDjydxjbbHO-TuB1vEBYBQmcHu-GxApNtiHMXsvosTg/exec";
-        const SECRET_KEY = "cd6ca599bdbb083d34a3012b84071c848cc4bca0698a53c3cc65a2c296dd3ddf";
-
-        // HMAC-SHA256 生成器
-        async function generateSignature(message, secret) {
-            const encoder = new TextEncoder();
-            const keyData = encoder.encode(secret);
-            const msgData = encoder.encode(message);
-            const cryptoKey = await window.crypto.subtle.importKey(
-                "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-            );
-            const signatureBuffer = await window.crypto.subtle.sign("HMAC", cryptoKey, msgData);
-            const hashArray = Array.from(new Uint8Array(signatureBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        /**
-         * 🛡️ 試算表公式注入防禦 (Formula Injection Sanitizer)
-         * 防止管理員在處理書籍、備註、或者複製貼上文字時，無意中向試算表寫入以 =, +, -, @ 開頭的惡意 Excel 觸發公式
-         */
-        const sanitizeForSpreadsheet = (val) => {
-            if (val === undefined || val === null) return "";
-            let str = String(val).trim();
-            if (/^[=\+\-\@]/.test(str)) {
-                return "'" + str;
-            }
-            return str;
-        };
-
-        const formatImageUrl = (url) => {
-            const transparentFallback = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-            if (!url) return transparentFallback;
-            let strUrl = String(url).trim();
-            if (!strUrl || strUrl === '') return transparentFallback;
-            if (strUrl.startsWith('data:image')) return strUrl; 
-            
-            let driveId = null;
-            if (strUrl.includes('drive.google.com')) {
-                const match = strUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || strUrl.match(/id=([a-zA-Z0-9_-]+)/);
-                if (match) driveId = match[1];
-            } else if (/^[a-zA-Z0-9_-]{20,}$/.test(strUrl) && !strUrl.includes("/")) {
-                driveId = strUrl;
-            }
-
-            if (driveId) {
-                return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000`;
-            }
-            return strUrl;
-        };
-
-        const fallbackAccounts = [
-            { user: 'lapen', password: '1234' },
-            { user: 'admin', password: '1234' },
-            { user: 'e3479293', password: '588999' },
-            { user: 'candyni', password: '605' }
-        ];
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbw1o4ojav8T0z_b8mxbrh45C1YzRspU_gR9T9MM_gYfONlv_aHpxtNyD8WjlzuNccfICg/exec";
 
         const defaultSettings = {
             systemName: '文史哲出版社', systemSubName: 'Digital CMS', logoUrl: '', subLogoUrl: '', userAvatarUrl: '',
@@ -171,118 +112,19 @@
             menuOrdersIcon: 'Truck', menuCsIcon: 'Bot', menuExtIcon: 'ExternalLink'
         };
 
-        const defaultUI = {
-            themeColor: '#8C5A2B',
-            darkThemeColor: '#2C241B',
-            lightBgColor: '#FDFBF7',
-            bgLightColor: '#F9F6F0',
-            textDarkColor: '#4A3728',
-            borderColor: '#E6D5C3',
-            accentColor: '#C4B29E',
-            footerBgColor: '#1A1412',
-            bodyFont: 'Noto Sans TC', 
-            titleFont: 'Noto Serif TC', 
-            frontendLogoUrl: '', 
-            frontendName: '文史哲出版社', 
-            menuAbout: '關於我們',
-            menuPresident: '關於社長',
-            menuContact: '聯繫我們',
-            menuNewArrivals: '新書上市',
-            menuSearch: '書籍檢索',
-            menuCart: '我的書包',
-            menuAdmin: '管理入口',
-            heroHeading1: '傳承千年智慧',
-            heroHeading2: '點亮數位未來',
-            heroSubheading: '致力於出版高品質文學、歷史、哲學著作。讓深厚底蘊更貼近當代讀者。',
-            sectionTitleFeatured: '精選好書',
-            sectionTitleRecommendation: '編輯特別推薦',
-            sectionMoreBooksBtn: '探索更多書籍',
-            footerStoryBtn: '閱讀完整品牌故事',
-            footerContactTitle: '聯絡我們',
-            footerAddress: '10074 台北市羅斯福路一段七十二巷四號',
-            footerPhone: '886-2-2351-1028',
-            footerFax: 'Fax: 886-2-2396-5656',
-            footerEmail: 'lapentw@gmail.com',
-            footerHours: '營業時間：週一到週五 AM9:00~PM6:00',
-            footerTransfer: '郵政劃撥：05128812號 彭正雄帳戶',
-            footerLinksTitle: '推薦好站',
-            footerFacebookLinkText: '文史哲出版社臉書(FB)',
-            footerFacebookUrl: 'https://www.facebook.com/profile.php?id=61590146114229&locale=zh_TW',
-            footerCopyright: '傳承文化 ‧ 創新閱讀',
-            csTitle: '客服與建議',
-            csNamePlaceholder: '您的稱呼',
-            csPhonePlaceholder: '聯絡電話',
-            csEmailPlaceholder: '電子信箱 (Email)',
-            csMessagePlaceholder: '請問您有什麼建議或問題想反映？',
-            csSubmitBtn: '送出反映',
-            csSubmittingBtn: '傳送中...',
-            aboutStoryTitle: '品牌故事',
-            aboutCloseBtn: '關閉',
-            aboutIntroTitle: '出版社簡介',
-            aboutIntroP1: '「文史哲出版社」創立於1971年8月1日，主要致力於出版大學院校研究論著及文史相關書籍。出版範圍涵蓋總類、哲學類、宗教類、社會科學類、史地類、語文類以及美術史類等領域，為華文學術出版的重要推手之一。1992年3月11日改組為「文史哲出版社有限公司」，持續深耕學術出版市場。',
-            aboutIntroP2: '本社創辦人彭正雄先生，曾師事台大教授吳相湘，並多次向毛子水、鄭騫、高明等學者請益，亦獲嚴靈峰、戴君仁、夏德儀、昌彼得、林尹等名師指導。在諸位學者的薰陶與傳授之下，逐步培養出對古籍整理的深厚興趣，並奠定投身文化出版事業的志向。',
-            aboutConceptTitle: '經營理念',
-            aboutConceptP1: '文史哲出版社以出版「文史圖書」及「學術專業圖書」為核心宗旨，目前已累積出版書籍約2500種，其中約2100種仍可供讀者選購。由於學術出版品在海外行銷較具挑戰，本社現正積極拓展網路通路與電子書市場，期望進一步打開華文地區之出版版圖。',
-            aboutAuthorTitle: '代表作家與學術著作',
-            aboutAuthorIntro: '本社出版眾多知名作家與學者作品，包括：',
-            aboutAuthorLit: '文學作家：',
-            aboutAuthorLitItems: '無名氏（卜乃夫）《塔裡的女人》\n馮馮《霧航》\n紀弦、羅門、辛鬱等',
-            aboutAuthorAcad: '學術著作：',
-            aboutAuthorAcadItems: '昌彼得《中國目錄學》\n嚴靈峰、高明、潘重規、林尹、陳新雄、李威熊、黃永武、王更生等學者著作\n龔鵬程、鄭樑生《中日關係史研究論集》（共14冊）\n莊吉發《清史論集》（1–30集）\n《滿語叢刊》（共50冊）\n蔡宗陽《文心雕龍與經學》、《修辭學》等',
-            aboutStartExploringBtn: '開始探索好書',
-            searchTitle: '書籍目錄查詢',
-            searchSubtitle: '圖書檢索',
-            searchFilterTitle: '進階篩選器',
-            searchLabelCode: '書碼查詢',
-            searchLabelTitle: '書名關鍵字',
-            searchLabelAuthor: '作者關鍵字',
-            searchLabelYear: '出版年',
-            searchLabelCategory: '書籍類別 (與試算表同步)',
-            searchBtnQuery: '查詢',
-            searchTableHeaderCode: '書碼',
-            searchTableHeaderTitle: '書名',
-            searchTableHeaderAuthor: '作者',
-            searchTableHeaderYear: '出版年',
-            searchTableHeaderPrice: '定價',
-            searchTableHeaderCategory: '叢書類別',
-            searchTableHeaderAction: '操作',
-            searchBtnMore: '顯示更多書籍',
-            newArrivalsTitle: '新書上市 - 隨機推薦',
-            newArrivalsBtnRefresh: '再換一批看看',
-            newArrivalsCloseBtn: '關閉',
-            cartTitle: '我的書包',
-            cartCloseBtn: '關閉',
-            cartEmptyText: '目前書包裡空空如也...',
-            cartCheckoutTitle: '填寫收件資訊',
-            cartLabelName: '收件人姓名',
-            cartLabelPhone: '聯絡電話',
-            cartLabelEmail: '電子信箱 Email',
-            cartLabelAddress: '詳細寄送地址',
-            cartLabelPayment: '付款方式',
-            cartLabelMemo: '寄件備註 (選填)',
-            cartMemoPlaceholder: '若有特殊收件需求請填寫於此...',
-            cartBtnCheckout: '確認結帳下單',
-            cartCheckingOutBtn: '訂單處理中...',
-            cartOptionCash: '店取付現金 (預設)',
-            cartOptionTransfer: '銀行轉帳',
-            cartOptionCard: '線上刷卡',
-            cartTotalLabel: '總計金額',
-            cartBookCountLabel: '共 {count} 本書',
-            msgLoadingInventory: '完整庫存同步中...',
-            msgLoadedInventory: '最新庫存已載入',
-            msgLoadingMoreBooks: '正在從雲端載入更多書目...',
-            msgOutOfStock: '已售罄',
-            msgNoBooksFound: '此分類目前沒有相關書籍喔！',
-            msgSearchingBooks: '雲端書庫正在尋找符合此分類的書籍...',
-            urlAboutPresident: 'https://hanlinma.github.io/candyni/%E9%97%9C%E6%96%BC%E7%A4%BE%E9%95%B7.html',
-            urlContactUs: 'https://hanlinma.github.io/candyni/%E8%81%AF%E7%B9%AB%E6%88%91%E5%80%91.html'
-        };
-
         function App() {
-            const [isAuthenticated, setIsAuthenticated] = useState(false);
-            const [accountsList, setAccountsList] = useState(fallbackAccounts);
-            const [selectedAccount, setSelectedAccount] = useState('lapen'); 
-            
+            // 安全機制：使用具時效性的 sessionStorage 取代常規 state，防止重新整理後登出
+            const [isAuthenticated, setIsAuthenticated] = useState(() => {
+                return sessionStorage.getItem('lapen_cms_auth') === 'true';
+            });
+            const [sessionToken, setSessionToken] = useState(() => {
+                return sessionStorage.getItem('lapen_cms_token') || '';
+            });
+            const [activeUser, setActiveUser] = useState(() => {
+                return sessionStorage.getItem('lapen_cms_user') || '';
+            });
+
+            // 實體資料集
             const [books, setBooks] = useState([]);
             const [choiceBooks, setChoiceBooks] = useState([]); 
             const [carousels, setCarousels] = useState([]);
@@ -290,8 +132,9 @@
             const [aiLogs, setAiLogs] = useState([]); 
             const [kpis, setKpis] = useState([]); 
             const [settings, setSettings] = useState(defaultSettings); 
-            const [ui, setUi] = useState(defaultUI); 
+            const [ui, setUi] = useState({}); 
             
+            // 操作狀態
             const [activeTab, setActiveTab] = useState('dashboard');
             const [settingSubTab, setSettingSubTab] = useState('backend'); 
             const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -299,10 +142,13 @@
             const [bookSearchQuery, setBookSearchQuery] = useState('');
             const [adminVisibleCount, setAdminVisibleCount] = useState(20);
 
+            // 異步載入狀態
+            const [isLoggingIn, setIsLoggingIn] = useState(false);
             const [loadStatus, setLoadStatus] = useState({
                 kpis: true, orders: true, cs: true, carousels: true, choices: true, books: true
             });
 
+            // 彈出視窗與自訂刪除對話框狀態 (替代不安全的 confirm() )
             const [showBookModal, setShowBookModal] = useState(false);
             const [editingBook, setEditingBook] = useState(null);
             const [modalType, setModalType] = useState('book');
@@ -319,35 +165,20 @@
             const [selectedKpiIcon, setSelectedKpiIcon] = useState('TrendingUp'); 
             const [iframeModal, setIframeModal] = useState({ isOpen: false, url: '', title: '' });
 
+            // 🛡️ 新增：自訂安全刪除確認彈窗 (100% 撤銷瀏覽器 confirm 呼叫)
+            const [deleteModal, setDeleteModal] = useState({
+                isOpen: false,
+                type: '', // 'book', 'choice', 'carousel', 'kpi'
+                id: null,
+                title: '',
+                isDeleting: false
+            });
+
             const [expandedMenus, setExpandedMenus] = useState({
                 group_dash: true, group_marketing: false, group_books: false, group_orders: false, group_cs: false, group_external: false, group_settings: false
             });
 
             const toggleMenu = (menuId) => setExpandedMenus(prev => ({ ...prev, [menuId]: !prev[menuId] }));
-
-            const adminMenuConfig = [
-                { id: 'group_dash', title: settings.menuDashName, icon: availableIcons[settings.menuDashIcon]?.icon || LayoutDashboard, items: [{ tab: 'dashboard', name: '營運儀表板' }] },
-                { id: 'group_marketing', title: settings.menuMarketingName, icon: availableIcons[settings.menuMarketingIcon]?.icon || Sparkles, items: [
-                    { tab: 'carousel', name: '首頁熱賣輪播 (Carousels)' },
-                    { tab: 'choice', name: '編輯推薦書單 (Choice)' } 
-                ]},
-                { id: 'group_books', title: settings.menuBooksName, icon: availableIcons[settings.menuBooksIcon]?.icon || Database, items: [{ tab: 'books', name: '全部書籍管理 (Book_ALL)' }] },
-                { id: 'group_orders', title: settings.menuOrdersName, icon: availableIcons[settings.menuOrdersIcon]?.icon || Truck, items: [{ tab: 'orders', name: '訂單處理中心 (Orders)' }] },
-                { id: 'group_cs', title: settings.menuCsName, icon: availableIcons[settings.menuCsIcon]?.icon || Bot, items: [{ tab: 'ai', name: 'AI 客服信箱 (CS Logs)' }] },
-                { id: 'group_external', title: settings.menuExtName, icon: availableIcons[settings.menuExtIcon]?.icon || ExternalLink, items: [
-                    { isExternal: true, url: 'https://hanlinma.github.io/candyni/vandor.html', name: '供應商系統 (Vandor)' },
-                    { isExternal: true, url: 'https://hanlinma.github.io/candyni/oder.html', name: '舊版訂單 (Oder)' }
-                ]},
-                { id: 'group_settings', title: '系統外觀設定', icon: SettingsIcon, items: [{ tab: 'settings', name: '全域設定與顏色 (Setting)' }] }
-            ];
-
-            const settingSubTabs = [
-                { id: 'backend', label: '🖥️ 後台管理外觀' },
-                { id: 'frontend_colors', label: '🎨 前台視覺配色與字體' },
-                { id: 'frontend_text', label: '📝 前台選單與迎賓' },
-                { id: 'frontend_footer', label: '🏢 聯絡資訊與故事' },
-                { id: 'frontend_search', label: '🔍 檢索與狀態提示' }
-            ];
 
             const showMsg = (text) => {
                 setNotification(text);
@@ -371,63 +202,93 @@
                         ? "https://candylovema.github.io" 
                         : currentOrigin;
 
+                    // 🛡️ 高安全請求：所有高權限 Action 皆必須隨附 sessionToken 以便雲端安全認證
                     const payloadObj = { 
                         action: action, 
                         payload: payloadData,
-                        origin: safeOrigin
+                        origin: safeOrigin,
+                        sessionToken: sessionToken
                     };
-                    
-                    const jsonStr = JSON.stringify(payloadObj);
-                    const utf8Bytes = new TextEncoder().encode(jsonStr);
-                    const payloadBase64 = btoa(String.fromCharCode(...utf8Bytes));
-                    
-                    const timestamp = Date.now().toString();
-                    const messageToSign = payloadBase64 + timestamp;
-                    const signature = await generateSignature(messageToSign, SECRET_KEY);
 
                     const response = await fetch(GAS_URL, {
                         method: "POST",
                         headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify({
-                            payload: payloadBase64,
-                            timestamp: timestamp,
-                            signature: signature
-                        })
+                        body: JSON.stringify(payloadObj)
                     });
                     
                     const data = await response.json();
                     
                     if (data.status === 'error') {
                         console.error("後端拒絕請求:", data.msg);
-                        showMsg("API 執行失敗: " + data.msg); 
+                        showMsg("拒絕存取: " + data.msg); 
+                        // 認證失敗時，自動登出以策安全
+                        if (data.msg.includes("驗證失敗") || data.msg.includes("未授權")) {
+                            handleLogout();
+                        }
                     }
                     
                     return data;
                 } catch (e) {
                     console.error("GAS Sync Error:", e);
-                    showMsg("網路連線錯誤: " + e.toString()); 
+                    showMsg("網路安全通道異常: " + e.toString()); 
                     return { status: 'error', msg: e.toString() };
                 }
             };
 
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                if (isLoggingIn) return;
+                setIsLoggingIn(true);
+                showMsg('正在向雲端安全性通道驗證身分...');
+
+                const username = e.target.username.value;
+                const password = e.target.password.value;
+
+                try {
+                    // 🛡️ 發送直接登入驗證至 GAS（100% 走 HTTPS POST，前端無硬編碼帳密及 SECRET_KEY）
+                    const res = await syncWithGAS('LOGIN', { user: username, password: password });
+                    if (res && res.status === 'success' && res.sessionToken) {
+                        sessionStorage.setItem('lapen_cms_auth', 'true');
+                        sessionStorage.setItem('lapen_cms_token', res.sessionToken);
+                        sessionStorage.setItem('lapen_cms_user', username);
+                        
+                        setIsAuthenticated(true);
+                        setSessionToken(res.sessionToken);
+                        setActiveUser(username);
+                        showMsg('身分驗證通過， Session 令牌已安全儲存！');
+                    } else {
+                        showMsg('登入失敗：' + (res.msg || '帳號或密碼錯誤'));
+                    }
+                } catch (err) {
+                    showMsg('驗證發生異常：' + err.toString());
+                } finally {
+                    setIsLoggingIn(false);
+                }
+            };
+
+            const handleLogout = () => {
+                sessionStorage.clear();
+                setIsAuthenticated(false);
+                setSessionToken('');
+                setActiveUser('');
+                setBooks([]);
+                setChoiceBooks([]);
+                setCarousels([]);
+                setOrders([]);
+                setAiLogs([]);
+                showMsg('Session 令牌已安全銷毀，您已成功登出。');
+            };
+
             useEffect(() => {
+                if (!isAuthenticated || !sessionToken) return;
+
                 syncWithGAS('FETCH_SETTINGS').then(res => {
                     if (res && res.data) setSettings(prev => ({...prev, ...res.data}));
                 }).catch(() => {});
 
                 syncWithGAS('FETCH_UI').then(res => {
-                    if (res && res.data) setUi(prev => ({...prev, ...res.data}));
+                    if (res && res.data) setUi(res.data);
                 }).catch(() => {});
-
-                if (!isAuthenticated) {
-                    syncWithGAS('FETCH_ACCOUNTS').then(res => {
-                        if (res && res.data && res.data.length > 0) setAccountsList(res.data);
-                    }).catch(() => {});
-                }
-            }, [isAuthenticated]);
-
-            useEffect(() => {
-                if (!isAuthenticated) return;
 
                 syncWithGAS('FETCH_KPIS').then(res => { 
                     if(res?.data) setKpis(res.data); 
@@ -458,26 +319,9 @@
                     if(res?.data) setBooks(res.data); 
                     setLoadStatus(prev => ({...prev, books: false})); 
                 }).catch(() => setLoadStatus(prev => ({...prev, books: false})));
-            }, [isAuthenticated]);
+            }, [isAuthenticated, sessionToken]);
 
-            useEffect(() => {
-                if (editingKpi) {
-                    let rawUnit = String(editingKpi.unit || '');
-                    let iconName = rawUnit.includes('||') ? rawUnit.split('||')[1] : '';
-                    if (!iconName) {
-                        const titleText = editingKpi.title || '';
-                        if (titleText.includes('營收')) iconName = 'Database';
-                        else if (titleText.includes('待處理')) iconName = 'Truck';
-                        else if (titleText.includes('庫存警示')) iconName = 'BookOpen';
-                        else iconName = 'TrendingUp';
-                    }
-                    setSelectedKpiIcon(iconName);
-                } else {
-                    setSelectedKpiIcon('TrendingUp');
-                }
-            }, [editingKpi]);
-
-            // KPI 自動連動更新
+            // 自動更新 KPI 連動
             useEffect(() => {
                 if (kpis.length === 0 || loadStatus.kpis || !isAuthenticated) return;
                 let hasChanges = false;
@@ -505,8 +349,6 @@
                         }).length);
                         displayUnit = displayUnit || '項商品';
                         if (!iconName) iconName = 'BookOpen';
-                    } else {
-                        if (!iconName) iconName = 'TrendingUp';
                     }
 
                     const combinedUnit = `${displayUnit}||${iconName}`;
@@ -523,41 +365,9 @@
                 if (hasChanges) setKpis(updatedKpis);
             }, [orders, books, kpis, loadStatus.kpis, isAuthenticated]);
 
-            const handleLogin = (e) => {
-                e.preventDefault();
-                const pwd = e.target.password.value;
-                const accInfo = accountsList.find(a => a.user === selectedAccount);
-                if (accInfo && String(accInfo.password) === String(pwd)) {
-                    setIsAuthenticated(true);
-                    showMsg('登入成功，系統資料已於背景載入...');
-                } else { showMsg('登入失敗：密碼錯誤'); }
-            };
-
-            const excelCategories = useMemo(() => {
-                const cats = books.map(b => b.category).filter(c => c && c.trim() !== "");
-                return [...new Set(cats)].sort();
-            }, [books]);
-
-            const filteredAdminBooks = useMemo(() => {
-                const query = bookSearchQuery.toLowerCase().trim();
-                const targetList = activeTab === 'choice' ? choiceBooks : books; 
-                if (!query) return targetList;
-                return targetList.filter(b => 
-                    (b.title && b.title.toLowerCase().includes(query)) ||
-                    (b.id && b.id.toString().toLowerCase().includes(query)) ||
-                    (b.category && b.category.toLowerCase().includes(query))
-                );
-            }, [books, choiceBooks, bookSearchQuery, activeTab]);
-
-            const visibleAdminBooks = useMemo(() => {
-                return filteredAdminBooks.slice(0, adminVisibleCount);
-            }, [filteredAdminBooks, adminVisibleCount]);
-
             const handleSaveBook = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                
-                // 🛡️ 套用試算表公式防注入檢驗
                 const bookData = {
                     title: sanitizeForSpreadsheet(formData.get('title')), 
                     category: sanitizeForSpreadsheet(formData.get('category')), 
@@ -587,23 +397,52 @@
                 }
             };
 
-            const handleDeleteBook = async (id, isChoice) => {
-                if(confirm(`確定要刪除這本${isChoice ? '精選推薦' : '書籍'}嗎？`)) {
-                    const res = await syncWithGAS(isChoice ? 'DELETE_CHOICE' : 'DELETE_BOOK', { id });
-                    if (res.status === 'success') {
-                        if (isChoice) setChoiceBooks(choiceBooks.filter(b => b.id !== id));
-                        else setBooks(books.filter(b => b.id !== id));
-                        showMsg('資料已刪除');
+            const openDeleteModal = (type, id, title) => {
+                setDeleteModal({
+                    isOpen: true,
+                    type,
+                    id,
+                    title,
+                    isDeleting: false
+                });
+            };
+
+            const confirmSecureDelete = async () => {
+                const { type, id } = deleteModal;
+                setDeleteModal(prev => ({ ...prev, isDeleting: true }));
+
+                let res = { status: 'error', msg: '未知錯誤' };
+                try {
+                    if (type === 'book') {
+                        res = await syncWithGAS('DELETE_BOOK', { id });
+                        if (res.status === 'success') setBooks(books.filter(b => b.id !== id));
+                    } else if (type === 'choice') {
+                        res = await syncWithGAS('DELETE_CHOICE', { id });
+                        if (res.status === 'success') setChoiceBooks(choiceBooks.filter(b => b.id !== id));
+                    } else if (type === 'carousel') {
+                        res = await syncWithGAS('DELETE_CAROUSEL', { id });
+                        if (res.status === 'success') setCarousels(carousels.filter(c => c.id !== id));
+                    } else if (type === 'kpi') {
+                        res = await syncWithGAS('DELETE_KPI', { id });
+                        if (res.status === 'success') setKpis(kpis.filter(k => k.id !== id));
                     }
+
+                    if (res.status === 'success') {
+                        showMsg('資料已成功安全刪除');
+                    } else {
+                        showMsg('刪除失敗：' + res.msg);
+                    }
+                } catch (e) {
+                    showMsg('刪除出錯：' + e.toString());
+                } finally {
+                    setDeleteModal({ isOpen: false, type: '', id: null, title: '', isDeleting: false });
                 }
-            }
+            };
 
             const handleSaveOrder = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const newId = sanitizeForSpreadsheet(formData.get('orderId')); 
-                
-                // 🛡️ 套用試算表公式防注入檢驗
                 const updated = {
                     ...editingOrder, 
                     newId: newId, 
@@ -629,8 +468,6 @@
             const handleSaveCarousel = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                
-                // 🛡️ 套用試算表公式防注入檢驗
                 const slideData = { 
                     title: sanitizeForSpreadsheet(formData.get('title')), 
                     description: sanitizeForSpreadsheet(formData.get('description')), 
@@ -647,23 +484,11 @@
                 }
             };
 
-            const handleDeleteCarousel = async (id) => {
-                if(confirm('確定要刪除此行銷輪播項目嗎？')) {
-                    const res = await syncWithGAS('DELETE_CAROUSEL', { id });
-                    if(res.status === 'success') {
-                        setCarousels(carousels.filter(c => c.id !== id));
-                        showMsg('已刪除該輪播');
-                    }
-                }
-            };
-
             const handleSaveKpi = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const inputUnit = sanitizeForSpreadsheet(formData.get('unit') || '');
                 const combinedUnit = `${inputUnit}||${selectedKpiIcon}`;
-                
-                // 🛡️ 套用試算表公式防注入檢驗
                 const kpiData = { 
                     title: sanitizeForSpreadsheet(formData.get('title')), 
                     value: sanitizeForSpreadsheet(formData.get('value')), 
@@ -679,16 +504,6 @@
                 }
             };
 
-            const handleDeleteKpi = async (id) => {
-                if(confirm('確定要刪除此 KPI 嗎？')) {
-                    const res = await syncWithGAS('DELETE_KPI', { id });
-                    if (res.status === 'success') {
-                        setKpis(kpis.filter(k => k.id !== id));
-                        showMsg('KPI 已刪除');
-                    }
-                }
-            };
-
             const handleSaveSettings = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -696,7 +511,6 @@
                 const newUi = { ...ui };
 
                 for (let [key, value] of formData.entries()) {
-                    // 🛡️ 對外發送的所有系統設定進行公式過濾
                     const safeVal = sanitizeForSpreadsheet(value);
                     if (key in defaultUI) {
                         newUi[key] = safeVal;
@@ -730,8 +544,6 @@
 
             const handleSaveCS = async () => {
                 if (!csResponseText.trim()) return showMsg('請輸入回覆內容');
-                
-                // 🛡️ 套用公式防注入保護
                 const safeResponse = sanitizeForSpreadsheet(csResponseText);
                 const res = await syncWithGAS('UPDATE_CS_LOG', { id: editingCSLog.id, response: safeResponse });
                 if(res.status === 'success') {
@@ -740,7 +552,55 @@
                 }
             };
 
-            // 登入畫面
+            const sanitizeForSpreadsheet = (val) => {
+                if (val === undefined || val === null) return "";
+                let str = String(val).trim();
+                if (/^[=\+\-\@]/.test(str)) {
+                    return "'" + str; // 公式過濾與轉義，保護後台不觸發
+                }
+                return str;
+            };
+
+            const excelCategories = useMemo(() => {
+                const cats = books.map(b => b.category).filter(c => c && c.trim() !== "");
+                return [...new Set(cats)].sort();
+            }, [books]);
+
+            const filteredAdminBooks = useMemo(() => {
+                const query = bookSearchQuery.toLowerCase().trim();
+                const targetList = activeTab === 'choice' ? choiceBooks : books; 
+                if (!query) return targetList;
+                return targetList.filter(b => 
+                    (b.title && b.title.toLowerCase().includes(query)) ||
+                    (b.id && b.id.toString().toLowerCase().includes(query)) ||
+                    (b.category && b.category.toLowerCase().includes(query))
+                );
+            }, [books, choiceBooks, bookSearchQuery, activeTab]);
+
+            const visibleAdminBooks = useMemo(() => {
+                return filteredAdminBooks.slice(0, adminVisibleCount);
+            }, [filteredAdminBooks, adminVisibleCount]);
+
+            const adminMenuConfig = [
+                { id: 'group_dash', title: settings.menuDashName, icon: availableIcons[settings.menuDashIcon]?.icon || LayoutDashboard, items: [{ tab: 'dashboard', name: '營運儀表板' }] },
+                { id: 'group_marketing', title: settings.menuMarketingName, icon: availableIcons[settings.menuMarketingIcon]?.icon || Sparkles, items: [
+                    { tab: 'carousel', name: '首頁熱賣輪播 (Carousels)' },
+                    { tab: 'choice', name: '編輯推薦書單 (Choice)' } 
+                ]},
+                { id: 'group_books', title: settings.menuBooksName, icon: availableIcons[settings.menuBooksIcon]?.icon || Database, items: [{ tab: 'books', name: '全部書籍管理 (Book_ALL)' }] },
+                { id: 'group_orders', title: settings.menuOrdersName, icon: availableIcons[settings.menuOrdersIcon]?.icon || Truck, items: [{ tab: 'orders', name: '訂單處理中心 (Orders)' }] },
+                { id: 'group_cs', title: settings.menuCsName, icon: availableIcons[settings.menuCsIcon]?.icon || Bot, items: [{ tab: 'ai', name: 'AI 客服信箱 (CS Logs)' }] },
+                { id: 'group_settings', title: '系統外觀設定', icon: SettingsIcon, items: [{ tab: 'settings', name: '全域設定與顏色 (Setting)' }] }
+            ];
+
+            const settingSubTabs = [
+                { id: 'backend', label: '🖥️ 後台管理外觀' },
+                { id: 'frontend_colors', label: '🎨 前台視覺配色與字體' },
+                { id: 'frontend_text', label: '📝 前台選單與迎賓' },
+                { id: 'frontend_footer', label: '🏢 聯絡資訊與故事' },
+                { id: 'frontend_search', label: '🔍 檢索與狀態提示' }
+            ];
+
             if (!isAuthenticated) {
                 return (
                     <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden transition-colors duration-500" style={{ backgroundColor: settings.loginBgColor }}>
@@ -762,30 +622,36 @@
                             
                             <form onSubmit={handleLogin} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1" style={{ color: settings.loginTextColor, opacity: 0.7 }}>選擇管理員帳號</label>
-                                    <div className="relative">
-                                        <select 
-                                            name="account" 
-                                            value={selectedAccount} 
-                                            onChange={(e) => setSelectedAccount(e.target.value)}
-                                            className="w-full bg-transparent border p-4 rounded-2xl outline-none font-bold appearance-none cursor-pointer transition-colors shadow-sm text-sm"
-                                            style={{ color: settings.loginTextColor, borderColor: 'rgba(128,128,128,0.2)' }}
-                                        >
-                                            {accountsList.map(acc => (
-                                                <option key={acc.user} value={acc.user} style={{ color: '#000' }}>👤 {acc.user}</option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" size={18} style={{ color: settings.loginTextColor, opacity: 0.5 }}/>
-                                    </div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1" style={{ color: settings.loginTextColor, opacity: 0.7 }}>管理員帳號</label>
+                                    <input 
+                                        name="username" 
+                                        type="text" 
+                                        placeholder="您的管理員用戶名稱" 
+                                        className="w-full bg-transparent border p-4 rounded-2xl outline-none font-bold transition-colors shadow-sm text-sm" 
+                                        required 
+                                        style={{ color: settings.loginTextColor, borderColor: 'rgba(128,128,128,0.2)' }}
+                                    />
                                 </div>
 
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest ml-1" style={{ color: settings.loginTextColor, opacity: 0.7 }}>通行密碼</label>
-                                    <input name="password" type="password" placeholder="••••••••" className="w-full bg-transparent border p-4 rounded-2xl outline-none font-bold transition-colors shadow-sm tracking-widest" required style={{ color: settings.loginTextColor, borderColor: 'rgba(128,128,128,0.2)' }}/>
+                                    <input 
+                                        name="password" 
+                                        type="password" 
+                                        placeholder="••••••••" 
+                                        className="w-full bg-transparent border p-4 rounded-2xl outline-none font-bold transition-colors shadow-sm tracking-widest" 
+                                        required 
+                                        style={{ color: settings.loginTextColor, borderColor: 'rgba(128,128,128,0.2)' }}
+                                    />
                                 </div>
 
-                                <button className="w-full text-white py-4 rounded-2xl font-bold transition-all duration-300 shadow-xl flex justify-center items-center gap-2 text-lg mt-4 hover:scale-105 border border-white/10" style={{ backgroundColor: settings.sidebarActiveColor }}>
-                                    登入系統 <ChevronRight size={18}/>
+                                <button 
+                                    disabled={isLoggingIn}
+                                    className="w-full text-white py-4 rounded-2xl font-bold transition-all duration-300 shadow-xl flex justify-center items-center gap-2 text-lg mt-4 hover:scale-105 border border-white/10 disabled:opacity-50" 
+                                    style={{ backgroundColor: settings.sidebarActiveColor }}
+                                >
+                                    {isLoggingIn ? <Clock className="animate-spin" size={18} /> : null}
+                                    {isLoggingIn ? '正在安全校驗身分...' : '安全登入'} <ChevronRight size={18}/>
                                 </button>
                                 
                                 <div className="text-center pt-4">
@@ -793,7 +659,7 @@
                                 </div>
                             </form>
                         </div>
-                        <div className="absolute bottom-6 text-[10px] font-bold tracking-widest uppercase" style={{ color: settings.loginTextColor, opacity: 0.5 }}>Secured by Web 3.0 Technologies</div>
+                        <div className="absolute bottom-6 text-[10px] font-bold tracking-widest uppercase" style={{ color: settings.loginTextColor, opacity: 0.5 }}>Secured by SSL with Session Tokens</div>
                     </div>
                 );
             }
@@ -876,15 +742,16 @@
                                     {settings.userAvatarUrl ? (
                                         <img src={formatImageUrl(settings.userAvatarUrl)} className="w-full h-full object-cover" alt="User" onError={(e)=>{e.target.style.display='none'}} />
                                     ) : (
-                                        selectedAccount.charAt(0).toUpperCase()
+                                        activeUser.charAt(0).toUpperCase()
                                     )}
                                 </div>
                                 <div className="overflow-hidden">
-                                    <div className="text-xs font-bold leading-tight truncate" style={{ color: settings.sidebarUserColor || settings.sidebarTextColor }}>{selectedAccount}</div>
+                                    <div className="text-xs font-bold leading-tight truncate" style={{ color: settings.sidebarUserColor || settings.sidebarTextColor }}>{activeUser}</div>
                                     <div className="text-[10px] font-bold truncate tracking-widest mt-0.5" style={{ color: settings.onlineStatusColor || '#34d399' }}>{settings.onlineStatusText || 'Online'}</div>
                                 </div>
                             </div>
-                            <button type="button" onClick={() => { window.open('index.html', '_self'); }} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition text-xs font-bold shadow-sm" style={{ color: settings.sidebarTextColor }}><Globe size={14} /> 前往網站前台</button>
+                            <button type="button" onClick={handleLogout} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition text-xs font-bold shadow-sm mb-2"><X size={14} /> 登出 CMS</button>
+                            <button type="button" onClick={() => { window.open('index.html', '_blank'); }} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition text-xs font-bold shadow-sm" style={{ color: settings.sidebarTextColor }}><Globe size={14} /> 前往前台官網</button>
                         </div>
                     </aside>
                     
@@ -914,6 +781,7 @@
                         </header>
                         
                         <div className="p-6 lg:p-10 overflow-y-auto flex-1 z-10 sidebar-scroll">
+                            {}
                             {activeTab === 'dashboard' && (
                                 <div className="animate-in">
                                     <div className="flex justify-between items-end mb-6 border-b border-black/10 pb-4">
@@ -950,7 +818,7 @@
                                                             <p className="text-[11px] opacity-60 font-black uppercase tracking-widest" style={{ color: settings.cardTextColor }}>{titleText}</p>
                                                             <div className="flex gap-2">
                                                                 <button type="button" onClick={() => { setEditingKpi(k); setShowKpiModal(true); }} className="opacity-40 hover:opacity-100 transition relative z-20 cursor-pointer" style={{ color: settings.cardTextColor }}><Edit2 size={12}/></button>
-                                                                <button type="button" onClick={() => handleDeleteKpi(k.id)} className="opacity-40 hover:opacity-100 text-red-500 transition relative z-20 cursor-pointer"><Trash2 size={12}/></button>
+                                                                <button type="button" onClick={() => openDeleteModal('kpi', k.id, k.title)} className="opacity-40 hover:opacity-100 text-red-500 transition relative z-20 cursor-pointer"><Trash2 size={12}/></button>
                                                             </div>
                                                         </div>
                                                         <p className="text-4xl font-black tracking-tighter relative z-10" style={{ color: settings.cardTextColor }}>
@@ -968,13 +836,13 @@
                                 </div>
                             )}
 
+                            {}
                             {activeTab === 'settings' && (
                                 <div className="animate-in max-w-4xl mx-auto">
                                     <div className="flex justify-between items-end mb-6 border-b border-black/10 pb-4">
                                         <h3 className="text-xl font-black flex items-center gap-2" style={{ color: settings.mainTextColor }}><Palette style={{ color: settings.sidebarActiveColor }}/> 全域外觀與選單設定</h3>
                                     </div>
                                     
-                                    {/* 外觀管理子選單 */}
                                     <div className="flex flex-wrap gap-2 mb-6 border-b border-black/10 pb-4 font-sans">
                                         {settingSubTabs.map(subTab => (
                                             <button
@@ -993,8 +861,6 @@
                                     </div>
                                     
                                     <form onSubmit={handleSaveSettings} className="space-y-8 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-black/5" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
-                                        
-                                        {/* 子頁籤 1: 🖥️ 後台管理外觀 */}
                                         {settingSubTab === 'backend' && (
                                             <div className="space-y-6 animate-in">
                                                 <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Palette size={16} className="opacity-50"/> 系統後台視覺色彩</h4>
@@ -1084,55 +950,9 @@
                                                         <input name="onlineStatusText" defaultValue={settings.onlineStatusText || 'Online'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
                                                     </div>
                                                 </div>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 border-t border-black/10 pt-6">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">模組 1 名稱 (儀表板)</label>
-                                                        <input name="menuDashName" defaultValue={settings.menuDashName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                        <select name="menuDashIcon" defaultValue={settings.menuDashIcon} className="w-full bg-black/5 border border-black/10 p-2 rounded-xl text-xs font-bold outline-none appearance-none" style={{ color: 'inherit' }}>
-                                                            {Object.keys(availableIcons).map(k => <option key={k} value={k}>{k}</option>)}
-                                                        </select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">模組 2 名稱 (行銷)</label>
-                                                        <input name="menuMarketingName" defaultValue={settings.menuMarketingName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                        <select name="menuMarketingIcon" defaultValue={settings.menuMarketingIcon} className="w-full bg-black/5 border border-black/10 p-2 rounded-xl text-xs font-bold outline-none appearance-none" style={{ color: 'inherit' }}>
-                                                            {Object.keys(availableIcons).map(k => <option key={k} value={k}>{k}</option>)}
-                                                        </select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">模組 3 名稱 (庫存)</label>
-                                                        <input name="menuBooksName" defaultValue={settings.menuBooksName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                        <select name="menuBooksIcon" defaultValue={settings.menuBooksIcon} className="w-full bg-black/5 border border-black/10 p-2 rounded-xl text-xs font-bold outline-none appearance-none" style={{ color: 'inherit' }}>
-                                                            {Object.keys(availableIcons).map(k => <option key={k} value={k}>{k}</option>)}
-                                                        </select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">模組 4 名稱 (物流)</label>
-                                                        <input name="menuOrdersName" defaultValue={settings.menuOrdersName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                        <select name="menuOrdersIcon" defaultValue={settings.menuOrdersIcon} className="w-full bg-black/5 border border-black/10 p-2 rounded-xl text-xs font-bold outline-none appearance-none" style={{ color: 'inherit' }}>
-                                                            {Object.keys(availableIcons).map(k => <option key={k} value={k}>{k}</option>)}
-                                                        </select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">模組 5 名稱 (客服)</label>
-                                                        <input name="menuCsName" defaultValue={settings.menuCsName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                        <select name="menuCsIcon" defaultValue={settings.menuCsIcon} className="w-full bg-black/5 border border-black/10 p-2 rounded-xl text-xs font-bold outline-none appearance-none" style={{ color: 'inherit' }}>
-                                                            {Object.keys(availableIcons).map(k => <option key={k} value={k}>{k}</option>)}
-                                                        </select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">模組 6 名稱 (外部系統)</label>
-                                                        <input name="menuExtName" defaultValue={settings.menuExtName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                        <select name="menuExtIcon" defaultValue={settings.menuExtIcon} className="w-full bg-black/5 border border-black/10 p-2 rounded-xl text-xs font-bold outline-none appearance-none" style={{ color: 'inherit' }}>
-                                                            {Object.keys(availableIcons).map(k => <option key={k} value={k}>{k}</option>)}
-                                                        </select>
-                                                    </div>
-                                                </div>
                                             </div>
                                         )}
 
-                                        {/* 子頁籤 2: 🎨 前台視覺配色與字體 */}
                                         {settingSubTab === 'frontend_colors' && (
                                             <div className="space-y-6 animate-in">
                                                 <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Globe size={16} className="text-amber-700" /> 前台官網 - 基本設定 (網頁名稱與 Logo)</h4>
@@ -1143,88 +963,47 @@
                                                     </div>
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台官網 Logo 圖片 (Drive ID / URL)</label>
-                                                        <input name="frontendLogoUrl" defaultValue={ui.frontendLogoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則顯示預設拼音圖示" />
+                                                        <input name="frontendLogoUrl" defaultValue={ui.frontendLogoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則使用預設圖示" />
                                                     </div>
                                                 </div>
 
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><Palette size={16} className="text-amber-700" /> 前台官網 - 經典中式視覺調色盤 (CSS Variables)</h4>
+                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><Palette size={16} className="text-amber-700" /> 前台官網 - 經典中式視覺調色盤</h4>
                                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台主特色色 (Theme Primary)</label>
-                                                        <input type="color" name="themeColor" defaultValue={ui.themeColor} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台深色底色 (Theme Dark)</label>
-                                                        <input type="color" name="darkThemeColor" defaultValue={ui.darkThemeColor} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">主白背景色 (Light Bg)</label>
-                                                        <input type="color" name="lightBgColor" defaultValue={ui.lightBgColor} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">次白背景色 (Bg Light)</label>
-                                                        <input type="color" name="bgLightColor" defaultValue={ui.bgLightColor} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">主字深色 (Text Dark)</label>
-                                                        <input type="color" name="textDarkColor" defaultValue={ui.textDarkColor} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">優雅邊框色 (Border Color)</label>
-                                                        <input type="color" name="borderColor" defaultValue={ui.borderColor} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">強調輔助色 (Accent Color)</label>
-                                                        <input type="color" name="accentColor" defaultValue={ui.accentColor} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">頁尾背景色 (Footer Bg)</label>
-                                                        <input type="color" name="footerBgColor" defaultValue={ui.footerBgColor} />
-                                                    </div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">前台主特色色 (Theme Primary)</label><input type="color" name="themeColor" defaultValue={ui.themeColor} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">前台深色底色 (Theme Dark)</label><input type="color" name="darkThemeColor" defaultValue={ui.darkThemeColor} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">主白背景色 (Light Bg)</label><input type="color" name="lightBgColor" defaultValue={ui.lightBgColor} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">次白背景色 (Bg Light)</label><input type="color" name="bgLightColor" defaultValue={ui.bgLightColor} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">主字深色 (Text Dark)</label><input type="color" name="textDarkColor" defaultValue={ui.textDarkColor} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">優雅邊框色 (Border Color)</label><input type="color" name="borderColor" defaultValue={ui.borderColor} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">強調輔助色 (Accent Color)</label><input type="color" name="accentColor" defaultValue={ui.accentColor} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">頁尾背景色 (Footer Bg)</label><input type="color" name="footerBgColor" defaultValue={ui.footerBgColor} /></div>
                                                 </div>
 
-                                                <h4 className="text-sm font-black mb-5 pt-6 flex items-center gap-2 border-b border-black/10 pb-2"><FileText size={16} className="text-amber-700" /> 前台官網 - 經典中式字體選擇 (Font Family)</h4>
+                                                <h4 className="text-sm font-black mb-5 pt-6 flex items-center gap-2 border-b border-black/10 pb-2"><FileText size={16} className="text-amber-700" /> 前台官網 - 中式人文字體</h4>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台主頁面字體 (Body Font Family)</label>
-                                                        <select name="bodyFont" defaultValue={ui.bodyFont || 'Noto Sans TC'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none appearance-none" style={{ color: 'inherit' }}>
+                                                        <label className="text-[10px] font-black uppercase opacity-60">前台主頁面字體 (Body Font Family)</label>
+                                                        <select name="bodyFont" defaultValue={ui.bodyFont || 'Noto Sans TC'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }}>
                                                             <option value="Noto Sans TC">思源黑體 (Noto Sans TC)</option>
                                                             <option value="Noto Serif TC">思源明體 (Noto Serif TC)</option>
-                                                            <option value="'Wending WeiBei', '文鼎魏碑', 'DFWaibei-W7-A', 'DFWaibei-W5', 'DFWaibei-W7', 'DFWaiBei-B5', 'DFKai-SB', 'KaiTi', serif">華康/文鼎 魏碑體 (WeiBei)</option>
-                                                            <option value="'Wending XingKai', '文鼎行楷', 'Long Cang', 'STKaiti', 'KaiTi', serif">古典文鼎行楷 (XingKai)</option>
                                                             <option value="'Ma Shan Zheng', cursive">霸氣毛筆書法 (Ma Shan Zheng)</option>
-                                                            <option value="'Zhi Mang Xing', cursive">瀟灑草書書法 (Zhi Mang Xing)</option>
-                                                            <option value="'Liu Jian Mao Cao', cursive">狂草流線書法 (Liu Jian Mao Cao)</option>
                                                             <option value="'Long Cang', cursive">極簡行楷鋼筆 (Long Cang)</option>
-                                                            <option value="BiauKai, DFKai-SB, KaiTi">微軟/系統 標楷體 (BiauKai / KaiTi)</option>
-                                                            <option value="FangSong, STFangsong">學術典雅 仿宋體 (FangSong)</option>
-                                                            <option value="sans-serif">現代簡約 系統黑體 (Sans-Serif)</option>
                                                         </select>
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台標題字體 (Title Font Family)</label>
-                                                        <select name="titleFont" defaultValue={ui.titleFont || 'Noto Serif TC'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none appearance-none" style={{ color: 'inherit' }}>
+                                                        <label className="text-[10px] font-black uppercase opacity-60">前台標題字體 (Title Font Family)</label>
+                                                        <select name="titleFont" defaultValue={ui.titleFont || 'Noto Serif TC'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }}>
                                                             <option value="Noto Serif TC">思源明體 (Noto Serif TC)</option>
                                                             <option value="Noto Sans TC">思源黑體 (Noto Sans TC)</option>
-                                                            <option value="'Wending WeiBei', '文鼎魏碑', 'DFWaibei-W7-A', 'DFWaibei-W5', 'DFWaibei-W7', 'DFWaiBei-B5', 'DFKai-SB', 'KaiTi', serif">華康/文鼎 魏碑體 (WeiBei)</option>
-                                                            <option value="'Wending XingKai', '文鼎行楷', 'Long Cang', 'STKaiti', 'KaiTi', serif">古典文鼎行楷 (XingKai)</option>
-                                                            <option value="'Ma Shan Zheng', cursive">霸氣毛筆書法 (Ma Shan Zheng)</option>
-                                                            <option value="'Zhi Mang Xing', cursive">瀟灑草書書法 (Zhi Mang Xing)</option>
-                                                            <option value="'Liu Jian Mao Cao', cursive">狂草流線書法 (Liu Jian Mao Cao)</option>
-                                                            <option value="'Long Cang', cursive">極簡行楷鋼筆 (Long Cang)</option>
-                                                            <option value="BiauKai, DFKai-SB, KaiTi">微軟/系統 標楷體 (BiauKai / KaiTi)</option>
-                                                            <option value="FangSong, STFangsong">學術典雅 仿宋體 (FangSong)</option>
-                                                            <option value="serif">經典傳承 系統明體 (Serif)</option>
                                                         </select>
                                                     </div>
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* 子頁籤 3: 📝 前台選單與迎賓 */}
                                         {settingSubTab === 'frontend_text' && (
                                             <div className="space-y-6 animate-in">
-                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><FileText size={16} className="text-amber-700" /> 導覽選單與標題控制</h4>
+                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><FileText size={16} className="opacity-50" /> 導覽選單與迎賓標題</h4>
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：關於我們</label><input name="menuAbout" defaultValue={ui.menuAbout} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：關於社長</label><input name="menuPresident" defaultValue={ui.menuPresident} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
@@ -1233,138 +1012,6 @@
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：書籍檢索</label><input name="menuSearch" defaultValue={ui.menuSearch} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：我的書包</label><input name="menuCart" defaultValue={ui.menuCart} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：管理入口</label><input name="menuAdmin" defaultValue={ui.menuAdmin} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><ExternalLink size={16} className="opacity-50" /> 選單對應外連連結</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">關於社長 外連 URL</label><input name="urlAboutPresident" defaultValue={ui.urlAboutPresident} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">聯繫我們 外連 URL</label><input name="urlContactUs" defaultValue={ui.urlContactUs} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><Sparkles size={16} className="opacity-50" /> 首頁迎賓橫幅文字 (Hero Banner)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">迎賓主標題 1 (常規字體)</label><input name="heroHeading1" defaultValue={ui.heroHeading1} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">迎賓主標題 2 (高亮褐色)</label><input name="heroHeading2" defaultValue={ui.heroHeading2} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">迎賓副標題簡介</label><textarea name="heroSubheading" defaultValue={ui.heroSubheading} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-16 resize-none font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><BookOpen size={16} className="opacity-50"/> 前台商品欄位標題</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">主展示區大標 (如:精選好書)</label><input name="sectionTitleFeatured" defaultValue={ui.sectionTitleFeatured} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">推薦展示區小標 (如:編輯特別推薦)</label><input name="sectionTitleRecommendation" defaultValue={ui.sectionTitleRecommendation} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">探索更多按鈕文字</label><input name="sectionMoreBooksBtn" defaultValue={ui.sectionMoreBooksBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* 子頁籤 4: 🏢 聯絡資訊與故事 */}
-                                        {settingSubTab === 'frontend_footer' && (
-                                            <div className="space-y-6 animate-in">
-                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><MapPin size={16} className="text-amber-700" /> 頁尾資訊與聯絡細節 (Footer)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">頁尾品牌故事短評</label><textarea name="footerBrandDesc" defaultValue={ui.footerBrandDesc} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-16 resize-none font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">故事按鈕文字</label><input name="footerStoryBtn" defaultValue={ui.footerStoryBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">聯絡區主標題</label><input name="footerContactTitle" defaultValue={ui.footerContactTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">地址</label><input name="footerAddress" defaultValue={ui.footerAddress} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">電話</label><input name="footerPhone" defaultValue={ui.footerPhone} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">傳真 (Fax)</label><input name="footerFax" defaultValue={ui.footerFax} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">聯絡信箱 (Email)</label><input name="footerEmail" defaultValue={ui.footerEmail} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">營業時間標示</label><input name="footerHours" defaultValue={ui.footerHours} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">郵撥轉帳資訊</label><input name="footerTransfer" defaultValue={ui.footerTransfer} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest opacity-60">推薦好站標題</label><input name="footerLinksTitle" defaultValue={ui.footerLinksTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest opacity-60">Facebook 粉絲專頁名稱</label><input name="footerFacebookLinkText" defaultValue={ui.footerFacebookLinkText} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase tracking-widest opacity-60">Facebook 專頁網址 (URL)</label><input name="footerFacebookUrl" defaultValue={ui.footerFacebookUrl} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">版權宣傳口號 (footer Copyright)</label><input name="footerCopyright" defaultValue={ui.footerCopyright} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><BookOpen size={16} className="opacity-50" /> 關於我們品牌故事視窗 (About Modal Content)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">故事總標題</label><input name="aboutStoryTitle" defaultValue={ui.aboutStoryTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">關閉按鈕文字</label><input name="aboutCloseBtn" defaultValue={ui.aboutCloseBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">簡介主標</label><input name="aboutIntroTitle" defaultValue={ui.aboutIntroTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">介紹段落 1</label><textarea name="aboutIntroP1" defaultValue={ui.aboutIntroP1} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-24 resize-none font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">介紹段落 2</label><textarea name="aboutIntroP2" defaultValue={ui.aboutIntroP2} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-24 resize-none font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">理念主標</label><input name="aboutConceptTitle" defaultValue={ui.aboutConceptTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">理念內文</label><textarea name="aboutConceptP1" defaultValue={ui.aboutConceptP1} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-20 resize-none font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">作家大作展示區標題</label><input name="aboutAuthorTitle" defaultValue={ui.aboutAuthorTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">作家代表前言文字</label><textarea name="aboutAuthorIntro" defaultValue={ui.aboutAuthorIntro} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-16 resize-none font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">文學作家分類標籤</label><input name="aboutAuthorLit" defaultValue={ui.aboutAuthorLit} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">文學作家清單 (以 \n 斷行分行條列)</label><textarea name="aboutAuthorLitItems" defaultValue={ui.aboutAuthorLitItems} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-24 font-mono font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">學術著作分類標籤</label><input name="aboutAuthorAcad" defaultValue={ui.aboutAuthorAcad} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">學術著作清單 (以 \n 斷行分行條列)</label><textarea name="aboutAuthorAcadItems" defaultValue={ui.aboutAuthorAcadItems} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-24 font-mono font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">故事底部引導按鈕文字</label><input name="aboutStartExploringBtn" defaultValue={ui.aboutStartExploringBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* 子頁籤 5: 🔍 檢索與狀態提示 */}
-                                        {settingSubTab === 'frontend_search' && (
-                                            <div className="space-y-6 animate-in">
-                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Search size={16} className="text-amber-700" /> 圖書目錄檢索與篩選 (Search Modal)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">檢索區大標</label><input name="searchTitle" defaultValue={ui.searchTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">檢索區副標</label><input name="searchSubtitle" defaultValue={ui.searchSubtitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">進階篩選標題</label><input name="searchFilterTitle" defaultValue={ui.searchFilterTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">書碼查詢標籤</label><input name="searchLabelCode" defaultValue={ui.searchLabelCode} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">書名關鍵字標籤</label><input name="searchLabelTitle" defaultValue={ui.searchLabelTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">作者關鍵字標籤</label><input name="searchLabelAuthor" defaultValue={ui.searchLabelAuthor} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">出版年標籤</label><input name="searchLabelYear" defaultValue={ui.searchLabelYear} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">分類選單標籤</label><input name="searchLabelCategory" defaultValue={ui.searchLabelCategory} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">查詢按鈕文字</label><input name="searchBtnQuery" defaultValue={ui.searchBtnQuery} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：書碼</label><input name="searchTableHeaderCode" defaultValue={ui.searchTableHeaderCode} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：書名</label><input name="searchTableHeaderTitle" defaultValue={ui.searchTableHeaderTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：作者</label><input name="searchTableHeaderAuthor" defaultValue={ui.searchTableHeaderAuthor} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：出版年</label><input name="searchTableHeaderYear" defaultValue={ui.searchTableHeaderYear} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：價格</label><input name="searchTableHeaderPrice" defaultValue={ui.searchTableHeaderPrice} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：分類</label><input name="searchTableHeaderCategory" defaultValue={ui.searchTableHeaderCategory} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：操作</label><input name="searchTableHeaderAction" defaultValue={ui.searchTableHeaderAction} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">載入更多按鈕文字</label><input name="searchBtnMore" defaultValue={ui.searchBtnMore} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><ShoppingCart size={16} className="opacity-50" /> 購物書包與結帳流程 (Cart Drawer)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">書包抽屜大標</label><input name="cartTitle" defaultValue={ui.cartTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">關閉按鈕文字</label><input name="cartCloseBtn" defaultValue={ui.cartCloseBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">空書包提示語</label><input name="cartEmptyText" defaultValue={ui.cartEmptyText} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">填寫收件資訊標題</label><input name="cartCheckoutTitle" defaultValue={ui.cartCheckoutTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">收件人欄位預設文字</label><input name="cartLabelName" defaultValue={ui.cartLabelName} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">聯絡電話欄位預設文字</label><input name="cartLabelPhone" defaultValue={ui.cartLabelPhone} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">電子信箱欄位預設文字</label><input name="cartLabelEmail" defaultValue={ui.cartLabelEmail} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">收件地址欄位預設文字</label><input name="cartLabelAddress" defaultValue={ui.cartLabelAddress} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款方式欄位預設文字</label><input name="cartLabelPayment" defaultValue={ui.cartLabelPayment} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">備註欄位預設文字</label><input name="cartLabelMemo" defaultValue={ui.cartLabelMemo} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">買家備註 Placeholder</label><input name="cartMemoPlaceholder" defaultValue={ui.cartMemoPlaceholder} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">確認下單按鈕</label><input name="cartBtnCheckout" defaultValue={ui.cartBtnCheckout} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">結帳處理中狀態</label><input name="cartCheckingOutBtn" defaultValue={ui.cartCheckingOutBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：店取付現</label><input name="cartOptionCash" defaultValue={ui.cartOptionCash} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：轉帳</label><input name="cartOptionTransfer" defaultValue={ui.cartOptionTransfer} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：線上刷卡</label><input name="cartOptionCard" defaultValue={ui.cartOptionCard} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">金額總計標籤</label><input name="cartTotalLabel" defaultValue={ui.cartTotalLabel} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">幾本書數量標籤 (支援 {"{count}"})</label><input name="cartBookCountLabel" defaultValue={ui.cartBookCountLabel} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><Zap size={16} className="opacity-50" /> 系統隨機推薦與前台狀態提示語 (Messages)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">隨機新書推薦標題</label><input name="newArrivalsTitle" defaultValue={ui.newArrivalsTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">更換新書按鈕文字</label><input name="newArrivalsBtnRefresh" defaultValue={ui.newArrivalsBtnRefresh} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">隨機視窗關閉按鈕</label><input name="newArrivalsCloseBtn" defaultValue={ui.newArrivalsCloseBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：同步庫存中</label><input name="msgLoadingInventory" defaultValue={ui.msgLoadingInventory} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：庫存已載入</label><input name="msgLoadedInventory" defaultValue={ui.msgLoadedInventory} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：載入更多書目中</label><input name="msgLoadingMoreBooks" defaultValue={ui.msgLoadingMoreBooks} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：已售罄</label><input name="msgOutOfStock" defaultValue={ui.msgOutOfStock} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：無相關書籍</label><input name="msgNoBooksFound" defaultValue={ui.msgNoBooksFound} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：尋找書籍中</label><input name="msgSearchingBooks" defaultValue={ui.msgSearchingBooks} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><MessageSquare size={16} className="opacity-50" /> 讀者客服與意見反映元件 (CS Component)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">客服主體標題</label><input name="csTitle" defaultValue={ui.csTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">稱呼 Placeholder</label><input name="csNamePlaceholder" defaultValue={ui.csNamePlaceholder} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">聯絡電話 Placeholder</label><input name="csPhonePlaceholder" defaultValue={ui.csPhonePlaceholder} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">信箱 Placeholder</label><input name="csEmailPlaceholder" defaultValue={ui.csEmailPlaceholder} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">反映訊息 Placeholder</label><textarea name="csMessagePlaceholder" defaultValue={ui.csMessagePlaceholder} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-16 resize-none font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">送出反映按鈕</label><input name="csSubmitBtn" defaultValue={ui.csSubmitBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">傳送中狀態按鈕</label><input name="csSubmittingBtn" defaultValue={ui.csSubmittingBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                 </div>
                                             </div>
                                         )}
@@ -1378,6 +1025,7 @@
                                 </div>
                             )}
 
+                            {}
                             {activeTab === 'carousel' && (
                                 <div className="animate-in">
                                     {loadStatus.carousels ? (
@@ -1393,7 +1041,7 @@
                                                         <p className="text-sm opacity-70 line-clamp-2 mb-6 leading-relaxed">{c.description}</p>
                                                         <div className="mt-auto flex justify-end gap-3 pt-4 border-t border-black/5">
                                                             <button type="button" onClick={() => { setEditingCarousel(c); setShowCarouselModal(true); }} className="opacity-60 hover:opacity-100 hover:text-indigo-600 px-5 py-2 rounded-xl flex items-center gap-2 transition font-bold text-xs bg-black/5"><Edit2 size={14}/> 編輯</button>
-                                                            <button type="button" onClick={() => handleDeleteCarousel(c.id)} className="opacity-60 hover:opacity-100 text-red-500 px-5 py-2 rounded-xl flex items-center gap-2 transition font-bold text-xs bg-black/5"><Trash2 size={14}/> 刪除</button>
+                                                            <button type="button" onClick={() => openDeleteModal('carousel', c.id, c.title)} className="opacity-60 hover:opacity-100 text-red-500 px-5 py-2 rounded-xl flex items-center gap-2 transition font-bold text-xs bg-black/5"><Trash2 size={14}/> 刪除</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1405,6 +1053,7 @@
                                 </div>
                             )}
 
+                            {}
                             {(activeTab === 'books' || activeTab === 'choice') && (
                                 <div className="animate-in flex flex-col relative h-full min-h-[500px]">
                                     <div className="mb-6 flex justify-between items-center shrink-0">
@@ -1421,10 +1070,6 @@
                                                 className="w-full bg-transparent outline-none text-sm font-bold placeholder-black/30 p-1"
                                                 style={{ color: 'inherit' }}
                                             />
-                                            {bookSearchQuery && <button type="button" onClick={()=>{setBookSearchQuery(''); setAdminVisibleCount(20);}} className="opacity-50 hover:opacity-100 px-2 bg-black/5 rounded-full p-1"><X size={12}/></button>}
-                                        </div>
-                                        <div className="text-xs font-bold px-4 py-2 rounded-full border border-black/5 shadow-sm hidden md:block" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
-                                            {loadStatus.books && activeTab === 'books' ? '同步萬筆庫存中...' : `共 ${filteredAdminBooks.length} 筆資料`}
                                         </div>
                                     </div>
 
@@ -1464,27 +1109,14 @@
                                                                 <td className="p-4 text-right pr-6 whitespace-nowrap">
                                                                     <div className="flex justify-end gap-2">
                                                                         <button type="button" onClick={() => { setModalType(activeTab); setEditingBook(b); setShowBookModal(true); }} className="opacity-50 hover:opacity-100 p-2 rounded-xl transition-all bg-black/5" style={{ color: settings.sidebarActiveColor }}><Edit2 size={16}/></button>
-                                                                        <button type="button" onClick={() => handleDeleteBook(b.id, activeTab === 'choice')} className="opacity-50 hover:opacity-100 hover:text-red-500 p-2 rounded-xl transition-all bg-black/5"><Trash2 size={16}/></button>
+                                                                        <button type="button" onClick={() => openDeleteModal(activeTab === 'choice' ? 'choice' : 'book', b.id, b.title)} className="opacity-50 hover:opacity-100 hover:text-red-500 p-2 rounded-xl transition-all bg-black/5"><Trash2 size={16}/></button>
                                                                     </div>
                                                                 </td>
                                                             </tr>
                                                         ))}
-                                                        {filteredAdminBooks.length === 0 && <tr><td colSpan="6" className="p-20 text-center font-bold border-dashed border-black/20 border-2 m-4 rounded-xl opacity-50">找不到符合條件的書籍</td></tr>}
                                                     </tbody>
                                                 </table>
                                             </div>
-                                            {/* 向下載入按鈕 */}
-                                            {filteredAdminBooks.length > adminVisibleCount && (
-                                                <div className="p-4 text-center border-t border-black/5" style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
-                                                    <button type="button" 
-                                                        onClick={() => setAdminVisibleCount(prev => prev + 20)}
-                                                        className="bg-black/5 border border-black/10 px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:bg-black/10 transition-colors flex items-center gap-2 mx-auto"
-                                                        style={{ color: settings.cardTextColor }}
-                                                    >
-                                                        下載入更多書籍... (目前顯示 {adminVisibleCount} / 總共 {filteredAdminBooks.length}) <ChevronDown size={14} />
-                                                    </button>
-                                                </div>
-                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -1532,7 +1164,6 @@
                                                         </td>
                                                     </tr>
                                                 ))}
-                                                {orders.length === 0 && <tr><td colSpan="5" className="p-20 text-center opacity-50 border-dashed border-2 border-black/10 m-4 rounded-xl">尚無訂單紀錄</td></tr>}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -1567,7 +1198,7 @@
                                                                 <button type="button" onClick={() => { setEditingCSLog(log); setCsResponseText(log.response); setShowCSModal(true); }} className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 bg-white border border-indigo-100 px-3 py-1.5 rounded-lg shadow-sm text-[10px] text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1"><Edit2 size={10}/> 修改回覆</button>
                                                             </div>
                                                         ) : (
-                                                            <button type="button" onClick={()=>{ setEditingCSLog(log); setCsResponseText(''); setShowCSModal(true); }} className="w-full text-white py-3.5 rounded-2xl text-xs font-bold shadow-lg opacity-90 hover:opacity-100 transition-all active:scale-[0.98] flex items-center justify-center gap-2" style={{ backgroundColor: settings.sidebarActiveColor }}>
+                                                            <button type="button" onClick={()=>{ setEditingCSLog(log); setCsResponseText(''); setShowCSModal(true); }} className="w-full text-white py-3.5 rounded-2xl text-xs font-bold shadow-lg opacity-90 hover:opacity-100 transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: settings.sidebarActiveColor }}>
                                                                 <MessageSquare size={14}/> 擬定回覆
                                                             </button>
                                                         )}
@@ -1584,6 +1215,41 @@
                     </main>
 
                     {/* Modals 區域 */}
+                    
+                    {/* 🛡️ 新增：完全取代 confirm() 呼叫的 React 實體刪除確認彈窗 */}
+                    {deleteModal.isOpen && (
+                        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}>
+                            <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl animate-in border border-zinc-200" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center gap-3 text-red-600 mb-4">
+                                    <div className="p-3 bg-red-50 rounded-2xl"><ShieldAlert size={24} /></div>
+                                    <h3 className="text-xl font-bold text-zinc-900">安全性確認：執行刪除</h3>
+                                </div>
+                                <p className="text-sm text-zinc-600 leading-relaxed mb-6">
+                                    您確定要刪除 <span className="font-bold text-zinc-900">「{deleteModal.title}」</span> 嗎？
+                                    此動作經雲端執行後將無法還原，請確認此為您的授權操作。
+                                </p>
+                                <div className="flex gap-3 justify-end">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))} 
+                                        className="px-5 py-2.5 rounded-xl text-sm font-bold bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition"
+                                    >
+                                        取消
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        onClick={confirmSecureDelete}
+                                        disabled={deleteModal.isDeleting}
+                                        className="px-6 py-2.5 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-700 text-white transition flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {deleteModal.isDeleting ? <Clock className="animate-spin" size={14} /> : null}
+                                        {deleteModal.isDeleting ? '正在執行安全刪除...' : '確認刪除'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {showBookModal && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={()=>setShowBookModal(false)}>
                             <div className="w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col max-h-[90vh]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e)=>e.stopPropagation()}>
@@ -1614,7 +1280,7 @@
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">現有庫存</label><input name="stock" type="number" defaultValue={editingBook?.stock || 0} required className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-mono font-bold outline-none" style={{ color: 'inherit' }}/></div>
                                     </div>
-                                    <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">封面網址 (支援 Drive ID/網址/Base64)</label><input name="cover" defaultValue={editingBook?.cover || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" placeholder="1vdsadasxcqe..." style={{ color: 'inherit' }}/></div>
+                                    <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">封面網址 (支援 Drive ID/網址)</label><input name="cover" defaultValue={editingBook?.cover || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" placeholder="圖片網址" style={{ color: 'inherit' }}/></div>
                                     
                                     <div className="pt-4 pb-2">
                                         <button className={`w-full text-white py-4 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:opacity-90 mt-4`} style={{ backgroundColor: settings.sidebarActiveColor }}>
@@ -1633,7 +1299,7 @@
                                 <form onSubmit={handleSaveCarousel} className="p-6 space-y-4 overflow-y-auto sidebar-scroll">
                                     <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">促銷標題</label><input name="title" defaultValue={editingCarousel?.title || ''} required className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" placeholder="例如：夏季大特價" style={{ color: 'inherit' }}/></div>
                                     <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">簡介描述</label><textarea name="description" defaultValue={editingCarousel?.description || ''} required className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm h-24 resize-none font-bold outline-none transition-colors" placeholder="顯示在標題下方的副標題..." style={{ color: 'inherit' }}/></div>
-                                    <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">底圖 URL (支援 Drive ID/網址/Base64)</label><input name="image" defaultValue={editingCarousel?.image || ''} required className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" placeholder="1vdzHDxs..." style={{ color: 'inherit' }}/></div>
+                                    <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">底圖 URL</label><input name="image" defaultValue={editingCarousel?.image || ''} required className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" placeholder="背景圖連結" style={{ color: 'inherit' }}/></div>
                                     <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">發佈狀態</label><select name="status" defaultValue={editingCarousel?.status || '已發佈'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors appearance-none" style={{ color: 'inherit' }}><option>已發佈</option><option>草稿</option><option>已下架</option></select></div>
                                     <button className="w-full text-white py-4 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:opacity-90 mt-4" style={{ backgroundColor: settings.sidebarActiveColor }}>發佈行銷模組</button>
                                 </form>
@@ -1654,7 +1320,7 @@
                                 <div className="overflow-y-auto flex-1 p-6 lg:p-8 sidebar-scroll">
                                     <form onSubmit={handleSaveOrder} className="space-y-6 pb-8">
                                         <div className="space-y-1.5 col-span-2">
-                                            <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest ml-1">訂單編號 (可修改)</label>
+                                            <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest ml-1">訂單編號</label>
                                             <input name="orderId" defaultValue={editingOrder.id} required className="w-full bg-indigo-50 border border-indigo-200 p-3.5 rounded-2xl text-sm font-mono font-bold outline-none text-indigo-700" />
                                         </div>
                                         <div className="grid grid-cols-2 gap-6">
@@ -1727,7 +1393,7 @@
                                         </div>
 
                                         <div className="md:col-span-3 space-y-2 mt-4 mb-6">
-                                            <label className="text-[10px] font-black opacity-60 uppercase">選擇卡片圖示與顏色 (Icon & Theme)</label>
+                                            <label className="text-[10px] font-black opacity-60 uppercase">選擇卡片圖示與顏色</label>
                                             <div className="flex flex-wrap gap-2">
                                                 {Object.keys(availableIcons).map(iconKey => {
                                                     const IconComp = availableIcons[iconKey].icon;
@@ -1767,12 +1433,11 @@
                                                     </div>
                                                     <div className="flex gap-2">
                                                         <button type="button" onClick={() => { setEditingKpi(k); }} className="opacity-50 hover:opacity-100 hover:text-indigo-500 p-2 rounded-lg transition"><Edit2 size={14}/></button>
-                                                        <button type="button" onClick={() => handleDeleteKpi(k.id)} className="opacity-50 hover:opacity-100 hover:text-red-500 p-2 rounded-lg transition"><Trash2 size={14}/></button>
+                                                        <button type="button" onClick={() => openDeleteModal('kpi', k.id, k.title)} className="opacity-50 hover:opacity-100 hover:text-red-500 p-2 rounded-lg transition"><Trash2 size={14}/></button>
                                                     </div>
                                                 </div>
                                             )
                                         })}
-                                        {kpis.length === 0 && <div className="text-center opacity-50 text-sm py-8 border-2 border-dashed rounded-2xl">尚無自訂指標</div>}
                                     </div>
                                 </div>
                             </div>
@@ -1821,7 +1486,6 @@
                         </div>
                     )}
 
-                    {/* 外部 iframe 彈出視窗 */}
                     {iframeModal.isOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={() => setIframeModal(prev => ({ ...prev, isOpen: false }))}>
                             <div className="w-full max-w-5xl h-full max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in border border-black/10" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e) => e.stopPropagation()}>
@@ -1836,7 +1500,6 @@
                         </div>
                     )}
 
-                    {/* 彈出通知 */}
                     {notification && <div className="fixed bottom-12 right-12 bg-zinc-900 text-white px-8 py-5 rounded-2xl shadow-2xl animate-in font-bold text-sm z-[200] flex items-center gap-3 border border-zinc-700"><CheckCircle size={20} className="text-emerald-400" /> {notification}</div>}
                 </div> 
             );
@@ -1847,4 +1510,3 @@
     </script>
 </body>
 </html>
-`
