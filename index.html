@@ -97,7 +97,7 @@
             ExternalLink: { icon: ExternalLink, color: 'opacity-70' }
         };
 
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbw1o4ojav8T0z_b8mxbrh45C1YzRspU_gR9T9MM_gYfONlv_aHpxtNyD8WjlzuNccfICg/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwRrEsuRLXAf_1xdYOVP3mPlC0VlU2LNILM8ZMHaCT2ajbvijCVIOB16hIwnzp9R3JGTA/exec";
 
         const formatImageUrl = (url) => {
             const transparentFallback = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -436,7 +436,9 @@
                     stock: parseInt(formData.get('stock')) || 0,
                     cover: sanitizeForSpreadsheet(formData.get('cover') || ''), 
                     author: sanitizeForSpreadsheet(formData.get('author') || ''), 
-                    year: sanitizeForSpreadsheet(formData.get('year') || '')
+                    year: sanitizeForSpreadsheet(formData.get('year') || ''),
+                    intro: sanitizeForSpreadsheet(formData.get('intro') || ''),
+                    "心得": sanitizeForSpreadsheet(formData.get('心得') || '')
                 };
                 
                 const isChoice = modalType === 'choice';
@@ -924,90 +926,30 @@
                                             <div className="space-y-6 animate-in">
                                                 <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Palette size={16} className="opacity-50"/> 系統後台視覺色彩</h4>
                                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入頁背景</label>
-                                                        <input type="color" name="loginBgColor" defaultValue={settings.loginBgColor} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入卡片底色</label>
-                                                        <input type="color" name="loginCardBgColor" defaultValue={settings.loginCardBgColor} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入文字顏色</label>
-                                                        <input type="color" name="loginTextColor" defaultValue={settings.loginTextColor} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄背景</label>
-                                                        <input type="color" name="sidebarBgColor" defaultValue={settings.sidebarBgColor} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊選單文字色</label>
-                                                        <input type="color" name="sidebarTextColor" defaultValue={settings.sidebarTextColor} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊用戶名稱色</label>
-                                                        <input type="color" name="sidebarUserColor" defaultValue={settings.sidebarUserColor || '#ffffff'} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">高亮主題色 (選單)</label>
-                                                        <input type="color" name="sidebarActiveColor" defaultValue={settings.sidebarActiveColor} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">內頁主背景顏色</label>
-                                                        <input type="color" name="mainBgColor" defaultValue={settings.mainBgColor} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">內頁主文字顏色</label>
-                                                        <input type="color" name="mainTextColor" defaultValue={settings.mainTextColor} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">卡片/區塊底色</label>
-                                                        <input type="color" name="cardBgColor" defaultValue={settings.cardBgColor} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">卡片/區塊文字</label>
-                                                        <input type="color" name="cardTextColor" defaultValue={settings.cardTextColor} className="shadow-sm border border-black/10" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">KPI 卡片底色</label>
-                                                        <input type="color" name="kpiBgColor" defaultValue={settings.kpiBgColor} className="shadow-sm border border-black/10" />
-                                                    </div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入頁背景</label><input type="color" name="loginBgColor" defaultValue={settings.loginBgColor} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入卡片底色</label><input type="color" name="loginCardBgColor" defaultValue={settings.loginCardBgColor} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入文字顏色</label><input type="color" name="loginTextColor" defaultValue={settings.loginTextColor} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄背景</label><input type="color" name="sidebarBgColor" defaultValue={settings.sidebarBgColor} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊選單文字色</label><input type="color" name="sidebarTextColor" defaultValue={settings.sidebarTextColor} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊用戶名稱色</label><input type="color" name="sidebarUserColor" defaultValue={settings.sidebarUserColor || '#ffffff'} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">高亮主題色 (選單)</label><input type="color" name="sidebarActiveColor" defaultValue={settings.sidebarActiveColor} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">內頁主背景顏色</label><input type="color" name="mainBgColor" defaultValue={settings.mainBgColor} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">內頁主文字顏色</label><input type="color" name="mainTextColor" defaultValue={settings.mainTextColor} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">卡片/區塊底色</label><input type="color" name="cardBgColor" defaultValue={settings.cardBgColor} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">卡片/區塊文字</label><input type="color" name="cardTextColor" defaultValue={settings.cardTextColor} className="shadow-sm border border-black/10" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">KPI 卡片底色</label><input type="color" name="kpiBgColor" defaultValue={settings.kpiBgColor} className="shadow-sm border border-black/10" /></div>
                                                 </div>
 
                                                 <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><FileEdit size={16} className="opacity-50"/> 後台標誌與選單設定</h4>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入頁大字 (System Name)</label>
-                                                        <input name="systemName" defaultValue={settings.systemName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入頁小字 (Sub Name)</label>
-                                                        <input name="systemSubName" defaultValue={settings.systemSubName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂主 Logo 圖片 (Drive ID / URL)</label>
-                                                        <input name="logoUrl" defaultValue={settings.logoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則使用預設圖示" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂副標題圖片 (Sub Logo URL)</label>
-                                                        <input name="subLogoUrl" defaultValue={settings.subLogoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則使用文字副標題" />
-                                                    </div>
-                                                    <div className="space-y-2 md:col-span-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂使用者頭像 (Drive ID / URL)</label>
-                                                        <input name="userAvatarUrl" defaultValue={settings.userAvatarUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則顯示帳號首字母" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄大字 (Sidebar Title)</label>
-                                                        <input name="adminPanelName" defaultValue={settings.adminPanelName || 'ADMIN PANEL'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄小字 (Sidebar Subtext)</label>
-                                                        <input name="sidebarSubText" defaultValue={settings.sidebarSubText || 'Digital CMS'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">連線狀態文字 (Online)</label>
-                                                        <input name="onlineStatusText" defaultValue={settings.onlineStatusText || 'Online'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                    </div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入頁大字 (System Name)</label><input name="systemName" defaultValue={settings.systemName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入頁小字 (Sub Name)</label><input name="systemSubName" defaultValue={settings.systemSubName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂主 Logo 圖片 (Drive ID / URL)</label><input name="logoUrl" defaultValue={settings.logoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則使用預設圖示" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂副標題圖片 (Sub Logo URL)</label><input name="subLogoUrl" defaultValue={settings.subLogoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則使用文字副標題" /></div>
+                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂使用者頭像 (Drive ID / URL)</label><input name="userAvatarUrl" defaultValue={settings.userAvatarUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則顯示帳號首字母" /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄大字 (Sidebar Title)</label><input name="adminPanelName" defaultValue={settings.adminPanelName || 'ADMIN PANEL'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄小字 (Sidebar Subtext)</label><input name="sidebarSubText" defaultValue={settings.sidebarSubText || 'Digital CMS'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">連線狀態文字 (Online)</label><input name="onlineStatusText" defaultValue={settings.onlineStatusText || 'Online'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
                                                 </div>
                                             </div>
                                         )}
@@ -1016,14 +958,8 @@
                                             <div className="space-y-6 animate-in">
                                                 <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Globe size={16} className="text-amber-700" /> 前台官網 - 基本設定 (網頁名稱與 Logo)</h4>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台網頁名稱 (Frontend Web Name)</label>
-                                                        <input name="frontendName" defaultValue={ui.frontendName || '文史哲出版社'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台官網 Logo 圖片 (Drive ID / URL)</label>
-                                                        <input name="frontendLogoUrl" defaultValue={ui.frontendLogoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則顯示預設圖示" />
-                                                    </div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台網頁名稱 (Frontend Web Name)</label><input name="frontendName" defaultValue={ui.frontendName || '文史哲出版社'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台官網 Logo 圖片 (Drive ID / URL)</label><input name="frontendLogoUrl" defaultValue={ui.frontendLogoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則顯示預設圖示" /></div>
                                                 </div>
 
                                                 <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><Palette size={16} className="text-amber-700" /> 前台官網 - 經典中式視覺調色盤</h4>
@@ -1075,7 +1011,6 @@
                                             </div>
                                         )}
 
-                                        {/* 🏢 子頁籤 4: 聯絡資訊與故事 */}
                                         {settingSubTab === 'frontend_footer' && (
                                             <div className="space-y-6 animate-in">
                                                 <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><MapPin size={16} className="text-amber-700" /> 頁尾資訊與聯絡細節 (Footer)</h4>
@@ -1115,7 +1050,6 @@
                                             </div>
                                         )}
 
-                                        {/* 🔍 子頁籤 5: 檢索與狀態提示 */}
                                         {settingSubTab === 'frontend_search' && (
                                             <div className="space-y-6 animate-in">
                                                 <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Search size={16} className="text-amber-700" /> 圖書目錄檢索與篩選 (Search Modal)</h4>
@@ -1387,7 +1321,6 @@
 
                     {/* Modals 區域 */}
                     
-                    {/* 🛡️ 安全刪除確認彈窗 */}
                     {deleteModal.isOpen && (
                         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}>
                             <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl animate-in border border-zinc-200" onClick={e => e.stopPropagation()}>
@@ -1453,6 +1386,9 @@
                                     </div>
                                     <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">封面網址 (支援 Drive ID / 網址)</label><input name="cover" defaultValue={editingBook?.cover || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" placeholder="圖片網址" style={{ color: 'inherit' }}/></div>
                                     
+                                    <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">內容介紹</label><textarea name="intro" defaultValue={editingBook?.intro || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none h-24 resize-none leading-relaxed" placeholder="請輸入內容介紹..." style={{ color: 'inherit' }}/></div>
+                                    <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">編輯心得 / 導讀</label><textarea name="心得" defaultValue={editingBook?.["心得"] || editingBook?.review || editingBook?.notes || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none h-24 resize-none leading-relaxed" placeholder="請輸入心得短評..." style={{ color: 'inherit' }}/></div>
+
                                     <div className="pt-4 pb-2">
                                         <button className={`w-full text-white py-4 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:opacity-90 mt-4`} style={{ backgroundColor: settings.sidebarActiveColor }}>
                                             確認儲存設定
