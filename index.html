@@ -80,6 +80,7 @@
         const MapPin = lib.MapPin || FallbackIcon;
         const FileText = lib.FileText || FallbackIcon;
         const ShieldAlert = lib.AlertTriangle || FallbackIcon;
+        const Wand2 = lib.Wand2 || Sparkles;
 
         const availableIcons = {
             LayoutDashboard: { icon: LayoutDashboard, color: 'text-blue-500' },
@@ -97,7 +98,8 @@
             ExternalLink: { icon: ExternalLink, color: 'opacity-70' }
         };
 
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwRrEsuRLXAf_1xdYOVP3mPlC0VlU2LNILM8ZMHaCT2ajbvijCVIOB16hIwnzp9R3JGTA/exec";
+        // 🟢 已更新為您最新的 Apps Script API 部署網址
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwSdI3L8H_7SKm3LPet8V84kSc6KEwpBxFeHdFIQaJfI3ElMkRtZCnOgWzRE8BC2uNH/exec";
 
         const formatImageUrl = (url) => {
             const transparentFallback = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -179,7 +181,7 @@
             msgLoadingInventory: '完整庫存同步中...', msgLoadedInventory: '最新庫存已載入',
             msgLoadingMoreBooks: '正在從雲端載入更多書目...', msgOutOfStock: '已售罄',
             msgNoBooksFound: '此分類目前沒有相關書籍喔！', msgSearchingBooks: '雲端書庫正在尋找符合此分類的書籍...',
-            urlAboutPresident: 'https://hanlinma.github.io/candyni/%E9%97%9C%E6%96%BC%E7%A4%BE%E9%95%B7.html',
+            urlAboutPresident: 'https://hanlinma.github.io/candyni/%E9%97%9C%E6%96%87%E7%A4%BE%E9%95%B7.html',
             urlContactUs: 'https://hanlinma.github.io/candyni/%E8%81%AF%E7%B9%AB%E6%88%91%E5%80%91%E5%80%91.html'
         };
 
@@ -226,6 +228,16 @@
             const [editingCSLog, setEditingCSLog] = useState(null);
             const [csResponseText, setCsResponseText] = useState('');
             const [isAIGenerating, setIsAIGenerating] = useState(false);
+            
+            // 書籍 AI 生成簡介與心得 state
+            const [modalBookTitle, setModalBookTitle] = useState('');
+            const [modalBookAuthor, setModalBookAuthor] = useState('');
+            const [modalBookYear, setModalBookYear] = useState('');
+            const [modalBookCategory, setModalBookCategory] = useState('');
+            const [modalBookIntro, setModalBookIntro] = useState('');
+            const [modalBookReview, setModalBookReview] = useState('');
+            const [isGeneratingBookAI, setIsGeneratingBookAI] = useState(false);
+
             const [showKpiModal, setShowKpiModal] = useState(false);
             const [editingKpi, setEditingKpi] = useState(null);
             const [selectedKpiIcon, setSelectedKpiIcon] = useState('TrendingUp'); 
@@ -247,7 +259,7 @@
 
             const showMsg = (text) => {
                 setNotification(text);
-                setTimeout(() => setNotification(null), 3000);
+                setTimeout(() => setNotification(null), 3500);
             };
 
             const formatDate = (dateStr) => {
@@ -259,6 +271,18 @@
                 if (yyyy === 1899) return `${hh}:${min}`;
                 return hh === '00' && min === '00' ? `${yyyy}/${mm}/${dd}` : `${yyyy}/${mm}/${dd} ${hh}:${min}`;
             };
+
+            // 當編輯書籍 Modal 開啟時同步內部狀態
+            useEffect(() => {
+                if (showBookModal) {
+                    setModalBookTitle(editingBook?.title || '');
+                    setModalBookAuthor(editingBook?.author || '');
+                    setModalBookYear(editingBook?.year || '');
+                    setModalBookCategory(editingBook?.category || '');
+                    setModalBookIntro(editingBook?.intro || '');
+                    setModalBookReview(editingBook?.["心得"] || editingBook?.review || editingBook?.notes || '');
+                }
+            }, [showBookModal, editingBook]);
 
             const syncWithGAS = async (action, payloadData = null) => {
                 try {
@@ -274,18 +298,46 @@
                         sessionToken: sessionToken
                     };
 
-                    const response = await fetch(GAS_URL, {
+                    const params = new URLSearchParams();
+                    params.append("action", action);
+                    if (sessionToken) params.append("sessionToken", sessionToken);
+                    params.append("origin", safeOrigin);
+
+                    let payloadStr = "";
+                    if (payloadData !== null && payloadData !== undefined) {
+                        payloadStr = typeof payloadData === "string" ? payloadData : JSON.stringify(payloadData);
+                        if (payloadStr.length < 2000) {
+                            params.append("payload", payloadStr);
+                        }
+                    }
+
+                    const requestUrl = `${GAS_URL}?${params.toString()}`;
+
+                    let response = await fetch(requestUrl, {
                         method: "POST",
                         headers: { "Content-Type": "text/plain;charset=utf-8" },
                         body: JSON.stringify(payloadObj)
                     });
                     
-                    const data = await response.json();
+                    let data = await response.json();
                     
+                    if (data && data.status === 'error' && data.msg && data.msg.includes("Method Not Allowed")) {
+                        console.warn("POST converted to GET on redirect. Retrying with GET parameters...");
+                        const retryParams = new URLSearchParams();
+                        retryParams.append("action", action);
+                        if (sessionToken) retryParams.append("sessionToken", sessionToken);
+                        retryParams.append("origin", safeOrigin);
+                        if (payloadStr) retryParams.append("payload", payloadStr);
+
+                        const retryUrl = `${GAS_URL}?${retryParams.toString()}`;
+                        response = await fetch(retryUrl, { method: "GET" });
+                        data = await response.json();
+                    }
+
                     if (data.status === 'error') {
                         console.error("後端拒絕請求:", data.msg);
                         showMsg("拒絕存取: " + data.msg); 
-                        if (data.msg.includes("驗證失敗") || data.msg.includes("未授權")) {
+                        if (data.msg.includes("驗證失敗") || data.msg.includes("未授權") || data.msg.includes("過期")) {
                             handleLogout();
                         }
                     }
@@ -295,6 +347,64 @@
                     console.error("GAS Sync Error:", e);
                     showMsg("網路安全通道異常: " + e.toString()); 
                     return { status: 'error', msg: e.toString() };
+                }
+            };
+
+            // 利用 Apps Script 後端呼叫 Gemini API 自動生成 Book 的 intro 與 心得
+            const handleGenerateBookAI = async () => {
+                if (!modalBookTitle.trim()) {
+                    showMsg('請先填寫書籍標題，以供 AI 生成介紹與心得！');
+                    return;
+                }
+                setIsGeneratingBookAI(true);
+                showMsg('✨ AI 正在讀取文史哲典籍庫，為您撰寫介紹與導讀...');
+
+                try {
+                    const res = await syncWithGAS('GENERATE_BOOK_AI', {
+                        title: modalBookTitle,
+                        author: modalBookAuthor,
+                        year: modalBookYear,
+                        category: modalBookCategory
+                    });
+
+                    if (res && res.status === 'success' && res.data) {
+                        if (res.data.intro) setModalBookIntro(res.data.intro);
+                        if (res.data.review) setModalBookReview(res.data.review);
+                        showMsg('✨ AI 成功生成「內容介紹」與「編輯心得」！');
+                    } else {
+                        throw new Error(res.msg || '未取得有效 AI 回應');
+                    }
+                } catch (err) {
+                    console.error('Gemini API 生成失敗:', err);
+                    showMsg('AI 生成失敗：' + (err.message || '請重新嘗試'));
+                } finally {
+                    setIsGeneratingBookAI(false);
+                }
+            };
+
+            // 利用 Apps Script 後端呼叫 Gemini API 自動生成客服回覆信函
+            const handleGenerateAI = async () => {
+                if (!editingCSLog) return;
+                setIsAIGenerating(true);
+                showMsg('✨ AI 正在撰寫親切且具文化底蘊的客服回覆...');
+
+                try {
+                    const res = await syncWithGAS('GENERATE_CS_AI', {
+                        user: editingCSLog.user,
+                        query: editingCSLog.query
+                    });
+
+                    if (res && res.status === 'success' && res.data && res.data.response) {
+                        setCsResponseText(res.data.response);
+                        showMsg('✨ AI 回覆草稿已擬定完成！');
+                    } else {
+                        throw new Error(res.msg || 'AI 擬稿失敗');
+                    }
+                } catch (err) {
+                    console.error('CS AI 生成失敗:', err);
+                    showMsg('AI 生成失敗：' + (err.message || '請重新嘗試'));
+                } finally {
+                    setIsAIGenerating(false);
                 }
             };
 
@@ -426,6 +536,46 @@
                 if (hasChanges) setKpis(updatedKpis);
             }, [orders, books, kpis, loadStatus.kpis, isAuthenticated]);
 
+            const excelCategories = useMemo(() => {
+                const cats = (books || []).map(b => b.category).filter(c => c && c.trim() !== "");
+                return [...new Set(cats)].sort();
+            }, [books]);
+
+            const filteredAdminBooks = useMemo(() => {
+                const query = (bookSearchQuery || '').toLowerCase().trim();
+                const targetList = activeTab === 'choice' ? (choiceBooks || []) : (books || []); 
+                if (!query) return targetList;
+                return targetList.filter(b => 
+                    (b.title && b.title.toLowerCase().includes(query)) ||
+                    (b.id && b.id.toString().toLowerCase().includes(query)) ||
+                    (b.category && b.category.toLowerCase().includes(query))
+                );
+            }, [books, choiceBooks, bookSearchQuery, activeTab]);
+
+            const visibleAdminBooks = useMemo(() => {
+                return (filteredAdminBooks || []).slice(0, adminVisibleCount);
+            }, [filteredAdminBooks, adminVisibleCount]);
+
+            useEffect(() => {
+                const handleScroll = (e) => {
+                    const target = e.target;
+                    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 250) {
+                        setAdminVisibleCount(prev => {
+                            const total = filteredAdminBooks ? filteredAdminBooks.length : 0;
+                            if (prev < total) {
+                                return prev + 20;
+                            }
+                            return prev;
+                        });
+                    }
+                };
+                const mainContainer = document.querySelector('main .overflow-y-auto');
+                if (mainContainer) {
+                    mainContainer.addEventListener('scroll', handleScroll);
+                    return () => mainContainer.removeEventListener('scroll', handleScroll);
+                }
+            }, [filteredAdminBooks?.length]);
+
             const handleSaveBook = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -437,8 +587,8 @@
                     cover: sanitizeForSpreadsheet(formData.get('cover') || ''), 
                     author: sanitizeForSpreadsheet(formData.get('author') || ''), 
                     year: sanitizeForSpreadsheet(formData.get('year') || ''),
-                    intro: sanitizeForSpreadsheet(formData.get('intro') || ''),
-                    "心得": sanitizeForSpreadsheet(formData.get('心得') || '')
+                    intro: sanitizeForSpreadsheet(modalBookIntro || formData.get('intro') || ''),
+                    "心得": sanitizeForSpreadsheet(modalBookReview || formData.get('心得') || '')
                 };
                 
                 const isChoice = modalType === 'choice';
@@ -595,16 +745,6 @@
                 }
             };
 
-            const handleGenerateAI = () => {
-                if (!editingCSLog) return;
-                setIsAIGenerating(true);
-                setTimeout(() => {
-                    const snippet = editingCSLog.query.length > 15 ? editingCSLog.query.substring(0, 15) + '...' : editingCSLog.query;
-                    const aiText = `親愛的 ${editingCSLog.user} 您好：\n\n感謝您的來信與指教。關於您提到的「${snippet}」一事，我們已經收到，並已交由相關部門盡速處理。\n\n若有任何進一步的消息，我們將隨時與您聯繫。感謝您對文史哲出版社的支持與愛護！\n\n文史哲出版社 客服中心 敬上`;
-                    setCsResponseText(aiText); setIsAIGenerating(false);
-                }, 800); 
-            };
-
             const handleSaveCS = async () => {
                 if (!csResponseText.trim()) return showMsg('請輸入回覆內容');
                 const safeResponse = sanitizeForSpreadsheet(csResponseText);
@@ -623,26 +763,6 @@
                 }
                 return str;
             };
-
-            const excelCategories = useMemo(() => {
-                const cats = books.map(b => b.category).filter(c => c && c.trim() !== "");
-                return [...new Set(cats)].sort();
-            }, [books]);
-
-            const filteredAdminBooks = useMemo(() => {
-                const query = bookSearchQuery.toLowerCase().trim();
-                const targetList = activeTab === 'choice' ? choiceBooks : books; 
-                if (!query) return targetList;
-                return targetList.filter(b => 
-                    (b.title && b.title.toLowerCase().includes(query)) ||
-                    (b.id && b.id.toString().toLowerCase().includes(query)) ||
-                    (b.category && b.category.toLowerCase().includes(query))
-                );
-            }, [books, choiceBooks, bookSearchQuery, activeTab]);
-
-            const visibleAdminBooks = useMemo(() => {
-                return filteredAdminBooks.slice(0, adminVisibleCount);
-            }, [filteredAdminBooks, adminVisibleCount]);
 
             const adminMenuConfig = [
                 { id: 'group_dash', title: settings.menuDashName, icon: availableIcons[settings.menuDashIcon]?.icon || LayoutDashboard, items: [{ tab: 'dashboard', name: '營運儀表板' }] },
@@ -1090,7 +1210,6 @@
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">結帳處理中狀態</label><input name="cartCheckingOutBtn" defaultValue={ui.cartCheckingOutBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：店取付現</label><input name="cartOptionCash" defaultValue={ui.cartOptionCash} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：轉帳</label><input name="cartOptionTransfer" defaultValue={ui.cartOptionTransfer} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：線上刷卡</label><input name="cartOptionCard" defaultValue={ui.cartOptionCard} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">金額總計標籤</label><input name="cartTotalLabel" defaultValue={ui.cartTotalLabel} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">幾本書數量標籤 (支援 {"{count}"})</label><input name="cartBookCountLabel" defaultValue={ui.cartBookCountLabel} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
                                                 </div>
@@ -1159,12 +1278,12 @@
 
                             {(activeTab === 'books' || activeTab === 'choice') && (
                                 <div className="animate-in flex flex-col relative h-full min-h-[500px]">
-                                    <div className="mb-6 flex justify-between items-center shrink-0">
+                                    <div className="mb-6 flex flex-wrap justify-between items-center gap-4 shrink-0">
                                         <div className="flex items-center gap-3 p-3 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-black/5 w-full max-w-md" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
                                             <Search size={18} className="opacity-50 ml-2 shrink-0" />
                                             <input 
                                                 type="text" 
-                                                placeholder={`在 ${activeTab === 'choice' ? '編輯推薦' : '全部庫存'} 中搜尋書碼、書名...`} 
+                                                placeholder={`在 ${activeTab === 'choice' ? '編輯推薦' : '全部庫存 (Book_ALL)'} 中搜尋書碼、書名...`} 
                                                 value={bookSearchQuery} 
                                                 onChange={e => {
                                                     setBookSearchQuery(e.target.value);
@@ -1175,6 +1294,9 @@
                                             />
                                             {bookSearchQuery && <button type="button" onClick={()=>{setBookSearchQuery(''); setAdminVisibleCount(20);}} className="opacity-50 hover:opacity-100 px-2 bg-black/5 rounded-full p-1"><X size={12}/></button>}
                                         </div>
+                                        <div className="text-xs font-bold opacity-60">
+                                            共 {filteredAdminBooks.length} 筆書籍（已顯示 {visibleAdminBooks.length} 筆）
+                                        </div>
                                     </div>
 
                                     {loadStatus.books && activeTab === 'books' ? (
@@ -1182,21 +1304,29 @@
                                     ) : (
                                         <div className="rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
                                             <div className="overflow-x-auto pb-4 sidebar-scroll">
-                                                <table className="w-full text-left border-collapse min-w-[800px] table-fixed">
+                                                <table className="w-full text-left border-collapse min-w-[850px] table-fixed">
                                                     <thead className="border-b border-black/10" style={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
                                                         <tr className="text-[10px] font-black uppercase tracking-[0.15em] opacity-60">
-                                                            <th className="p-4 pl-6 w-[30%]">書籍詳情 (書碼)</th>
-                                                            <th className="p-4 w-[15%]">作者 / 年份</th>
-                                                            <th className="p-4 w-[15%]">類別</th>
-                                                            <th className="p-4 w-[15%]">庫存</th>
-                                                            <th className="p-4 w-[15%]">價格</th>
-                                                            <th className="p-4 w-[10%] text-right pr-6">操作</th>
+                                                            <th className="p-4 pl-6 w-[18%]">操作</th>
+                                                            <th className="p-4 w-[28%]">書籍詳情 (書碼)</th>
+                                                            <th className="p-4 w-[18%]">作者 / 年份</th>
+                                                            <th className="p-4 w-[14%]">類別</th>
+                                                            <th className="p-4 w-[11%]">庫存</th>
+                                                            <th className="p-4 w-[11%] pr-6">價格</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="text-sm font-bold divide-y divide-black/5">
                                                         {visibleAdminBooks.map(b => (
                                                             <tr key={b.id} className="hover:bg-black/5 transition-colors group">
-                                                                <td className="p-4 pl-6 flex items-center gap-4 overflow-hidden">
+                                                                <td className="p-4 pl-6 whitespace-nowrap">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <button type="button" onClick={() => { setModalType(activeTab); setEditingBook(b); setShowBookModal(true); }} className="opacity-90 hover:opacity-100 p-2 px-3 rounded-xl transition-all bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center gap-1.5 text-xs shadow-sm font-bold" title="編輯並可使用 AI 生成介紹與心得">
+                                                                            <Wand2 size={14}/> AI 編輯
+                                                                        </button>
+                                                                        <button type="button" onClick={() => openDeleteModal(activeTab === 'choice' ? 'choice' : 'book', b.id, b.title)} className="opacity-50 hover:opacity-100 hover:text-red-500 p-2 rounded-xl transition-all bg-black/5" title="刪除"><Trash2 size={16}/></button>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-4 flex items-center gap-4 overflow-hidden">
                                                                     <img src={formatImageUrl(b.cover)} className="w-10 h-14 object-cover rounded-lg shadow-sm border border-black/10 bg-white shrink-0 group-hover:scale-105 transition-transform" onError={(e)=>e.target.src='https://via.placeholder.com/40x50?text=?'}/>
                                                                     <div className="flex-1 min-w-0">
                                                                         <div className="truncate text-sm font-black">{b.title}</div>
@@ -1209,18 +1339,25 @@
                                                                 </td>
                                                                 <td className="p-4 font-normal whitespace-nowrap overflow-hidden"><span className="bg-black/5 px-3 py-1.5 rounded-full text-[11px] font-bold border border-black/10 inline-block whitespace-nowrap truncate" style={{ color: 'inherit' }}>{b.category}</span></td>
                                                                 <td className="p-4 whitespace-nowrap overflow-hidden"><span className={`${b.stock < 10 ? 'text-red-500 bg-red-500/10 border-red-500/20' : 'opacity-80 bg-black/5 border-black/10'} px-3 py-1.5 rounded-full text-[11px] border inline-block whitespace-nowrap truncate`}>{b.stock} 本</span></td>
-                                                                <td className="p-4 font-mono whitespace-nowrap opacity-90 overflow-hidden">NT$ {b.price}</td>
-                                                                <td className="p-4 text-right pr-6 whitespace-nowrap">
-                                                                    <div className="flex justify-end gap-2">
-                                                                        <button type="button" onClick={() => { setModalType(activeTab); setEditingBook(b); setShowBookModal(true); }} className="opacity-50 hover:opacity-100 p-2 rounded-xl transition-all bg-black/5" style={{ color: settings.sidebarActiveColor }}><Edit2 size={16}/></button>
-                                                                        <button type="button" onClick={() => openDeleteModal(activeTab === 'choice' ? 'choice' : 'book', b.id, b.title)} className="opacity-50 hover:opacity-100 hover:text-red-500 p-2 rounded-xl transition-all bg-black/5"><Trash2 size={16}/></button>
-                                                                    </div>
-                                                                </td>
+                                                                <td className="p-4 font-mono whitespace-nowrap opacity-90 overflow-hidden pr-6">NT$ {b.price}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
                                                 </table>
                                             </div>
+
+                                            {visibleAdminBooks.length < filteredAdminBooks.length && (
+                                                <div className="p-4 text-center border-t border-black/5 bg-black/5">
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => setAdminVisibleCount(prev => prev + 30)} 
+                                                        className="px-6 py-2.5 bg-black/10 hover:bg-black/20 rounded-xl text-xs font-bold transition-all shadow-sm"
+                                                        style={{ color: 'inherit' }}
+                                                    >
+                                                        載入更多書籍 (已顯示 {visibleAdminBooks.length} / 共 {filteredAdminBooks.length} 筆)
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -1319,8 +1456,6 @@
                         </div>
                     </main>
 
-                    {/* Modals 區域 */}
-                    
                     {deleteModal.isOpen && (
                         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}>
                             <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl animate-in border border-zinc-200" onClick={e => e.stopPropagation()}>
@@ -1357,19 +1492,75 @@
                     {showBookModal && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={()=>setShowBookModal(false)}>
                             <div className="w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col max-h-[90vh]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e)=>e.stopPropagation()}>
-                                <div className="p-5 border-b border-black/5 flex justify-between items-center font-bold tracking-tight bg-black/5"><div className="flex items-center gap-2"><Database size={18} style={{ color: settings.sidebarActiveColor }}/> 書籍內容管理</div><button type="button" onClick={() => setShowBookModal(false)} className="opacity-50 hover:opacity-100">✖</button></div>
+                                <div className="p-5 border-b border-black/5 flex justify-between items-center font-bold tracking-tight bg-black/5">
+                                    <div className="flex items-center gap-2">
+                                        <Database size={18} style={{ color: settings.sidebarActiveColor }}/> 書籍內容管理
+                                    </div>
+                                    <button type="button" onClick={() => setShowBookModal(false)} className="opacity-50 hover:opacity-100">✖</button>
+                                </div>
                                 <form onSubmit={handleSaveBook} className="p-6 space-y-4 overflow-y-auto sidebar-scroll">
-                                    <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">書籍標題</label><input name="title" defaultValue={editingBook?.title || ''} required className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" placeholder="例如：新版論語譯註" style={{ color: 'inherit' }}/></div>
+                                    <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-500/20 p-4 rounded-2xl flex items-center justify-between">
+                                        <div className="flex items-center gap-2.5">
+                                            <Sparkles size={18} className="text-indigo-600 animate-pulse" />
+                                            <div>
+                                                <div className="text-xs font-black text-indigo-900">Book_ALL 智能圖書編輯器</div>
+                                                <div className="text-[10px] text-indigo-700/80 font-bold">填寫書名後可一鍵使用 AI 自動寫入介紹與心得</div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleGenerateBookAI} 
+                                            disabled={isGeneratingBookAI}
+                                            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
+                                        >
+                                            {isGeneratingBookAI ? <Clock size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                                            {isGeneratingBookAI ? 'AI 撰寫中...' : '✨ 生成介紹與心得'}
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">書籍標題</label>
+                                        <input 
+                                            name="title" 
+                                            value={modalBookTitle} 
+                                            onChange={e=>setModalBookTitle(e.target.value)}
+                                            required 
+                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" 
+                                            placeholder="例如：新版論語譯註" 
+                                            style={{ color: 'inherit' }}
+                                        />
+                                    </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">作者</label><input name="author" defaultValue={editingBook?.author || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" placeholder="作者名稱" style={{ color: 'inherit' }}/></div>
-                                        <div className="space-y-1"><label className="text-[10px] font-bold opacity-60 uppercase tracking-widest ml-1">出版年</label><input name="year" defaultValue={editingBook?.year || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" placeholder="例如: 2024" style={{ color: 'inherit' }}/></div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">作者</label>
+                                            <input 
+                                                name="author" 
+                                                value={modalBookAuthor}
+                                                onChange={e=>setModalBookAuthor(e.target.value)}
+                                                className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" 
+                                                placeholder="作者名稱" 
+                                                style={{ color: 'inherit' }}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold opacity-60 uppercase tracking-widest ml-1">出版年</label>
+                                            <input 
+                                                name="year" 
+                                                value={modalBookYear}
+                                                onChange={e=>setModalBookYear(e.target.value)}
+                                                className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" 
+                                                placeholder="例如: 2024" 
+                                                style={{ color: 'inherit' }}
+                                            />
+                                        </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">分類</label>
                                             <input 
                                                 name="category" 
-                                                defaultValue={editingBook?.category || ''} 
+                                                value={modalBookCategory}
+                                                onChange={e=>setModalBookCategory(e.target.value)}
                                                 list="category-list"
                                                 className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" 
                                                 style={{ color: 'inherit' }}
@@ -1386,12 +1577,38 @@
                                     </div>
                                     <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">封面網址 (支援 Drive ID / 網址)</label><input name="cover" defaultValue={editingBook?.cover || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none transition-colors" placeholder="圖片網址" style={{ color: 'inherit' }}/></div>
                                     
-                                    <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">內容介紹</label><textarea name="intro" defaultValue={editingBook?.intro || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none h-24 resize-none leading-relaxed" placeholder="請輸入內容介紹..." style={{ color: 'inherit' }}/></div>
-                                    <div className="space-y-1"><label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">編輯心得 / 導讀</label><textarea name="心得" defaultValue={editingBook?.["心得"] || editingBook?.review || editingBook?.notes || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none h-24 resize-none leading-relaxed" placeholder="請輸入心得短評..." style={{ color: 'inherit' }}/></div>
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">內容介紹 (intro)</label>
+                                            <span className="text-[10px] font-bold text-indigo-600">支援 AI 生成</span>
+                                        </div>
+                                        <textarea 
+                                            name="intro" 
+                                            value={modalBookIntro}
+                                            onChange={e=>setModalBookIntro(e.target.value)}
+                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none h-24 resize-none leading-relaxed" 
+                                            placeholder="請輸入內容介紹，或使用 AI 自動產生..." 
+                                            style={{ color: 'inherit' }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">編輯心得 / 導讀 (心得)</label>
+                                            <span className="text-[10px] font-bold text-purple-600">支援 AI 生成</span>
+                                        </div>
+                                        <textarea 
+                                            name="心得" 
+                                            value={modalBookReview}
+                                            onChange={e=>setModalBookReview(e.target.value)}
+                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none h-24 resize-none leading-relaxed" 
+                                            placeholder="請輸入心得短評，或使用 AI 自動產生..." 
+                                            style={{ color: 'inherit' }}
+                                        />
+                                    </div>
 
                                     <div className="pt-4 pb-2">
                                         <button className={`w-full text-white py-4 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:opacity-90 mt-4`} style={{ backgroundColor: settings.sidebarActiveColor }}>
-                                            確認儲存設定
+                                            確認儲存書籍資料
                                         </button>
                                     </div>
                                 </form>
@@ -1399,6 +1616,7 @@
                         </div>
                     )}
 
+                    {/* Carousel Modal */}
                     {showCarouselModal && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={()=>setShowCarouselModal(false)}>
                             <div className="w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col max-h-[90vh]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e)=>e.stopPropagation()}>
@@ -1414,6 +1632,7 @@
                         </div>
                     )}
 
+                    {/* Order Modal */}
                     {showOrderModal && editingOrder && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={()=>setShowOrderModal(false)}>
                             <div className="w-full max-w-2xl rounded-[2.5rem] shadow-2xl animate-in border border-black/10 flex flex-col max-h-[90vh]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e)=>e.stopPropagation()}>
@@ -1470,6 +1689,7 @@
                         </div>
                     )}
 
+                    {/* KPI Modal */}
                     {showKpiModal && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={()=>setShowKpiModal(false)}>
                             <div className="w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col max-h-[90vh]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e)=>e.stopPropagation()}>
@@ -1593,6 +1813,7 @@
                         </div>
                     )}
 
+                    {/* Iframe External Modal */}
                     {iframeModal.isOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={() => setIframeModal(prev => ({ ...prev, isOpen: false }))}>
                             <div className="w-full max-w-5xl h-full max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in border border-black/10" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e) => e.stopPropagation()}>
