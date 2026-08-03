@@ -107,7 +107,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // Native SVG Icon Library
         const ICON_SVGS = {
             Warehouse: () => <g><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"/><path d="M6 18h12M6 14h12M6 10h12"/></g>,
             FileSpreadsheet: () => <g><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h8M12 10v8"/></g>,
@@ -131,6 +130,8 @@
             HelpCircle: () => <g><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></g>,
             ChevronLeft: () => <g><polyline points="15 18 9 12 15 6"/></g>,
             ChevronRight: () => <g><polyline points="9 18 15 12 9 6"/></g>,
+            ChevronUp: () => <g><polyline points="18 15 12 9 6 15"/></g>,
+            ChevronDown: () => <g><polyline points="6 9 12 15 18 9"/></g>,
             Menu: () => <g><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></g>,
             ZoomIn: () => <g><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></g>,
             ZoomOut: () => <g><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></g>,
@@ -162,7 +163,6 @@
 
         const cleanCodeStr = (s) => (s || '').toString().trim().toLowerCase().replace(/[\s\-_架倉]/g, '');
 
-        // Helper function to remove duplicate warehouses by code/ID
         const deduplicateWarehouses = (list) => {
             if (!Array.isArray(list)) return [];
             const map = new Map();
@@ -346,7 +346,6 @@
             const floorPlaneMeshRef = useRef(null);
             const animFrameRef = useRef(null);
 
-            // Refs to keep state updated inside event handlers without unmounting WebGL context
             const warehouseRef = useRef(warehouse);
             const onSelectShelfRef = useRef(onSelectShelf);
             const onUpdateShelfRef = useRef(onUpdateShelf);
@@ -375,6 +374,7 @@
             const maxDim = Math.max(warehouse.width || 24, warehouse.depth || 18);
             const defaultRadius = Math.max(35, maxDim * 1.15);
 
+            // Fix for Issue 2: Use 0.18 instead of 0.01 for 2D mode pitch angle to avoid camera matrix gimbal lock
             const cameraAngle = useRef({ theta: Math.PI / 4, phi: Math.PI / 3, radius: defaultRadius });
             const cameraTarget = useRef({ x: 0, y: 0, z: 0 });
             const initialTouchDistance = useRef(null);
@@ -390,7 +390,7 @@
                 cam.position.x = target.x + r * Math.sin(phi) * Math.sin(theta);
                 cam.position.y = target.y + r * Math.cos(phi);
                 cam.position.z = target.z + r * Math.sin(phi) * Math.cos(theta);
-                cam.lookAt(target.x, target.y + 1.5, target.z);
+                cam.lookAt(target.x, target.y + 1.2, target.z);
             }, []);
 
             useEffect(() => {
@@ -398,7 +398,8 @@
                 const dim = Math.max(warehouse.width || 24, warehouse.depth || 18);
                 const initR = Math.max(30, dim * 1.15);
                 if (viewMode === '2D') {
-                    cameraAngle.current = { theta: 0, phi: 0.01, radius: initR * 0.9 };
+                    // Safe top-down view angle (0.18 rad) prevents raycasting & camera breakdown
+                    cameraAngle.current = { theta: 0, phi: 0.18, radius: initR * 0.95 };
                     cameraTarget.current = { x: 0, y: 0, z: 0 };
                 } else {
                     cameraAngle.current = { theta: Math.PI / 4, phi: Math.PI / 3, radius: initR };
@@ -462,7 +463,6 @@
                 scene.add(shelvesGroup);
                 shelvesGroupRef.current = shelvesGroup;
 
-                // Invisible Floor Raycast Plane for 3D Dragging
                 const planeGeo = new THREE.PlaneGeometry(1000, 1000);
                 planeGeo.rotateX(-Math.PI / 2);
                 const floorRaycastPlane = new THREE.Mesh(planeGeo, new THREE.MeshBasicMaterial({ visible: false }));
@@ -567,7 +567,7 @@
                     const deltaY = clientY - previousMousePosition.current.y;
 
                     cameraAngle.current.theta -= deltaX * 0.008;
-                    cameraAngle.current.phi = Math.max(0.05, Math.min(Math.PI / 2 - 0.02, cameraAngle.current.phi - deltaY * 0.008));
+                    cameraAngle.current.phi = Math.max(0.08, Math.min(Math.PI / 2 - 0.02, cameraAngle.current.phi - deltaY * 0.008));
 
                     previousMousePosition.current = { x: clientX, y: clientY };
                     updateCameraPosition();
@@ -715,7 +715,6 @@
                 };
             }, [updateCameraPosition]);
 
-            // Reconstruct / Update Shelf Meshes when warehouse data changes
             useEffect(() => {
                 if (!sceneRef.current || !shelvesGroupRef.current || !warehouse) return;
 
@@ -764,7 +763,7 @@
                 wallWire.position.y = 0.1;
                 shelvesGroup.add(wallWire);
 
-                warehouse.shelves.forEach(shelf => {
+                (warehouse.shelves || []).forEach(shelf => {
                     const shelfGroup = new THREE.Group();
                     const curX = parseFloat(shelf.x) || 0;
                     const curZ = parseFloat(shelf.z) || 0;
@@ -906,7 +905,7 @@
                 } else if (dir === 'reset') {
                     cameraTarget.current = { x: 0, y: 0, z: 0 };
                     const dim = Math.max(warehouse.width, warehouse.depth);
-                    cameraAngle.current = { theta: Math.PI / 4, phi: Math.PI / 3, radius: Math.max(35, dim * 1.15) };
+                    cameraAngle.current = { theta: viewMode === '2D' ? 0 : Math.PI / 4, phi: viewMode === '2D' ? 0.18 : Math.PI / 3, radius: Math.max(35, dim * 1.15) };
                 }
                 updateCameraPosition();
             };
@@ -939,7 +938,7 @@
                         </div>
                     )}
 
-                    {/* Mobile Touch D-Pad */}
+                    {/* Mobile Touch Navigation Controls */}
                     <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 items-end pointer-events-auto">
                         <div className="glass-panel p-2 rounded-2xl shadow-xl flex flex-col gap-1.5 items-center border border-borderwood">
                             <div className="text-[10px] font-bold text-amber-900 border-b border-borderwood/60 pb-1 w-full text-center">
@@ -1005,6 +1004,9 @@
             const [viewMode, setViewMode] = useState('3D');
 
             const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+            
+            // Solution for Issue 1: Mobile Collapsible Panel state
+            const [isPanelMinimized, setIsPanelMinimized] = useState(false);
 
             const [searchQuery, setSearchQuery] = useState('');
             const [selectedCategory, setSelectedCategory] = useState('全部');
@@ -1057,7 +1059,6 @@
                 }
             }, []);
 
-            // Robust shelf update handler matching both ID and Code
             const handleUpdateShelf = useCallback((updatedShelf) => {
                 if (!updatedShelf) return;
                 const cleanShelf = {
@@ -1361,15 +1362,33 @@
             const handleAddShelf = (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
+                
+                const width = parseFloat(formData.get('width')) || 3.0;
+                const depth = parseFloat(formData.get('depth')) || 0.9;
+                
+                // Auto-calculate non-overlapping floor placement if default 0,0 is busy
+                let inputX = parseFloat(formData.get('x'));
+                let inputZ = parseFloat(formData.get('z'));
+                if (isNaN(inputX)) inputX = 0;
+                if (isNaN(inputZ)) inputZ = 0;
+
+                const existingShelves = activeWarehouse.shelves || [];
+                const maxWhW = (activeWarehouse.width / 2) - 1;
+                const maxWhD = (activeWarehouse.depth / 2) - 1;
+
+                // Clamp to warehouse bounds
+                inputX = Math.max(-maxWhW, Math.min(maxWhW, inputX));
+                inputZ = Math.max(-maxWhD, Math.min(maxWhD, inputZ));
+
                 const newShelf = {
                     id: `SH-${Date.now().toString().slice(-4)}`,
-                    code: formData.get('code') || '',
-                    name: formData.get('name') || '',
-                    x: parseFloat(formData.get('x')) || 0,
-                    z: parseFloat(formData.get('z')) || 0,
+                    code: formData.get('code') || `A${existingShelves.length + 1}架`,
+                    name: formData.get('name') || '新增書架',
+                    x: Math.round(inputX * 10) / 10,
+                    z: Math.round(inputZ * 10) / 10,
                     rot: parseInt(formData.get('rot')) || 0,
-                    width: parseFloat(formData.get('width')) || 3.0,
-                    depth: parseFloat(formData.get('depth')) || 0.9,
+                    width,
+                    depth,
                     tiers: parseInt(formData.get('tiers')) || 5,
                     category: formData.get('category') || '通用',
                     color: '#8C5A2B'
@@ -1377,13 +1396,22 @@
 
                 const updatedWhs = warehouses.map(wh => {
                     if (wh.id !== activeWarehouseId) return wh;
-                    return { ...wh, shelves: [...wh.shelves, newShelf] };
+                    return { ...wh, shelves: [...(wh.shelves || []), newShelf] };
                 });
 
                 setSelectedShelf(newShelf);
                 persistWarehouses(updatedWhs, true);
                 setIsAddShelfModalOpen(false);
-                showToast(`成功新增書架：${newShelf.code} (${newShelf.name})`);
+                setIsPanelMinimized(false);
+                
+                // Automatically highlight and position focus on newly created shelf in both 2D & 3D modes
+                setHighlightedLocation({
+                    warehouseId: activeWarehouseId,
+                    shelfId: newShelf.id,
+                    tier: 1
+                });
+
+                showToast(`成功新增書架：${newShelf.code} (${newShelf.name})！已鎖定新架焦點`);
             };
 
             const handleDeleteShelf = (shelfId) => {
@@ -1761,16 +1789,43 @@
                             />
                         </main>
 
-                        {/* Right Panel: Selected Shelf Controls */}
                         {selectedShelf && (
                             <aside 
                                 onTouchStart={(e) => e.stopPropagation()}
                                 onTouchMove={(e) => e.stopPropagation()}
-                                className="w-full md:w-80 lg:w-96 max-h-[80vh] md:max-h-none border-t md:border-t-0 md:border-l border-borderwood bg-white/95 backdrop-blur-md p-3 md:p-4 flex flex-col gap-3 z-30 shrink-0 shadow-2xl md:shadow-lg overflow-y-auto fixed md:relative bottom-0 left-0 right-0 md:left-auto md:top-0 md:bottom-0 rounded-t-3xl md:rounded-none"
+                                className={`w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-borderwood bg-white/95 backdrop-blur-md flex flex-col gap-3 z-30 shrink-0 shadow-2xl md:shadow-lg transition-all duration-300 fixed md:relative bottom-0 left-0 right-0 md:left-auto md:top-0 md:bottom-0 rounded-t-3xl md:rounded-none ${
+                                    isPanelMinimized 
+                                        ? 'h-14 md:h-full p-2.5 md:p-4 overflow-hidden' 
+                                        : 'max-h-[45vh] md:max-h-none p-3 md:p-4 overflow-y-auto'
+                                }`}
                             >
-                                <div className="md:hidden w-12 h-1.5 bg-amber-800/30 rounded-full mx-auto -mt-0.5 mb-1"></div>
+                                {/* Mobile Touch Drag Handle & Collapse/Expand Header */}
+                                <div className="md:hidden flex justify-between items-center border-b border-borderwood/60 pb-1.5 -mt-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-1 bg-amber-800/40 rounded-full"></div>
+                                        <span className="text-xs font-bold text-amber-900 font-serif-title truncate max-w-[180px]">
+                                            【{selectedShelf.code}】{selectedShelf.name}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={() => setIsPanelMinimized(!isPanelMinimized)}
+                                            className="p-1 px-2.5 rounded-lg bg-amber-800/10 text-amber-900 font-bold text-[11px] flex items-center gap-1 hover:bg-amber-800 hover:text-white transition"
+                                        >
+                                            <Icon name={isPanelMinimized ? "ChevronUp" : "ChevronDown"} size={14} />
+                                            <span>{isPanelMinimized ? "展開控制" : "縮小看3D"}</span>
+                                        </button>
+                                        <button 
+                                            onClick={handleCloseShelfPanel}
+                                            className="p-1 rounded-full hover:bg-paper text-amber-900/60"
+                                        >
+                                            <Icon name="X" size={16} />
+                                        </button>
+                                    </div>
+                                </div>
 
-                                <div className="flex flex-col gap-1.5 border-b border-borderwood pb-2">
+                                {/* Desktop Header */}
+                                <div className="hidden md:flex flex-col gap-1.5 border-b border-borderwood pb-2">
                                     <div className="flex justify-between items-center">
                                         <span className="text-xs font-bold text-amber-800 flex items-center gap-1">
                                             <Icon name="Sliders" size={14} />
@@ -1805,14 +1860,14 @@
                                 {/* Mobile Mode Segmented Tabs */}
                                 <div className="md:hidden flex gap-1 bg-paper p-1 rounded-xl border border-borderwood text-xs font-bold">
                                     <button
-                                        onClick={() => setMobileTab('POS')}
-                                        className={`flex-1 py-1.5 rounded-lg transition ${mobileTab === 'POS' ? 'bg-amber-800 text-white shadow-xs' : 'text-amber-900'}`}
+                                        onClick={() => { setMobileTab('POS'); setIsPanelMinimized(false); }}
+                                        className={`flex-1 py-1 rounded-lg transition ${mobileTab === 'POS' ? 'bg-amber-800 text-white shadow-xs' : 'text-amber-900'}`}
                                     >
                                         📍 座標微調
                                     </button>
                                     <button
-                                        onClick={() => setMobileTab('BOOKS')}
-                                        className={`flex-1 py-1.5 rounded-lg transition ${mobileTab === 'BOOKS' ? 'bg-amber-800 text-white shadow-xs' : 'text-amber-900'}`}
+                                        onClick={() => { setMobileTab('BOOKS'); setIsPanelMinimized(false); }}
+                                        className={`flex-1 py-1 rounded-lg transition ${mobileTab === 'BOOKS' ? 'bg-amber-800 text-white shadow-xs' : 'text-amber-900'}`}
                                     >
                                         📚 此架圖書 ({books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code || cleanCodeStr(b.shelfId) === cleanCodeStr(selectedShelf.code)).length})
                                     </button>
@@ -1826,7 +1881,7 @@
                                 >
                                     <div className="bg-amber-800/10 p-2 rounded-lg border border-amber-800/20 text-[11px] font-bold text-amber-900 flex items-center gap-1.5">
                                         <Icon name="Compass" size={14} className="text-amber-800 shrink-0" />
-                                        <span>💡 提示：您可以直接在 3D 地圖上按住此書架拖曳擺放！</span>
+                                        <span>💡 提示：您可以按『縮小看3D』後，於畫面上直接按住拖曳擺放！</span>
                                     </div>
 
                                     {/* 4-Direction Movement Pad */}
@@ -2204,11 +2259,11 @@
                                     </div>
                                     <div className="grid grid-cols-3 gap-3">
                                         <div>
-                                            <label className="block font-bold text-amber-900 mb-1">X 座標 (左右)</label>
+                                            <label className="block font-bold text-amber-900 mb-1">X 座標 (左右, m)</label>
                                             <input name="x" type="number" defaultValue="0" step="0.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                         <div>
-                                            <label className="block font-bold text-amber-900 mb-1">Z 座標 (前後)</label>
+                                            <label className="block font-bold text-amber-900 mb-1">Z 座標 (前後, m)</label>
                                             <input name="z" type="number" defaultValue="0" step="0.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                         <div>
