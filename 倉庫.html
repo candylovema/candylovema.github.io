@@ -180,6 +180,8 @@
             }).filter(row => row.some(cell => cell !== ''));
         };
 
+        const cleanCodeStr = (s) => (s || '').toString().trim().toLowerCase().replace(/[\s\-_架倉]/g, '');
+
         const getColIdx = (headers, keywords) => {
             if (!headers || !keywords) return -1;
             for (let i = 0; i < headers.length; i++) {
@@ -787,8 +789,23 @@
                                 const whCode = idxWh >= 0 ? row[idxWh] : '';
                                 const shCode = idxShelf >= 0 ? row[idxShelf] : '';
 
-                                const foundWh = warehouses.find(w => w.code === whCode || w.id === whCode);
-                                const foundSh = foundWh ? foundWh.shelves.find(s => s.code === shCode || s.id === shCode) : null;
+                                const targetWhStr = cleanCodeStr(whCode);
+                                const foundWh = warehouses.find(w => {
+                                    if (!targetWhStr) return false;
+                                    const wc = cleanCodeStr(w.code);
+                                    const wi = cleanCodeStr(w.id);
+                                    const wn = cleanCodeStr(w.name);
+                                    return wc === targetWhStr || wi === targetWhStr || targetWhStr.includes(wc) || wc.includes(targetWhStr) || wn.includes(targetWhStr);
+                                });
+
+                                const targetShStr = cleanCodeStr(shCode);
+                                const foundSh = foundWh ? foundWh.shelves.find(s => {
+                                    if (!targetShStr) return false;
+                                    const sc = cleanCodeStr(s.code);
+                                    const si = cleanCodeStr(s.id);
+                                    const sn = cleanCodeStr(s.name);
+                                    return sc === targetShStr || si === targetShStr || targetShStr.includes(sc) || sc.includes(targetShStr) || sn.includes(targetShStr);
+                                }) : null;
 
                                 newBooks.push({
                                     id: `BK-GS-${i}-${Date.now().toString().slice(-4)}`,
@@ -1559,7 +1576,7 @@
                                     <div className="flex justify-between items-center">
                                         <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                                             <Icon name="BookOpen" size={14} className="text-amber-800" />
-                                            此架圖書 ({books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code).length} 本)：
+                                            此架圖書 ({books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code || cleanCodeStr(b.shelfId) === cleanCodeStr(selectedShelf.code)).length} 本)：
                                         </h4>
                                         <button
                                             onClick={() => {
@@ -1576,12 +1593,12 @@
                                     </div>
 
                                     <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                                        {books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code).length === 0 ? (
+                                        {books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code || cleanCodeStr(b.shelfId) === cleanCodeStr(selectedShelf.code)).length === 0 ? (
                                             <div className="p-3 text-center text-xs text-amber-800/60 font-bold bg-paper rounded-xl border border-dashed border-borderwood">
                                                 此書架目前空無一物，點擊上方『放書入此架』放置書籍！
                                             </div>
                                         ) : (
-                                            books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code).map(book => (
+                                            books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code || cleanCodeStr(b.shelfId) === cleanCodeStr(selectedShelf.code)).map(book => (
                                                 <div key={book.id} className="p-2.5 rounded-xl bg-paper border border-borderwood text-xs flex flex-col gap-1.5">
                                                     <div className="flex justify-between items-start">
                                                         <span className="font-bold text-amber-900 line-clamp-1 pr-2">《{book.title}》</span>
@@ -1614,462 +1631,377 @@
                                     </div>
                                 </div>
 
-                                <button 
-                                    onClick={() => handleDeleteShelf(selectedShelf.id)}
-                                    className="w-full py-2.5 rounded-xl border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 transition text-xs font-bold flex justify-center items-center gap-1.5 mt-auto"
-                                >
-                                    <Icon name="Trash2" size={15} />
-                                    刪除此書架
-                                </button>
+                                <div className="pt-2 border-t border-borderwood flex justify-between gap-2">
+                                    <button
+                                        onClick={() => handleDeleteShelf(selectedShelf.id)}
+                                        className="w-full py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                                    >
+                                        <Icon name="Trash2" size={14} />
+                                        <span>刪除此 3D 書架</span>
+                                    </button>
+                                </div>
                             </aside>
                         )}
                     </div>
 
-                    {/* Modal 0: Assign Book to Selected Shelf Modal */}
-                    {isAssignBookModalOpen && selectedShelf && (
+                    {/* Modal 1: Add New Warehouse Modal */}
+                    {isAddWarehouseModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <form onSubmit={handleAssignBookToShelf} className="bg-cream border-2 border-borderwood w-full max-w-lg rounded-3xl shadow-2xl p-6 flex flex-col gap-4 font-sans animate-in">
+                            <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
-                                    <div>
-                                        <h3 className="text-base font-bold font-serif-title text-amber-900 flex items-center gap-2">
-                                            <Icon name="PlusCircle" size={18} className="text-amber-800" />
-                                            放置圖書至【{selectedShelf.code} - {selectedShelf.name}】
-                                        </h3>
-                                        <p className="text-xs text-amber-800 font-bold mt-0.5">
-                                            目前所選倉庫：{activeWarehouse.name} ({activeWarehouse.code})
-                                        </p>
-                                    </div>
-                                    <button type="button" onClick={() => setIsAssignBookModalOpen(false)} className="p-1 rounded-full hover:bg-paper">
+                                    <h3 className="font-serif-title font-bold text-amber-900 text-base flex items-center gap-2">
+                                        <Icon name="PlusCircle" size={18} className="text-amber-800" />
+                                        新增倉庫 (建置 3D 空間場域)
+                                    </h3>
+                                    <button onClick={() => setIsAddWarehouseModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
                                         <Icon name="X" size={18} />
                                     </button>
                                 </div>
-
-                                <div className="space-y-3 text-xs">
-                                    <div>
-                                        <label className="block text-amber-900 font-bold mb-1">1. 搜尋圖書 (書名、作者或 ISBN 書碼)：</label>
-                                        <div className="relative">
-                                            <input 
-                                                type="text"
-                                                value={assignBookSearch}
-                                                onChange={(e) => setAssignBookSearch(e.target.value)}
-                                                placeholder="輸入關鍵字快速過濾圖書..."
-                                                className="w-full pl-8 pr-3 py-2 rounded-xl border border-borderwood bg-white font-bold text-amber-900 outline-none"
-                                            />
-                                            <Icon name="Search" size={15} className="absolute left-2.5 top-2.5 text-amber-800/60" />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-amber-900 font-bold mb-1">2. 選擇欲擺放入架之圖書：</label>
-                                        <select 
-                                            required
-                                            value={assignBookId}
-                                            onChange={(e) => setAssignBookId(e.target.value)}
-                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold text-amber-900 outline-none cursor-pointer max-h-40"
-                                        >
-                                            <option value="">-- 請挑選圖書 --</option>
-                                            {books
-                                                .filter(b => {
-                                                    const q = assignBookSearch.toLowerCase().trim();
-                                                    if (!q) return true;
-                                                    return (b.title && b.title.toLowerCase().includes(q)) ||
-                                                           (b.author && b.author.toLowerCase().includes(q)) ||
-                                                           (b.code && b.code.toLowerCase().includes(q));
-                                                })
-                                                .map(b => {
-                                                    const isUnassigned = !b.warehouseId || !b.shelfId;
-                                                    return (
-                                                        <option key={b.id} value={b.id}>
-                                                            {isUnassigned ? "【待入庫】" : "【已在上架】"} 《{b.title}》 - {b.author} (#{b.code})
-                                                        </option>
-                                                    );
-                                                })
-                                            }
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-amber-900 font-bold mb-1">3. 擺放於此書架之層數 (Tier)：</label>
-                                        <select 
-                                            value={assignBookTier}
-                                            onChange={(e) => setAssignBookTier(parseInt(e.target.value))}
-                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold text-amber-900 outline-none cursor-pointer"
-                                        >
-                                            {Array.from({ length: selectedShelf.tiers || 5 }, (_, idx) => (
-                                                <option key={idx + 1} value={idx + 1}>
-                                                    第 {idx + 1} 層 (由下至上)
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end gap-2 pt-2 border-t border-borderwood">
-                                    <button type="button" onClick={() => setIsAssignBookModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-bold bg-paper text-amber-900">
-                                        取消
-                                    </button>
-                                    <button type="submit" className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm flex items-center gap-1">
-                                        <Icon name="CheckCircle2" size={15} />
-                                        確認一鍵入架擺放
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    )}
-
-                    {}
-                    {/* Modal 1: Google Sheets & CSV Multi-Tab Sync Modal */}
-                    {isCsvModalOpen && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-cream border-2 border-borderwood w-full max-w-3xl rounded-3xl shadow-2xl p-6 flex flex-col gap-4 font-sans animate-in">
-                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
-                                    <h3 className="text-lg font-bold font-serif-title text-amber-900 flex items-center gap-2">
-                                        <Icon name="FileSpreadsheet" size={20} className="text-amber-800" />
-                                        Google 試算表 (Book_ALL & 倉庫) 雙向同步
-                                    </h3>
-                                    <button onClick={() => setIsCsvModalOpen(false)} className="p-1 rounded-full hover:bg-paper">
-                                        <Icon name="X" size={20} />
-                                    </button>
-                                </div>
-
-                                <div className="flex gap-2 border-b border-borderwood/80 pb-2">
-                                    <button 
-                                        onClick={() => setCsvCsvTab('GOOGLE_SHEETS')}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                                            csvTab === 'GOOGLE_SHEETS' 
-                                                ? 'bg-amber-800 text-white shadow-xs' 
-                                                : 'bg-paper text-amber-900 border border-borderwood'
-                                        }`}
-                                    >
-                                        ☁️ 雲端即時連線同步
-                                    </button>
-                                    <button 
-                                        onClick={() => setCsvCsvTab('BOOKS_CSV')}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                                            csvTab === 'BOOKS_CSV' 
-                                                ? 'bg-amber-800 text-white shadow-xs' 
-                                                : 'bg-paper text-amber-900 border border-borderwood'
-                                        }`}
-                                    >
-                                        📚 Book_ALL 試算表 CSV (剪貼)
-                                    </button>
-                                    <button 
-                                        onClick={() => setCsvCsvTab('WAREHOUSES_CSV')}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                                            csvTab === 'WAREHOUSES_CSV' 
-                                                ? 'bg-amber-800 text-white shadow-xs' 
-                                                : 'bg-paper text-amber-900 border border-borderwood'
-                                        }`}
-                                    >
-                                        🏢 倉庫分頁 CSV (剪貼)
-                                    </button>
-                                </div>
-
-                                {csvTab === 'GOOGLE_SHEETS' && (
-                                    <div className="space-y-4 py-2">
-                                        <div className="text-xs text-amber-900/90 leading-relaxed bg-paper p-4 rounded-xl border border-borderwood space-y-2">
-                                            <div className="font-bold text-amber-900 text-sm flex items-center gap-1.5">
-                                                <Icon name="AlertCircle" size={16} className="text-amber-800" />
-                                                如何確保成功讀取 Google 試算表中的所有書籍？
-                                            </div>
-                                            <div>1. 請確保 Google 試算表右上角【共用】按鈕，權限已改為<strong>「知道連結的任何人」</strong>。</div>
-                                            <div>2. 試算表內部需包含名稱為 <strong>Book_ALL</strong> 與 <strong>倉庫</strong> 的兩個工作表分頁。</div>
-                                            <div>3. 若設定權限後仍受阻，可於下欄選擇 <strong>Book_ALL 試算表 CSV (剪貼)</strong> 頁籤直接選擇檔案一次匯入！</div>
-                                        </div>
-
+                                <form onSubmit={handleAddWarehouse} className="space-y-3 text-xs">
+                                    <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block text-xs font-bold text-amber-900 mb-1">
-                                                Google 試算表網址：
-                                            </label>
-                                            <input 
-                                                type="text"
-                                                value={googleSheetUrl}
-                                                onChange={(e) => setGoogleSheetUrl(e.target.value)}
-                                                className="w-full p-3 rounded-xl border border-borderwood bg-white text-xs font-mono font-bold text-amber-900 outline-none focus:border-amber-800 shadow-inner"
-                                            />
+                                            <label className="block font-bold text-amber-900 mb-1">倉庫代碼 (例如: WH-D)</label>
+                                            <input name="code" required defaultValue={`WH-${String.fromCharCode(65 + warehouses.length)}`} className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
-
-                                        <div className="flex justify-end gap-2 pt-2">
-                                            <button 
-                                                onClick={() => handleSyncFromGoogleSheets(true)}
-                                                disabled={isSyncingSheets}
-                                                className="w-full py-3.5 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 transition shadow-md flex items-center justify-center gap-2 text-sm"
-                                            >
-                                                <Icon name="RefreshCw" size={16} className={isSyncingSheets ? 'animate-spin' : ''} />
-                                                <span>{isSyncingSheets ? "正在連線下載雲端全社資料..." : "⚡ 立即從 Google 試算表同步 (Book_ALL + 倉庫)"}</span>
-                                            </button>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">倉庫名稱</label>
+                                            <input name="name" required placeholder="例如: 新店二倉" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                     </div>
-                                )}
-
-                                {csvTab === 'BOOKS_CSV' && (
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center bg-paper p-3 rounded-xl border border-borderwood">
-                                            <span className="text-xs text-amber-900 font-bold">📂 直接選擇試算表 CSV 檔案上傳：</span>
-                                            <input 
-                                                type="file" 
-                                                accept=".csv"
-                                                onChange={(e) => handleFileUpload(e, false)}
-                                                className="text-xs text-amber-900 font-bold file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-800 file:text-white hover:file:bg-amber-900 cursor-pointer"
-                                            />
+                                    <div>
+                                        <label className="block font-bold text-amber-900 mb-1">地址位置</label>
+                                        <input name="address" placeholder="例如: 新北市新店區寶橋路102號" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">長度 (X軸, 公尺)</label>
+                                            <input name="width" type="number" defaultValue="24" step="1" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
-                                        <textarea 
-                                            value={csvText}
-                                            onChange={(e) => setCsvText(e.target.value)}
-                                            rows="8"
-                                            className="w-full p-3 rounded-xl border border-borderwood bg-white text-xs font-mono text-amber-900 outline-none focus:border-amber-800 leading-relaxed"
-                                            placeholder="貼上 Book_ALL CSV 內容..."
-                                        />
-                                        <div className="flex justify-between items-center">
-                                            <button 
-                                                onClick={() => {
-                                                    document.execCommand('copy');
-                                                    showToast("已複製 Book_ALL CSV 數據到剪貼簿！");
-                                                }}
-                                                className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-borderwood text-amber-900 hover:bg-paper transition flex items-center gap-1.5"
-                                            >
-                                                <Icon name="Copy" size={15} /> 複製 Book_ALL CSV 數據
-                                            </button>
-                                            <button 
-                                                onClick={handleImportCsvText}
-                                                className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm"
-                                            >
-                                                一鍵匯入並更新圖書儲位
-                                            </button>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">深度 (Z軸, 公尺)</label>
+                                            <input name="depth" type="number" defaultValue="18" step="1" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">挑高 (Y軸, 公尺)</label>
+                                            <input name="height" type="number" defaultValue="4.5" step="0.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                     </div>
-                                )}
-
-                                {csvTab === 'WAREHOUSES_CSV' && (
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center bg-paper p-3 rounded-xl border border-borderwood">
-                                            <span className="text-xs text-amber-900 font-bold">🏢 直接選擇倉庫 CSV 檔案上傳：</span>
-                                            <input 
-                                                type="file" 
-                                                accept=".csv"
-                                                onChange={(e) => handleFileUpload(e, true)}
-                                                className="text-xs text-amber-900 font-bold file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-800 file:text-white hover:file:bg-amber-900 cursor-pointer"
-                                            />
-                                        </div>
-                                        <textarea 
-                                            value={warehouseCsvText}
-                                            onChange={(e) => setWarehouseCsvText(e.target.value)}
-                                            rows="8"
-                                            className="w-full p-3 rounded-xl border border-borderwood bg-white text-xs font-mono text-amber-900 outline-none focus:border-amber-800 leading-relaxed"
-                                            placeholder="貼上 倉庫分頁 CSV 內容..."
-                                        />
-                                        <div className="flex justify-between items-center">
-                                            <button 
-                                                onClick={() => {
-                                                    document.execCommand('copy');
-                                                    showToast("已複製 倉庫分頁 CSV 數據到剪貼簿！");
-                                                }}
-                                                className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-borderwood text-amber-900 hover:bg-paper transition flex items-center gap-1.5"
-                                            >
-                                                <Icon name="Copy" size={15} /> 複製倉庫分頁 CSV 數據
-                                            </button>
-                                            <button 
-                                                onClick={handleImportWarehouseCsvText}
-                                                className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm"
-                                            >
-                                                一鍵匯入並更新倉庫 3D 擺設
-                                            </button>
-                                        </div>
+                                    <div className="pt-2 flex justify-end gap-2">
+                                        <button type="button" onClick={() => setIsAddWarehouseModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold">取消</button>
+                                        <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">建立倉庫與基本排架</button>
                                     </div>
-                                )}
+                                </form>
                             </div>
                         </div>
                     )}
 
-                    {/* Modal 2: Print Blueprint Report */}
-                    {isPrintModalOpen && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-white border-2 border-borderwood w-full max-w-2xl rounded-3xl shadow-2xl p-8 flex flex-col gap-5 font-sans animate-in">
-                                <div className="text-center border-b border-borderwood pb-4">
-                                    <h2 className="text-2xl font-black text-amber-900 font-serif-title">
-                                        文史哲出版社 - 倉庫擺設明細與揀貨藍圖
-                                    </h2>
-                                    <p className="text-xs text-amber-800 font-bold mt-1">
-                                        {activeWarehouse.name} ({activeWarehouse.code}) ‧ {new Date().toLocaleDateString()}
-                                    </p>
-                                </div>
-
-                                <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                                    <h3 className="font-bold text-amber-900 text-sm flex items-center gap-1.5">
-                                        <Icon name="Grid" size={16} className="text-amber-800" />
-                                        目前書架佈局對照表：
-                                    </h3>
-                                    <table className="w-full text-left text-xs border-collapse">
-                                        <thead>
-                                            <tr className="bg-paper border-b border-borderwood text-amber-900 font-bold">
-                                                <th className="p-2">書架代號</th>
-                                                <th className="p-2">書架名稱</th>
-                                                <th className="p-2">X, Z 座標</th>
-                                                <th className="p-2">層數</th>
-                                                <th className="p-2">擺放書籍種數</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {activeWarehouse.shelves.map(sh => (
-                                                <tr key={sh.id} className="border-b border-borderwood/50">
-                                                    <td className="p-2 font-mono font-bold text-amber-800">{sh.code}</td>
-                                                    <td className="p-2 font-bold text-amber-900">{sh.name}</td>
-                                                    <td className="p-2 font-mono">({sh.x}, {sh.z})</td>
-                                                    <td className="p-2">{sh.tiers} 層</td>
-                                                    <td className="p-2 font-bold">{books.filter(b => b.shelfId === sh.id || b.shelfId === sh.code).length} 種</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div className="flex justify-end gap-3 pt-4 border-t border-borderwood">
-                                    <button 
-                                        onClick={() => setIsPrintModalOpen(false)}
-                                        className="px-4 py-2 rounded-xl text-xs font-bold bg-paper border border-borderwood text-amber-900"
-                                    >
-                                        關閉
-                                    </button>
-                                    <button 
-                                        onClick={() => window.print()}
-                                        className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm flex items-center gap-1.5"
-                                    >
-                                        <Icon name="Printer" size={15} /> 列印此藍圖報表
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Modal 3: Add New Shelf Modal */}
+                    {/* Modal 2: Add New Shelf Modal */}
                     {isAddShelfModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <form onSubmit={handleAddShelf} className="bg-cream border-2 border-borderwood w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col gap-4 font-sans animate-in">
+                            <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
-                                    <h3 className="text-base font-bold font-serif-title text-amber-900 flex items-center gap-2">
+                                    <h3 className="font-serif-title font-bold text-amber-900 text-base flex items-center gap-2">
                                         <Icon name="PlusCircle" size={18} className="text-amber-800" />
-                                        新增書架至 {activeWarehouse.name}
+                                        新增書架至 {activeWarehouse.name} ({activeWarehouse.code})
                                     </h3>
-                                    <button type="button" onClick={() => setIsAddShelfModalOpen(false)} className="p-1 rounded-full hover:bg-paper">
+                                    <button onClick={() => setIsAddShelfModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
                                         <Icon name="X" size={18} />
                                     </button>
                                 </div>
-
-                                <div className="space-y-3 text-xs">
-                                    <div>
-                                        <label className="block text-amber-900 font-bold mb-1">書架代號 (如: A9架)</label>
-                                        <input name="code" required defaultValue={`A${activeWarehouse.shelves.length + 1}架`} className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-amber-900 font-bold mb-1">書架區塊名稱</label>
-                                        <input name="name" required placeholder="例如：臺灣文學特藏區" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2">
+                                <form onSubmit={handleAddShelf} className="space-y-3 text-xs">
+                                    <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block text-amber-900 font-bold mb-1">X 軸座標 (公尺)</label>
-                                            <input name="x" type="number" step="0.5" defaultValue="0" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                            <label className="block font-bold text-amber-900 mb-1">書架代碼 (例如: A9架)</label>
+                                            <input name="code" required defaultValue={`A${activeWarehouse.shelves.length + 1}架`} className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                         <div>
-                                            <label className="block text-amber-900 font-bold mb-1">Z 軸座標 (公尺)</label>
-                                            <input name="z" type="number" step="0.5" defaultValue="0" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                            <label className="block font-bold text-amber-900 mb-1">書架名稱</label>
+                                            <input name="name" required placeholder="例如: 經學與聲韻學專區" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-3 gap-3">
                                         <div>
-                                            <label className="block text-amber-900 font-bold mb-1">旋轉角度</label>
-                                            <select name="rot" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none">
-                                                <option value="0">0°</option>
-                                                <option value="90">90°</option>
+                                            <label className="block font-bold text-amber-900 mb-1">X 座標 (左右)</label>
+                                            <input name="x" type="number" defaultValue="0" step="0.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">Z 座標 (前後)</label>
+                                            <input name="z" type="number" defaultValue="0" step="0.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">旋轉角度</label>
+                                            <select name="rot" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none">
+                                                <option value="0">0° (平行)</option>
+                                                <option value="90">90° (垂直)</option>
                                                 <option value="180">180°</option>
                                                 <option value="270">270°</option>
                                             </select>
                                         </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
                                         <div>
-                                            <label className="block text-amber-900 font-bold mb-1">層數</label>
-                                            <input name="tiers" type="number" min="2" max="8" defaultValue="5" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                            <label className="block font-bold text-amber-900 mb-1">層數 (Tiers)</label>
+                                            <input name="tiers" type="number" defaultValue="5" min="2" max="8" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                         <div>
-                                            <label className="block text-amber-900 font-bold mb-1">寬度(m)</label>
-                                            <input name="width" type="number" step="0.2" defaultValue="3.2" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                            <label className="block font-bold text-amber-900 mb-1">寬度 (Meters)</label>
+                                            <input name="width" type="number" defaultValue="3.2" step="0.2" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">主要類別</label>
+                                            <input name="category" defaultValue="通用學術" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-amber-900 font-bold mb-1">主要書籍類別</label>
-                                        <input name="category" defaultValue="文學叢刊" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                    <div className="pt-2 flex justify-end gap-2">
+                                        <button type="button" onClick={() => setIsAddShelfModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold">取消</button>
+                                        <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">新增至 3D 畫域</button>
                                     </div>
-                                </div>
-
-                                <div className="flex justify-end gap-2 pt-2 border-t border-borderwood">
-                                    <button type="button" onClick={() => setIsAddShelfModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-bold bg-paper text-amber-900">
-                                        取消
-                                    </button>
-                                    <button type="submit" className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm">
-                                        確認新增
-                                    </button>
-                                </div>
-                            </form>
+                                </form>
+                            </div>
                         </div>
                     )}
 
-                    {/* Modal 4: Add New Warehouse Modal */}
-                    {isAddWarehouseModalOpen && (
+                    {/* Modal 3: Assign Book to Selected Shelf Modal */}
+                    {isAssignBookModalOpen && selectedShelf && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <form onSubmit={handleAddWarehouse} className="bg-cream border-2 border-borderwood w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col gap-4 font-sans animate-in">
+                            <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
-                                    <h3 className="text-base font-bold font-serif-title text-amber-900 flex items-center gap-2">
-                                        <Icon name="Building2" size={18} className="text-amber-800" />
-                                        建立新文史哲圖書倉庫
+                                    <h3 className="font-serif-title font-bold text-amber-900 text-base flex items-center gap-2">
+                                        <Icon name="BookOpen" size={18} className="text-amber-800" />
+                                        放置圖書至【{selectedShelf.code} - {selectedShelf.name}】
                                     </h3>
-                                    <button type="button" onClick={() => setIsAddWarehouseModalOpen(false)} className="p-1 rounded-full hover:bg-paper">
+                                    <button onClick={() => setIsAssignBookModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
+                                        <Icon name="X" size={18} />
+                                    </button>
+                                </div>
+                                <form onSubmit={handleAssignBookToShelf} className="space-y-4 text-xs">
+                                    <div>
+                                        <label className="block font-bold text-amber-900 mb-1">1. 搜尋並選擇圖書：</label>
+                                        <input
+                                            type="text"
+                                            value={assignBookSearch}
+                                            onChange={(e) => setAssignBookSearch(e.target.value)}
+                                            placeholder="輸入書名、作者或 ISBN 快速過濾..."
+                                            className="w-full p-2 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none mb-2"
+                                        />
+                                        <select
+                                            value={assignBookId}
+                                            onChange={(e) => setAssignBookId(e.target.value)}
+                                            required
+                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none max-h-40"
+                                            size="5"
+                                        >
+                                            {books
+                                                .filter(b => !assignBookSearch || b.title.includes(assignBookSearch) || b.code.includes(assignBookSearch) || b.author.includes(assignBookSearch))
+                                                .map(b => (
+                                                    <option key={b.id} value={b.id}>
+                                                        [{b.code}] 《{b.title}》- {b.author} ({b.warehouseId ? '已在倉' : '待入庫'})
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block font-bold text-amber-900 mb-1">2. 選擇擺放層數：</label>
+                                        <select
+                                            value={assignBookTier}
+                                            onChange={(e) => setAssignBookTier(e.target.value)}
+                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none"
+                                        >
+                                            {Array.from({ length: selectedShelf.tiers || 5 }, (_, idx) => (
+                                                <option key={idx + 1} value={idx + 1}>
+                                                    第 {idx + 1} 層 ({idx === 0 ? '最底層' : idx === (selectedShelf.tiers - 1) ? '頂層' : '中間層'})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="pt-2 flex justify-end gap-2">
+                                        <button type="button" onClick={() => setIsAssignBookModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold">取消</button>
+                                        <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">確定放入此書架</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modal 4: Google Sheets & CSV Import / Export Sync Modal */}
+                    {isCsvModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="glass-panel w-full max-w-3xl rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
+                                    <h3 className="font-serif-title font-bold text-amber-900 text-lg flex items-center gap-2">
+                                        <Icon name="FileSpreadsheet" size={20} className="text-amber-800" />
+                                        Google 試算表 (Book_ALL & 倉庫) 雙向連線同步
+                                    </h3>
+                                    <button onClick={() => setIsCsvModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
                                         <Icon name="X" size={18} />
                                     </button>
                                 </div>
 
-                                <div className="space-y-3 text-xs">
-                                    <div>
-                                        <label className="block text-amber-900 font-bold mb-1">倉庫名稱</label>
-                                        <input name="name" required placeholder="例如：羅斯福路二倉 (D倉)" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-amber-900 font-bold mb-1">倉庫代碼 (如: D-MAIN)</label>
-                                        <input name="code" required defaultValue={`WH-D`} className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none uppercase" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-amber-900 font-bold mb-1">倉庫地址/位置</label>
-                                        <input name="address" required placeholder="例如：臺北市中正區羅斯福路一段72巷8號B1" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div>
-                                            <label className="block text-amber-900 font-bold mb-1">長度 (m)</label>
-                                            <input name="width" type="number" step="1" defaultValue="25" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-amber-900 font-bold mb-1">深度/寬 (m)</label>
-                                            <input name="depth" type="number" step="1" defaultValue="18" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-amber-900 font-bold mb-1">屋頂高度 (m)</label>
-                                            <input name="height" type="number" step="0.5" defaultValue="4.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
-                                        </div>
-                                    </div>
+                                <div className="flex gap-2 border-b border-borderwood pb-2 text-xs font-bold">
+                                    <button
+                                        onClick={() => setCsvCsvTab('GOOGLE_SHEETS')}
+                                        className={`px-4 py-2 rounded-xl transition ${csvTab === 'GOOGLE_SHEETS' ? 'bg-amber-800 text-white shadow-xs' : 'bg-paper text-amber-900 border border-borderwood'}`}
+                                    >
+                                        ⚡ Google 雲端即時連線 (Book_ALL & 倉庫)
+                                    </button>
+                                    <button
+                                        onClick={() => setCsvCsvTab('BOOK_ALL_CSV')}
+                                        className={`px-4 py-2 rounded-xl transition ${csvTab === 'BOOK_ALL_CSV' ? 'bg-amber-800 text-white shadow-xs' : 'bg-paper text-amber-900 border border-borderwood'}`}
+                                    >
+                                        📄 Book_ALL CSV 檔案/文字匯入匯出
+                                    </button>
+                                    <button
+                                        onClick={() => setCsvCsvTab('WAREHOUSE_CSV')}
+                                        className={`px-4 py-2 rounded-xl transition ${csvTab === 'WAREHOUSE_CSV' ? 'bg-amber-800 text-white shadow-xs' : 'bg-paper text-amber-900 border border-borderwood'}`}
+                                    >
+                                        🏢 倉庫擺設 CSV 匯入匯出
+                                    </button>
                                 </div>
 
-                                <div className="flex justify-end gap-2 pt-2 border-t border-borderwood">
-                                    <button type="button" onClick={() => setIsAddWarehouseModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-bold bg-paper text-amber-900">
-                                        取消
-                                    </button>
-                                    <button type="submit" className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm">
-                                        建立新倉庫
-                                    </button>
-                                </div>
-                            </form>
+                                {csvTab === 'GOOGLE_SHEETS' && (
+                                    <div className="space-y-4 text-xs">
+                                        <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-amber-900 space-y-2">
+                                            <p className="font-bold text-sm flex items-center gap-1">
+                                                <Icon name="CheckCircle2" size={16} className="text-emerald-700" />
+                                                已綁定全社試算表 ID：<span className="font-mono underline">1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s</span>
+                                            </p>
+                                            <p>系統會讀取並解析 <span className="font-bold text-amber-800">Book_ALL</span> 分頁中全部圖書，以及 <span className="font-bold text-amber-800">倉庫</span> 分頁中的 3D 排架結構。</p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">Google 試算表網址 / ID：</label>
+                                            <input
+                                                type="text"
+                                                value={googleSheetUrl}
+                                                onChange={(e) => setGoogleSheetUrl(e.target.value)}
+                                                className="w-full p-3 rounded-xl border border-borderwood bg-paper text-xs font-mono font-bold text-amber-900 outline-none"
+                                            />
+                                        </div>
+
+                                        <button
+                                            onClick={() => handleSyncFromGoogleSheets(true)}
+                                            disabled={isSyncingSheets}
+                                            className="w-full py-3.5 rounded-xl bg-amber-800 text-white font-bold text-sm hover:bg-amber-900 transition flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+                                        >
+                                            <Icon name="RefreshCw" size={18} className={isSyncingSheets ? "animate-spin" : ""} />
+                                            <span>{isSyncingSheets ? "正在從 Google 試算表抓取最新 Book_ALL 及倉庫分頁..." : "⚡ 立即同步 Google 試算表全部數據"}</span>
+                                        </button>
+                                    </div>
+                                )}
+
+                                {csvTab === 'BOOK_ALL_CSV' && (
+                                    <div className="space-y-3 text-xs">
+                                        <div className="flex justify-between items-center">
+                                            <label className="font-bold text-amber-900">Book_ALL 圖書清單 CSV 文字內容：</label>
+                                            <input type="file" accept=".csv" onChange={(e) => handleFileUpload(e, false)} className="text-xs text-amber-800 font-bold" />
+                                        </div>
+                                        <textarea
+                                            value={csvText}
+                                            onChange={(e) => setCsvText(e.target.value)}
+                                            rows="10"
+                                            className="w-full p-3 rounded-xl border border-borderwood bg-paper font-mono text-[11px] text-amber-900 outline-none resize-y"
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={handleImportCsvText} className="px-5 py-2.5 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">
+                                                匯入並更新圖書儲位 (照書碼排序)
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {csvTab === 'WAREHOUSE_CSV' && (
+                                    <div className="space-y-3 text-xs">
+                                        <div className="flex justify-between items-center">
+                                            <label className="font-bold text-amber-900">倉庫與 3D 書架擺設設定 CSV 文字內容：</label>
+                                            <input type="file" accept=".csv" onChange={(e) => handleFileUpload(e, true)} className="text-xs text-amber-800 font-bold" />
+                                        </div>
+                                        <textarea
+                                            value={warehouseCsvText}
+                                            onChange={(e) => setWarehouseCsvText(e.target.value)}
+                                            rows="10"
+                                            className="w-full p-3 rounded-xl border border-borderwood bg-paper font-mono text-[11px] text-amber-900 outline-none resize-y"
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={handleImportWarehouseCsvText} className="px-5 py-2.5 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">
+                                                匯入並更新倉庫 3D 擺設
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
-                    {/* Toast Notification */}
+                    {/* Modal 5: Print Picker Blueprint Modal */}
+                    {isPrintModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="glass-panel w-full max-w-4xl rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
+                                    <h3 className="font-serif-title font-bold text-amber-900 text-lg flex items-center gap-2">
+                                        <Icon name="Printer" size={20} className="text-amber-800" />
+                                        【{activeWarehouse.name}】揀貨藍圖與書架擺設總表
+                                    </h3>
+                                    <button onClick={() => setIsPrintModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
+                                        <Icon name="X" size={18} />
+                                    </button>
+                                </div>
+
+                                <div id="printableBlueprint" className="bg-white p-6 rounded-2xl border border-borderwood text-xs text-amber-900 space-y-6">
+                                    <div className="border-b border-borderwood pb-4 flex justify-between items-start">
+                                        <div>
+                                            <h2 className="text-xl font-bold font-serif-title">{activeWarehouse.name} ({activeWarehouse.code})</h2>
+                                            <p className="text-amber-800/80 mt-1">地址：{activeWarehouse.address}</p>
+                                            <p className="text-amber-800/80">空間規格：{activeWarehouse.width}m × {activeWarehouse.depth}m × {activeWarehouse.height}m</p>
+                                        </div>
+                                        <div className="text-right font-mono text-[11px] text-amber-800/70">
+                                            列印時間：{new Date().toLocaleString('zh-TW')}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {activeWarehouse.shelves.map(shelf => {
+                                            const shelfBooks = books.filter(b => b.shelfId === shelf.id || b.shelfId === shelf.code || cleanCodeStr(b.shelfId) === cleanCodeStr(shelf.code));
+                                            return (
+                                                <div key={shelf.id} className="p-3.5 rounded-xl border border-borderwood bg-paper flex flex-col gap-2">
+                                                    <div className="flex justify-between items-center font-bold border-b border-borderwood pb-1.5">
+                                                        <span className="text-sm font-serif-title text-amber-900">{shelf.code} - {shelf.name}</span>
+                                                        <span className="text-[10px] font-mono text-amber-800">座標: ({shelf.x.toFixed(1)}, {shelf.z.toFixed(1)}) | {shelf.tiers}層</span>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {shelfBooks.length === 0 ? (
+                                                            <div className="text-[11px] text-amber-800/50 italic">（此架無存放圖書）</div>
+                                                        ) : (
+                                                            shelfBooks.map(b => (
+                                                                <div key={b.id} className="flex justify-between text-[11px]">
+                                                                    <span className="font-bold">第 {b.tier || 1} 層：《{b.title}》</span>
+                                                                    <span className="font-mono text-amber-800">#{b.code}</span>
+                                                                </div>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2 pt-2">
+                                    <button onClick={() => setIsPrintModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold text-xs">關閉</button>
+                                    <button onClick={() => window.print()} className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold text-xs hover:bg-amber-900 transition flex items-center gap-1.5">
+                                        <Icon name="Printer" size={15} />
+                                        <span>列印此報表 (Print)</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Toast Notification Container */}
                     {toastMessage && (
-                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-amber-900 text-white px-5 py-3 rounded-2xl shadow-2xl z-50 text-xs font-bold flex items-center gap-2 border border-white/20 animate-in">
-                            <Icon name="CheckCircle2" size={16} className="text-amber-300" />
+                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 glass-dark text-white px-5 py-3 rounded-2xl shadow-2xl z-50 text-xs font-bold flex items-center gap-2 border border-white/20 animate-bounce">
+                            <Icon name="CheckCircle2" size={16} className="text-amber-400 shrink-0" />
                             <span>{toastMessage}</span>
                         </div>
                     )}
