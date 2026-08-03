@@ -727,18 +727,27 @@
                             if (text && !text.includes('<!DOCTYPE html>')) return text;
                         }
                     } catch (e) {
-                        console.warn("Direct fetch failed, trying proxy...", e);
+                        // Direct fetch failed (CORS or sandboxed iframe restriction)
                     }
 
-                    try {
-                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-                        const proxyResp = await fetch(proxyUrl);
-                        if (proxyResp.ok) {
-                            const proxyText = await proxyResp.text();
-                            if (proxyText && !proxyText.includes('<!DOCTYPE html>')) return proxyText;
+                    // Fallback proxies to try sequentially
+                    const proxies = [
+                        (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+                        (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+                        (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
+                    ];
+
+                    for (const getProxyUrl of proxies) {
+                        try {
+                            const proxyUrl = getProxyUrl(targetUrl);
+                            const proxyResp = await fetch(proxyUrl);
+                            if (proxyResp.ok) {
+                                const proxyText = await proxyResp.text();
+                                if (proxyText && !proxyText.includes('<!DOCTYPE html>')) return proxyText;
+                            }
+                        } catch (err) {
+                            // Quietly catch errors without outputting full console error traces
                         }
-                    } catch (err) {
-                        console.error("Proxy fetch failed:", err);
                     }
                     return null;
                 };
