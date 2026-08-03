@@ -162,6 +162,26 @@
 
         const cleanCodeStr = (s) => (s || '').toString().trim().toLowerCase().replace(/[\s\-_架倉]/g, '');
 
+        // Helper function to remove duplicate warehouses by code/ID
+        const deduplicateWarehouses = (list) => {
+            if (!Array.isArray(list)) return [];
+            const map = new Map();
+            list.forEach(w => {
+                if (!w) return;
+                const key = cleanCodeStr(w.code) || cleanCodeStr(w.id) || w.id;
+                if (!map.has(key)) {
+                    map.set(key, { ...w, shelves: w.shelves || [] });
+                } else {
+                    const existing = map.get(key);
+                    const shelfMap = new Map();
+                    (existing.shelves || []).forEach(s => shelfMap.set(cleanCodeStr(s.id) || cleanCodeStr(s.code), s));
+                    (w.shelves || []).forEach(s => shelfMap.set(cleanCodeStr(s.id) || cleanCodeStr(s.code), s));
+                    existing.shelves = Array.from(shelfMap.values());
+                }
+            });
+            return Array.from(map.values());
+        };
+
         const saveStorage = (key, val) => {
             try {
                 const str = typeof val === 'string' ? val : JSON.stringify(val);
@@ -379,7 +399,7 @@
                     cameraTarget.current = { x: 0, y: 0, z: 0 };
                 }
                 updateCameraPosition();
-            }, [viewMode, updateCameraPosition]);
+            }, [viewMode, warehouse, updateCameraPosition]);
 
             useEffect(() => {
                 if (!highlightedLocation || !warehouse) return;
@@ -397,7 +417,28 @@
                 }
             }, [highlightedLocation, warehouse, updateCameraPosition]);
 
-            // Setup Effect - Runs once on mount or viewMode change
+            // ResizeObserver to handle sidebar toggling without canvas distortion
+            useEffect(() => {
+                const container = mountRef.current;
+                if (!container) return;
+
+                const resizeObserver = new ResizeObserver(() => {
+                    if (!mountRef.current || !rendererRef.current || !cameraRef.current) return;
+                    const w = mountRef.current.clientWidth;
+                    const h = mountRef.current.clientHeight;
+                    if (w === 0 || h === 0) return;
+                    cameraRef.current.aspect = w / h;
+                    cameraRef.current.updateProjectionMatrix();
+                    rendererRef.current.setSize(w, h);
+                });
+
+                resizeObserver.observe(container);
+
+                return () => {
+                    resizeObserver.disconnect();
+                };
+            }, []);
+
             useEffect(() => {
                 const container = mountRef.current;
                 if (!container) return;
@@ -961,7 +1002,7 @@
         function App() {
             const [warehouses, setWarehouses] = useState(() => {
                 const saved = loadStorage('lapen_warehouses_v2', null);
-                return (Array.isArray(saved) && saved.length > 0) ? saved : INITIAL_WAREHOUSES;
+                return (Array.isArray(saved) && saved.length > 0) ? deduplicateWarehouses(saved) : deduplicateWarehouses(INITIAL_WAREHOUSES);
             });
 
             const [bookOverrides, setBookOverrides] = useState(() => {
@@ -1017,12 +1058,13 @@
             const minZ = useMemo(() => -maxZ, [maxZ]);
 
             const persistWarehouses = useCallback((newWhs, syncToCloud = true) => {
-                setWarehouses(newWhs);
-                saveStorage('lapen_warehouses_v2', newWhs);
+                const cleanWhs = deduplicateWarehouses(newWhs);
+                setWarehouses(cleanWhs);
+                saveStorage('lapen_warehouses_v2', cleanWhs);
                 if (syncToCloud) {
                     if (cloudSyncTimer.current) clearTimeout(cloudSyncTimer.current);
                     cloudSyncTimer.current = setTimeout(() => {
-                        syncWithGAS("SYNC_WAREHOUSES", { warehouses: newWhs });
+                        syncWithGAS("SYNC_WAREHOUSES", { warehouses: cleanWhs });
                     }, 2000);
                 }
             }, []);
@@ -1084,13 +1126,13 @@
 
                 try {
                     const savedWhs = loadStorage('lapen_warehouses_v2', null);
-                    let currentWhs = (Array.isArray(savedWhs) && savedWhs.length > 0) ? savedWhs : warehouses;
+                    let currentWhs = (Array.isArray(savedWhs) && savedWhs.length > 0) ? deduplicateWarehouses(savedWhs) : warehouses;
 
                     if (!savedWhs || forceFetchWarehouses) {
                         const whRes = await syncWithGAS('FETCH_WAREHOUSES');
                         if (whRes && whRes.status === 'success' && Array.isArray(whRes.data) && whRes.data.length > 0) {
-                            currentWhs = whRes.data;
-                            persistWarehouses(whRes.data, false);
+                            currentWhs = deduplicateWarehouses(whRes.data);
+                            persistWarehouses(currentWhs, false);
                         }
                     }
 
@@ -1277,6 +1319,7 @@
             const handleEditWarehouse = (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
+                const newCode = (formData.get('code') || '').toUpperCase().trim();
                 const name = (formData.get('name') || '').trim();
                 const address = (formData.get('address') || '').trim();
                 const width = parseFloat(formData.get('width')) || 24;
@@ -1287,6 +1330,7 @@
                     if (w.id === activeWarehouseId) {
                         return {
                             ...w,
+                            code: newCode || w.code,
                             name: name || w.name,
                             address: address || w.address,
                             width,
@@ -1299,7 +1343,25 @@
 
                 persistWarehouses(updatedWhs, true);
                 setIsEditWarehouseModalOpen(false);
-                showToast(`成功更新倉庫【${activeWarehouse.code}】尺寸與名稱！`);
+                showToast(`成功更新倉庫【${newCode || activeWarehouse.code}】尺寸與代號！`);
+            };
+
+            const handleDeleteWarehouse = (whId) => {
+                if (warehouses.length <= 1) {
+                    return showToast("⚠️ 系統至少需保留一個倉庫，無法刪除唯一倉庫！");
+                }
+                const targetWh = warehouses.find(w => w.id === whId);
+                if (!window.confirm(`確定要刪除倉庫【${targetWh?.name || whId}】嗎？刪除後該倉庫對應的書架與排架資訊將被移除！`)) return;
+
+                const updatedWhs = warehouses.filter(w => w.id !== whId);
+                persistWarehouses(updatedWhs, true);
+
+                const nextWh = updatedWhs[0];
+                setActiveWarehouseId(nextWh.id);
+                setSelectedShelf(null);
+                setHighlightedLocation(null);
+                setIsEditWarehouseModalOpen(false);
+                showToast(`🗑️ 已成功刪除倉庫！已自動切換至【${nextWh.name}】`);
             };
 
             const handleCloseShelfPanel = () => {
@@ -1671,7 +1733,7 @@
                         {/* Main Canvas Viewport */}
                         <main className="flex-1 relative overflow-hidden flex flex-col bg-paper">
                             <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center pointer-events-none">
-                                <div className={`glass-panel px-3 py-1.5 md:px-4 md:py-2 rounded-2xl flex items-center gap-2 md:gap-3 pointer-events-auto shadow-sm ${!isLeftSidebarOpen ? 'ml-36' : ''}`}>
+                                <div className="glass-panel px-3 py-1.5 md:px-4 md:py-2 rounded-2xl flex items-center gap-2 md:gap-3 pointer-events-auto shadow-sm">
                                     <span className="font-serif-title font-bold text-amber-900 text-xs md:text-sm flex items-center gap-1.5">
                                         <Icon name="Building2" size={16} className="text-amber-800 hidden sm:inline" />
                                         {activeWarehouse.name} ({activeWarehouse.code})
@@ -2074,7 +2136,7 @@
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
                                     <h3 className="font-serif-title font-bold text-amber-900 text-base flex items-center gap-2">
                                         <Icon name="Sliders" size={18} className="text-amber-800" />
-                                        編輯倉庫【{activeWarehouse.code}】尺寸與名稱
+                                        編輯倉庫【{activeWarehouse.code}】尺寸、代號與名稱
                                     </h3>
                                     <button onClick={() => setIsEditWarehouseModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
                                         <Icon name="X" size={18} />
@@ -2083,8 +2145,8 @@
                                 <form onSubmit={handleEditWarehouse} className="space-y-3 text-xs">
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block font-bold text-amber-900 mb-1">倉庫代碼 (不可修改)</label>
-                                            <input value={activeWarehouse.code} disabled className="w-full p-2.5 rounded-xl border border-borderwood bg-paper/60 font-bold text-amber-800 outline-none font-mono cursor-not-allowed" />
+                                            <label className="block font-bold text-amber-900 mb-1">倉庫代碼 (例如: A-MAIN)</label>
+                                            <input name="code" required defaultValue={activeWarehouse.code} className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none font-mono focus:border-amber-800" />
                                         </div>
                                         <div>
                                             <label className="block font-bold text-amber-900 mb-1">倉庫名稱</label>
@@ -2109,9 +2171,19 @@
                                             <input name="height" type="number" defaultValue={activeWarehouse.height} step="0.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                     </div>
-                                    <div className="pt-2 flex justify-end gap-2">
-                                        <button type="button" onClick={() => setIsEditWarehouseModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold">取消</button>
-                                        <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">儲存倉庫變更</button>
+                                    <div className="pt-2 flex justify-between items-center gap-2">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => handleDeleteWarehouse(activeWarehouse.id)} 
+                                            className="px-4 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 font-bold hover:bg-red-100 transition flex items-center gap-1"
+                                        >
+                                            <Icon name="Trash2" size={14} />
+                                            <span>刪除此倉庫</span>
+                                        </button>
+                                        <div className="flex gap-2">
+                                            <button type="button" onClick={() => setIsEditWarehouseModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold">取消</button>
+                                            <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">儲存倉庫變更</button>
+                                        </div>
                                     </div>
                                 </form>
                             </div>
