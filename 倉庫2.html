@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>文史哲出版社 - 3D多倉庫暨書架擺設管理與快速索引系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -48,6 +48,7 @@
             background-color: var(--bg-light);
             color: #4A3728;
             overflow-x: hidden;
+            touch-action: manipulation;
         }
 
         .font-serif-title {
@@ -55,9 +56,9 @@
         }
 
         .glass-panel {
-            background: rgba(253, 251, 247, 0.88);
+            background: rgba(253, 251, 247, 0.92);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(230, 213, 195, 0.8);
+            border: 1px solid rgba(230, 213, 195, 0.85);
             box-shadow: 0 10px 30px rgba(44, 36, 27, 0.08);
         }
 
@@ -88,6 +89,7 @@
             display: block;
             width: 100% !important;
             height: 100% !important;
+            touch-action: none;
         }
 
         .hide-scrollbar::-webkit-scrollbar {
@@ -99,7 +101,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col select-none">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -114,23 +116,29 @@
             MapPin: () => <g><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></g>,
             Building2: () => <g><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></g>,
             Box: () => <g><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></g>,
-            LayoutGrid: () => <g><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></g>,
             Plus: () => <g><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>,
-            ArrowUpDown: () => <g><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/><path d="M12 4v16"/></g>,
             X: () => <g><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></g>,
             Move: () => <g><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></g>,
             Sliders: () => <g><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></g>,
             BookOpen: () => <g><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></g>,
             Trash2: () => <g><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></g>,
-            Copy: () => <g><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></g>,
-            Grid: () => <g><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></g>,
             PlusCircle: () => <g><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></g>,
             CheckCircle2: () => <g><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></g>,
             Compass: () => <g><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></g>,
             Filter: () => <g><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></g>,
             AlertCircle: () => <g><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></g>,
             RefreshCw: () => <g><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></g>,
-            HelpCircle: () => <g><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></g>
+            HelpCircle: () => <g><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></g>,
+            ChevronLeft: () => <g><polyline points="15 18 9 12 15 6"/></g>,
+            ChevronRight: () => <g><polyline points="9 18 15 12 9 6"/></g>,
+            Menu: () => <g><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></g>,
+            ZoomIn: () => <g><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></g>,
+            ZoomOut: () => <g><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></g>,
+            ArrowUp: () => <g><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></g>,
+            ArrowDown: () => <g><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></g>,
+            ArrowLeft: () => <g><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></g>,
+            ArrowRight: () => <g><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></g>,
+            RotateCcw: () => <g><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></g>
         };
 
         const Icon = ({ name, size = 18, className = "" }) => {
@@ -152,45 +160,97 @@
             );
         };
 
-        const parseCSVText = (text) => {
-            if (!text) return [];
-            const lines = text.split(/\r?\n/);
-            return lines.map(line => {
-                const result = [];
-                let current = '';
-                let inQuotes = false;
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (char === '"') {
-                        if (inQuotes && line[i + 1] === '"') {
-                            current += '"';
-                            i++;
-                        } else {
-                            inQuotes = !inQuotes;
-                        }
-                    } else if (char === ',' && !inQuotes) {
-                        result.push(current.trim());
-                        current = '';
-                    } else {
-                        current += char;
-                    }
-                }
-                result.push(current.trim());
-                return result;
-            }).filter(row => row.some(cell => cell !== ''));
-        };
-
         const cleanCodeStr = (s) => (s || '').toString().trim().toLowerCase().replace(/[\s\-_架倉]/g, '');
 
-        const getColIdx = (headers, keywords) => {
-            if (!headers || !keywords) return -1;
-            for (let i = 0; i < headers.length; i++) {
-                const header = (headers[i] || '').toLowerCase().replace(/[\s_"]/g, '');
-                for (const kw of keywords) {
-                    if (header.includes(kw.toLowerCase())) return i;
+        // Unified robust location matcher to fix "placed in shelf but shown unassigned on left list"
+        const getBookLocationInfo = (book, warehouseList) => {
+            if (!book || (!book.warehouseId && !book.shelfId)) {
+                return { wh: null, sh: null, isAssigned: false };
+            }
+
+            const cleanWhId = cleanCodeStr(book.warehouseId);
+            const cleanShId = cleanCodeStr(book.shelfId);
+
+            let wh = warehouseList.find(w => 
+                w.id === book.warehouseId || 
+                w.code === book.warehouseId ||
+                (cleanWhId && (cleanCodeStr(w.id) === cleanWhId || cleanCodeStr(w.code) === cleanWhId || cleanCodeStr(w.name).includes(cleanWhId)))
+            );
+
+            let sh = null;
+            if (wh) {
+                sh = wh.shelves.find(s => 
+                    s.id === book.shelfId || 
+                    s.code === book.shelfId ||
+                    (cleanShId && (cleanCodeStr(s.id) === cleanShId || cleanCodeStr(s.code) === cleanShId || cleanCodeStr(s.name).includes(cleanShId)))
+                );
+            } else {
+                // Fallback search across all warehouses if warehouseId was slightly mismatched
+                for (const w of warehouseList) {
+                    const foundS = w.shelves.find(s => 
+                        s.id === book.shelfId || 
+                        s.code === book.shelfId ||
+                        (cleanShId && (cleanCodeStr(s.id) === cleanShId || cleanCodeStr(s.code) === cleanShId))
+                    );
+                    if (foundS) {
+                        wh = w;
+                        sh = foundS;
+                        break;
+                    }
                 }
             }
-            return -1;
+
+            return { wh, sh, isAssigned: !!(wh && sh) };
+        };
+
+        const parseBookLocation = (b, warehouseList) => {
+            let whId = b.warehouseId || '';
+            let shId = b.shelfId || '';
+            let tierNum = parseInt(b.tier) || 1;
+
+            const infoStr = (b.warehouseInfo || b.locationStr || b.location || '').toString();
+
+            let foundWh = warehouseList.find(w => w.id === whId || w.code === whId);
+            if (!foundWh && infoStr) {
+                const cleanInfo = cleanCodeStr(infoStr);
+                foundWh = warehouseList.find(w => {
+                    const wc = cleanCodeStr(w.code);
+                    const wi = cleanCodeStr(w.id);
+                    const wn = cleanCodeStr(w.name);
+                    return (wc && cleanInfo.includes(wc)) || (wi && cleanInfo.includes(wi)) || (wn && cleanInfo.includes(wn));
+                });
+            }
+
+            let foundSh = null;
+            if (foundWh) {
+                whId = foundWh.id;
+                foundSh = foundWh.shelves.find(s => s.id === shId || s.code === shId);
+                if (!foundSh && infoStr) {
+                    const cleanInfo = cleanCodeStr(infoStr);
+                    foundSh = foundWh.shelves.find(s => {
+                        const sc = cleanCodeStr(s.code);
+                        const si = cleanCodeStr(s.id);
+                        const sn = cleanCodeStr(s.name);
+                        return (sc && cleanInfo.includes(sc)) || (si && cleanInfo.includes(si)) || (sn && cleanInfo.includes(sn));
+                    });
+                }
+            }
+
+            if (foundSh) {
+                shId = foundSh.id;
+            } else if (!foundWh) {
+                whId = '';
+                shId = '';
+            }
+
+            if (infoStr) {
+                const tierMatch = infoStr.match(/(?:第|tier\s*)(\d+)/i) || infoStr.match(/(\d+)\s*層/i);
+                if (tierMatch) {
+                    tierNum = parseInt(tierMatch[1], 10) || 1;
+                }
+            }
+
+            return { warehouseId: whId, shelfId: shId, tier: tierNum };
         };
 
         const INITIAL_WAREHOUSES = [
@@ -227,19 +287,6 @@
                     { id: 'SH-B03', code: 'B3架', name: '滿語叢刊典藏架', x: 5, z: -3, rot: 0, width: 3.0, depth: 0.8, tiers: 6, category: '滿學', color: '#1B4F72' },
                     { id: 'SH-B04', code: 'B4架', name: '藝術史與戲曲研究', x: -2, z: 3, rot: 0, width: 3.5, depth: 0.8, tiers: 5, category: '藝術社會', color: '#7E5109' },
                 ]
-            },
-            {
-                id: 'WH-C',
-                name: '新店備份典藏倉 (C倉)',
-                code: 'C-BACKUP',
-                address: '新北市新店區寶橋路100號',
-                width: 30,
-                depth: 20,
-                height: 5.0,
-                shelves: [
-                    { id: 'SH-C01', code: 'C1架', name: '大套書與珍本典藏架', x: -6, z: -2, rot: 0, width: 4.0, depth: 1.0, tiers: 6, category: '歷史學', color: '#1B4F72' },
-                    { id: 'SH-C02', code: 'C2架', name: '哲學與宗教備份架', x: 2, z: -2, rot: 0, width: 4.0, depth: 1.0, tiers: 5, category: '哲學宗教', color: '#5B2C6F' }
-                ]
             }
         ];
 
@@ -248,15 +295,10 @@
             { id: 'BK-1002', code: '978-957-549-002', title: '中國目錄學', author: '昌彼得', year: '1975', category: '目錄學', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 2, stock: 45, price: 550, intro: '國學與古籍整理基礎必讀典籍。' },
             { id: 'BK-1003', code: '978-957-549-003', title: '清史論集（第一集）', author: '莊吉發', year: '1982', category: '歷史學', warehouseId: 'WH-A', shelfId: 'SH-A03', tier: 1, stock: 30, price: 620, intro: '莊吉發教授對清代歷史與檔案之深刻研究。' },
             { id: 'BK-1004', code: '978-957-549-004', title: '文心雕龍與經學', author: '蔡宗陽', year: '1988', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 4, stock: 85, price: 480, intro: '剖析《文心雕龍》文學理論與經學思想。' },
-            { id: 'BK-1005', code: '978-957-549-005', title: '霧航', author: '馮馮', year: '1980', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 2, stock: 60, price: 420, intro: '著名作家馮馮代表作。' },
-            { id: 'BK-1006', code: '978-957-549-006', title: '中日關係史研究論集 (第一冊)', author: '龔鵬程、鄭樑生', year: '1991', category: '歷史學', warehouseId: 'WH-B', shelfId: 'SH-B02', tier: 3, stock: 25, price: 750, intro: '中日交流史重要論文集。' },
-            { id: 'BK-1007', code: '978-957-549-007', title: '滿語叢刊 (全50冊之一)', author: '文史哲編輯部', year: '1995', category: '滿學', warehouseId: 'WH-B', shelfId: 'SH-B03', tier: 5, stock: 15, price: 1200, intro: '清代滿語研究文獻彙編。' },
-            { id: 'BK-1008', code: '978-957-549-008', title: '修辭學探微', author: '蔡宗陽', year: '1993', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 2, stock: 50, price: 360, intro: '漢語修辭技巧與文章風格。' },
-            { id: 'BK-1009', code: '978-957-549-009', title: '中國哲學思潮史', author: '嚴靈峰', year: '1985', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 3, stock: 40, price: 580, intro: '貫穿先秦至明清哲學思潮。' },
-            { id: 'BK-1010', code: '978-957-549-010', title: '紀弦詩選新編', author: '紀弦', year: '1978', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 4, stock: 70, price: 320, intro: '現代詩派發起人紀弦詩集。' }
+            { id: 'BK-1005', code: '978-957-549-005', title: '霧航', author: '馮馮', year: '1980', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 2, stock: 60, price: 420, intro: '著名作家馮馮代表作。' }
         ];
 
-        const ThreeWarehouseView = ({ warehouse, selectedShelf, highlightedLocation, onSelectShelf, viewMode }) => {
+        const ThreeWarehouseView = ({ warehouse, selectedShelf, highlightedLocation, onSelectShelf, viewMode, onMoveCamera }) => {
             const mountRef = useRef(null);
             const sceneRef = useRef(null);
             const rendererRef = useRef(null);
@@ -267,7 +309,13 @@
 
             const isDragging = useRef(false);
             const previousMousePosition = useRef({ x: 0, y: 0 });
-            const cameraAngle = useRef({ theta: Math.PI / 4, phi: Math.PI / 3, radius: 35 });
+            
+            const maxDim = Math.max(warehouse.width || 24, warehouse.depth || 18);
+            const defaultRadius = Math.max(35, maxDim * 1.15);
+
+            const cameraAngle = useRef({ theta: Math.PI / 4, phi: Math.PI / 3, radius: defaultRadius });
+            const cameraTarget = useRef({ x: 0, y: 0, z: 0 });
+            const initialTouchDistance = useRef(null);
 
             const updateCameraPosition = useCallback(() => {
                 if (!cameraRef.current) return;
@@ -275,33 +323,39 @@
                 const r = cameraAngle.current.radius;
                 const theta = cameraAngle.current.theta;
                 const phi = cameraAngle.current.phi;
+                const target = cameraTarget.current;
 
-                cam.position.x = r * Math.sin(phi) * Math.sin(theta);
-                cam.position.y = r * Math.cos(phi);
-                cam.position.z = r * Math.sin(phi) * Math.cos(theta);
-                cam.lookAt(0, 1.5, 0);
+                cam.position.x = target.x + r * Math.sin(phi) * Math.sin(theta);
+                cam.position.y = target.y + r * Math.cos(phi);
+                cam.position.z = target.z + r * Math.sin(phi) * Math.cos(theta);
+                cam.lookAt(target.x, target.y + 1.5, target.z);
             }, []);
 
             useEffect(() => {
+                const dim = Math.max(warehouse.width || 24, warehouse.depth || 18);
+                const initR = Math.max(30, dim * 1.15);
                 if (viewMode === '2D') {
-                    cameraAngle.current = { theta: 0, phi: 0.001, radius: 28 };
+                    cameraAngle.current = { theta: 0, phi: 0.001, radius: initR * 0.9 };
+                    cameraTarget.current = { x: 0, y: 0, z: 0 };
                 } else {
-                    cameraAngle.current = { theta: Math.PI / 4, phi: Math.PI / 3, radius: 32 };
+                    cameraAngle.current = { theta: Math.PI / 4, phi: Math.PI / 3, radius: initR };
+                    cameraTarget.current = { x: 0, y: 0, z: 0 };
                 }
                 updateCameraPosition();
-            }, [viewMode, updateCameraPosition]);
+            }, [viewMode, warehouse, updateCameraPosition]);
 
             useEffect(() => {
                 if (!highlightedLocation || !warehouse) return;
-                const targetShelf = warehouse.shelves.find(s => s.id === highlightedLocation.shelfId);
+                const targetShelf = warehouse.shelves.find(s => s.id === highlightedLocation.shelfId || s.code === highlightedLocation.shelfId);
                 if (targetShelf) {
                     onSelectShelf(targetShelf);
                     const targetX = targetShelf.x;
                     const targetZ = targetShelf.z;
                     
+                    cameraTarget.current = { x: targetX, y: 0, z: targetZ };
                     const targetTheta = Math.atan2(targetX, targetZ) + Math.PI / 6;
                     cameraAngle.current.theta = targetTheta;
-                    cameraAngle.current.radius = 22;
+                    cameraAngle.current.radius = Math.max(18, Math.min(60, targetShelf.width * 5));
                     updateCameraPosition();
                 }
             }, [highlightedLocation, warehouse, onSelectShelf, updateCameraPosition]);
@@ -315,10 +369,9 @@
 
                 const scene = new THREE.Scene();
                 scene.background = new THREE.Color(0xFDFBF7);
-                scene.fog = new THREE.FogExp2(0xFDFBF7, 0.012);
                 sceneRef.current = scene;
 
-                const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+                const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 3000);
                 cameraRef.current = camera;
                 updateCameraPosition();
 
@@ -332,26 +385,22 @@
                 container.innerHTML = '';
                 container.appendChild(renderer.domElement);
 
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
                 scene.add(ambientLight);
 
-                const dirLight = new THREE.DirectionalLight(0xfff5ea, 0.8);
-                dirLight.position.set(15, 30, 15);
+                const dirLight = new THREE.DirectionalLight(0xfff5ea, 0.85);
+                dirLight.position.set(50, 100, 50);
                 dirLight.castShadow = true;
                 dirLight.shadow.mapSize.width = 2048;
                 dirLight.shadow.mapSize.height = 2048;
                 scene.add(dirLight);
-
-                const pointLight = new THREE.PointLight(0x8C5A2B, 0.5, 50);
-                pointLight.position.set(0, 10, 0);
-                scene.add(pointLight);
 
                 const shelvesGroup = new THREE.Group();
                 scene.add(shelvesGroup);
                 shelvesGroupRef.current = shelvesGroup;
 
                 const pinGroup = new THREE.Group();
-                const pinGeo = new THREE.ConeGeometry(0.4, 1.0, 8);
+                const pinGeo = new THREE.ConeGeometry(0.8, 2.0, 8);
                 pinGeo.rotateX(Math.PI);
                 const pinMat = new THREE.MeshStandardMaterial({ color: 0xE74C3C, emissive: 0x900C3F, roughness: 0.3 });
                 const pinMesh = new THREE.Mesh(pinGeo, pinMat);
@@ -360,31 +409,102 @@
                 scene.add(pinGroup);
                 pinMeshRef.current = pinGroup;
 
-                const handleMouseDown = (e) => {
+                const handlePointerDown = (clientX, clientY) => {
                     isDragging.current = true;
-                    previousMousePosition.current = { x: e.clientX, y: e.clientY };
+                    previousMousePosition.current = { x: clientX, y: clientY };
                 };
 
-                const handleMouseMove = (e) => {
+                const handlePointerMove = (clientX, clientY) => {
                     if (!isDragging.current) return;
-                    const deltaX = e.clientX - previousMousePosition.current.x;
-                    const deltaY = e.clientY - previousMousePosition.current.y;
+                    const deltaX = clientX - previousMousePosition.current.x;
+                    const deltaY = clientY - previousMousePosition.current.y;
 
                     cameraAngle.current.theta -= deltaX * 0.008;
-                    cameraAngle.current.phi = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, cameraAngle.current.phi - deltaY * 0.008));
+                    cameraAngle.current.phi = Math.max(0.05, Math.min(Math.PI / 2 - 0.02, cameraAngle.current.phi - deltaY * 0.008));
 
-                    previousMousePosition.current = { x: e.clientX, y: e.clientY };
+                    previousMousePosition.current = { x: clientX, y: clientY };
                     updateCameraPosition();
                 };
 
-                const handleMouseUp = () => {
+                const handlePointerUp = () => {
                     isDragging.current = false;
+                };
+
+                const handleMouseDown = (e) => handlePointerDown(e.clientX, e.clientY);
+                const handleMouseMove = (e) => handlePointerMove(e.clientX, e.clientY);
+                const handleMouseUp = () => handlePointerUp();
+
+                const handleTouchStart = (e) => {
+                    if (e.touches.length === 1) {
+                        handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
+                    } else if (e.touches.length === 2) {
+                        isDragging.current = false;
+                        const dist = Math.hypot(
+                            e.touches[0].clientX - e.touches[1].clientX,
+                            e.touches[0].clientY - e.touches[1].clientY
+                        );
+                        initialTouchDistance.current = dist;
+                    }
+                };
+
+                const handleTouchMove = (e) => {
+                    if (e.touches.length === 1) {
+                        handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+                    } else if (e.touches.length === 2 && initialTouchDistance.current !== null) {
+                        const dist = Math.hypot(
+                            e.touches[0].clientX - e.touches[1].clientX,
+                            e.touches[0].clientY - e.touches[1].clientY
+                        );
+                        const delta = initialTouchDistance.current - dist;
+                        const maxD = Math.max(warehouse.width, warehouse.depth);
+                        cameraAngle.current.radius = Math.max(5, Math.min(maxD * 2.5, cameraAngle.current.radius + delta * 0.2));
+                        initialTouchDistance.current = dist;
+                        updateCameraPosition();
+                    }
+                };
+
+                const handleTouchEnd = () => {
+                    handlePointerUp();
+                    initialTouchDistance.current = null;
                 };
 
                 const handleWheel = (e) => {
                     e.preventDefault();
-                    cameraAngle.current.radius = Math.max(10, Math.min(60, cameraAngle.current.radius + e.deltaY * 0.03));
+                    const maxD = Math.max(warehouse.width, warehouse.depth);
+                    cameraAngle.current.radius = Math.max(5, Math.min(maxD * 2.5, cameraAngle.current.radius + e.deltaY * 0.05));
                     updateCameraPosition();
+                };
+
+                const handleKeyDown = (e) => {
+                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                        if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+                            return;
+                        }
+                        e.preventDefault();
+
+                        const step = Math.max(1, Math.max(warehouse.width, warehouse.depth) * 0.02);
+                        const theta = cameraAngle.current.theta;
+                        const forwardX = -Math.sin(theta);
+                        const forwardZ = -Math.cos(theta);
+                        const rightX = Math.cos(theta);
+                        const rightZ = -Math.sin(theta);
+
+                        if (e.key === 'ArrowUp') {
+                            cameraTarget.current.x += forwardX * step;
+                            cameraTarget.current.z += forwardZ * step;
+                        } else if (e.key === 'ArrowDown') {
+                            cameraTarget.current.x -= forwardX * step;
+                            cameraTarget.current.z -= forwardZ * step;
+                        } else if (e.key === 'ArrowLeft') {
+                            cameraTarget.current.x -= rightX * step;
+                            cameraTarget.current.z -= rightZ * step;
+                        } else if (e.key === 'ArrowRight') {
+                            cameraTarget.current.x += rightX * step;
+                            cameraTarget.current.z += rightZ * step;
+                        }
+
+                        updateCameraPosition();
+                    }
                 };
 
                 const raycaster = new THREE.Raycaster();
@@ -414,6 +534,12 @@
                 domEl.addEventListener('mousedown', handleMouseDown);
                 window.addEventListener('mousemove', handleMouseMove);
                 window.addEventListener('mouseup', handleMouseUp);
+                
+                domEl.addEventListener('touchstart', handleTouchStart, { passive: true });
+                window.addEventListener('touchmove', handleTouchMove, { passive: true });
+                window.addEventListener('touchend', handleTouchEnd);
+
+                window.addEventListener('keydown', handleKeyDown);
                 domEl.addEventListener('wheel', handleWheel, { passive: false });
                 domEl.addEventListener('click', handleClick);
 
@@ -431,7 +557,7 @@
                 const animate = () => {
                     time += 0.03;
                     if (pinMeshRef.current && pinMeshRef.current.visible) {
-                        pinMeshRef.current.position.y += Math.sin(time * 3) * 0.008;
+                        pinMeshRef.current.position.y += Math.sin(time * 3) * 0.012;
                         pinMeshRef.current.rotation.y += 0.02;
                     }
                     if (rendererRef.current && sceneRef.current && cameraRef.current) {
@@ -444,15 +570,19 @@
                 return () => {
                     window.removeEventListener('mousemove', handleMouseMove);
                     window.removeEventListener('mouseup', handleMouseUp);
+                    window.removeEventListener('touchmove', handleTouchMove);
+                    window.removeEventListener('touchend', handleTouchEnd);
+                    window.removeEventListener('keydown', handleKeyDown);
                     window.removeEventListener('resize', handleResize);
                     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
                     if (domEl) {
                         domEl.removeEventListener('mousedown', handleMouseDown);
+                        domEl.removeEventListener('touchstart', handleTouchStart);
                         domEl.removeEventListener('wheel', handleWheel);
                         domEl.removeEventListener('click', handleClick);
                     }
                 };
-            }, [updateCameraPosition, onSelectShelf]);
+            }, [updateCameraPosition, onSelectShelf, warehouse]);
 
             useEffect(() => {
                 if (!sceneRef.current || !shelvesGroupRef.current || !warehouse) return;
@@ -471,7 +601,10 @@
                 const oldGrid = scene.getObjectByName("warehouseGrid");
                 if (oldGrid) scene.remove(oldGrid);
 
-                const floorGeo = new THREE.PlaneGeometry(warehouse.width, warehouse.depth);
+                const whWidth = Math.max(1, warehouse.width || 24);
+                const whDepth = Math.max(1, warehouse.depth || 18);
+
+                const floorGeo = new THREE.PlaneGeometry(whWidth, whDepth);
                 const floorMat = new THREE.MeshStandardMaterial({
                     color: 0xE6D5C3,
                     roughness: 0.8,
@@ -484,12 +617,14 @@
                 floorMesh.name = "warehouseFloor";
                 scene.add(floorMesh);
 
-                const gridHelper = new THREE.GridHelper(Math.max(warehouse.width, warehouse.depth), 24, 0x8C5A2B, 0xC4B29E);
+                const maxDim = Math.max(whWidth, whDepth);
+                const divisions = Math.min(100, Math.max(12, Math.floor(maxDim / 2)));
+                const gridHelper = new THREE.GridHelper(maxDim, divisions, 0x8C5A2B, 0xC4B29E);
                 gridHelper.position.y = 0.01;
                 gridHelper.name = "warehouseGrid";
                 scene.add(gridHelper);
 
-                const wallGeo = new THREE.BoxGeometry(warehouse.width, 0.2, warehouse.depth);
+                const wallGeo = new THREE.BoxGeometry(whWidth, 0.2, whDepth);
                 const wallWire = new THREE.LineSegments(
                     new THREE.EdgesGeometry(wallGeo),
                     new THREE.LineBasicMaterial({ color: 0x8C5A2B, linewidth: 2 })
@@ -583,13 +718,13 @@
                 });
 
                 if (highlightedLocation && pinMeshRef.current) {
-                    const targetShelf = warehouse.shelves.find(s => s.id === highlightedLocation.shelfId);
+                    const targetShelf = warehouse.shelves.find(s => s.id === highlightedLocation.shelfId || s.code === highlightedLocation.shelfId);
                     if (targetShelf) {
                         const shelfHeight = 2.4;
                         const tierGap = shelfHeight / (targetShelf.tiers || 4);
                         const tierY = (highlightedLocation.tier || 1) * tierGap;
 
-                        pinMeshRef.current.position.set(targetShelf.x, tierY + 0.8, targetShelf.z);
+                        pinMeshRef.current.position.set(targetShelf.x, tierY + 1.2, targetShelf.z);
                         pinMeshRef.current.visible = true;
                     } else {
                         pinMeshRef.current.visible = false;
@@ -600,16 +735,80 @@
 
             }, [warehouse, selectedShelf, highlightedLocation]);
 
+            const panCamera = (dir) => {
+                const step = Math.max(1, Math.max(warehouse.width, warehouse.depth) * 0.03);
+                const theta = cameraAngle.current.theta;
+                const forwardX = -Math.sin(theta);
+                const forwardZ = -Math.cos(theta);
+                const rightX = Math.cos(theta);
+                const rightZ = -Math.sin(theta);
+
+                if (dir === 'up') {
+                    cameraTarget.current.x += forwardX * step;
+                    cameraTarget.current.z += forwardZ * step;
+                } else if (dir === 'down') {
+                    cameraTarget.current.x -= forwardX * step;
+                    cameraTarget.current.z -= forwardZ * step;
+                } else if (dir === 'left') {
+                    cameraTarget.current.x -= rightX * step;
+                    cameraTarget.current.z -= rightZ * step;
+                } else if (dir === 'right') {
+                    cameraTarget.current.x += rightX * step;
+                    cameraTarget.current.z += rightZ * step;
+                } else if (dir === 'zoomIn') {
+                    cameraAngle.current.radius = Math.max(5, cameraAngle.current.radius * 0.85);
+                } else if (dir === 'zoomOut') {
+                    const maxD = Math.max(warehouse.width, warehouse.depth);
+                    cameraAngle.current.radius = Math.min(maxD * 2.5, cameraAngle.current.radius * 1.15);
+                } else if (dir === 'reset') {
+                    cameraTarget.current = { x: 0, y: 0, z: 0 };
+                    const dim = Math.max(warehouse.width, warehouse.depth);
+                    cameraAngle.current = { theta: Math.PI / 4, phi: Math.PI / 3, radius: Math.max(35, dim * 1.15) };
+                }
+                updateCameraPosition();
+            };
+
             return (
                 <div className="w-full h-full relative canvas-container">
                     <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
-                    <div className="absolute bottom-4 left-4 glass-dark text-xs p-3 rounded-xl pointer-events-none flex flex-col gap-1 border border-white/10 font-sans shadow-lg">
+                    
+                    {/* Desktop Tips Overlay */}
+                    <div className="hidden md:flex absolute bottom-4 left-4 glass-dark text-xs p-3 rounded-xl pointer-events-none flex-col gap-1 border border-white/10 font-sans shadow-lg">
                         <div className="font-bold text-amber-300 flex items-center gap-1.5 mb-0.5">
                             <Icon name="Compass" size={14} /> 3D 視角操作說明：
                         </div>
-                        <div>• 按住滑鼠左鍵拖曳：旋轉視角</div>
-                        <div>• 滾輪縮放：放大 / 縮小視野</div>
+                        <div>• 按住滑鼠左鍵/單指拖曳：旋轉視角</div>
+                        <div>• 鍵盤方向鍵 (↑↓←→)：平移移動畫面</div>
+                        <div>• 滾輪/雙指捏合：放大與縮小視野</div>
                         <div>• 點擊 3D 書架：選取並調整座標位置</div>
+                    </div>
+
+                    {/* Mobile On-screen Touch D-Pad & Control Overlay */}
+                    <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 items-end pointer-events-auto">
+                        <div className="glass-panel p-2 rounded-2xl shadow-xl flex flex-col gap-1.5 items-center border border-borderwood">
+                            <div className="text-[10px] font-bold text-amber-900 border-b border-borderwood/60 pb-1 w-full text-center">
+                                📱 手機觸控平移
+                            </div>
+                            <div className="grid grid-cols-3 gap-1">
+                                <div />
+                                <button onClick={() => panCamera('up')} className="p-2 bg-amber-800 text-white rounded-lg active:scale-95 shadow-sm"><Icon name="ArrowUp" size={14} /></button>
+                                <div />
+                                <button onClick={() => panCamera('left')} className="p-2 bg-amber-800 text-white rounded-lg active:scale-95 shadow-sm"><Icon name="ArrowLeft" size={14} /></button>
+                                <button onClick={() => panCamera('reset')} title="視角歸位" className="p-2 bg-paper border border-borderwood text-amber-900 rounded-lg active:scale-95"><Icon name="RotateCcw" size={14} /></button>
+                                <button onClick={() => panCamera('right')} className="p-2 bg-amber-800 text-white rounded-lg active:scale-95 shadow-sm"><Icon name="ArrowRight" size={14} /></button>
+                                <div />
+                                <button onClick={() => panCamera('down')} className="p-2 bg-amber-800 text-white rounded-lg active:scale-95 shadow-sm"><Icon name="ArrowDown" size={14} /></button>
+                                <div />
+                            </div>
+                            <div className="flex gap-1.5 pt-1 border-t border-borderwood/60 w-full justify-center">
+                                <button onClick={() => panCamera('zoomIn')} className="flex-1 py-1.5 bg-paper border border-borderwood text-amber-900 font-bold rounded-lg text-xs flex items-center justify-center gap-1 active:scale-95">
+                                    <Icon name="ZoomIn" size={14} /> 放大
+                                </button>
+                                <button onClick={() => panCamera('zoomOut')} className="flex-1 py-1.5 bg-paper border border-borderwood text-amber-900 font-bold rounded-lg text-xs flex items-center justify-center gap-1 active:scale-95">
+                                    <Icon name="ZoomOut" size={14} /> 縮小
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -617,7 +816,6 @@
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwcKsTM6Pog4Tq0357zIMVldgSmtsUk_hsEneGRpfb-vfVTxH8qJhIwJvlNKKXGgxOk/exec";
 
-        // 通用 GAS POST 連線函式
         const syncWithGAS = async (action, payload = null) => {
             try {
                 const response = await fetch(GAS_URL, {
@@ -635,12 +833,23 @@
 
         function App() {
             const [warehouses, setWarehouses] = useState(() => {
-                const local = localStorage.getItem('lapen_warehouses_v2');
-                return local ? JSON.parse(local) : INITIAL_WAREHOUSES;
+                try {
+                    const local = localStorage.getItem('lapen_warehouses_v2');
+                    return local ? JSON.parse(local) : INITIAL_WAREHOUSES;
+                } catch (e) {
+                    console.warn("localStorage quota exceeded or blocked:", e);
+                    return INITIAL_WAREHOUSES;
+                }
             });
+
             const [books, setBooks] = useState(() => {
-                const local = localStorage.getItem('lapen_books_v2');
-                return local ? JSON.parse(local) : INITIAL_BOOKS;
+                try {
+                    const local = localStorage.getItem('lapen_books_v2');
+                    return local ? JSON.parse(local) : INITIAL_BOOKS;
+                } catch (e) {
+                    console.warn("localStorage quota exceeded or blocked:", e);
+                    return INITIAL_BOOKS;
+                }
             });
 
             const [activeWarehouseId, setActiveWarehouseId] = useState('WH-A');
@@ -648,13 +857,13 @@
             const [highlightedLocation, setHighlightedLocation] = useState(null);
             const [viewMode, setViewMode] = useState('3D');
 
-            // Search & Filter State
+            const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+
             const [searchQuery, setSearchQuery] = useState('');
             const [selectedCategory, setSelectedCategory] = useState('全部');
             const [selectedWarehouseFilter, setSelectedCategoryWarehouseFilter] = useState('ALL');
             const [sortBy, setSortBy] = useState('code_asc');
 
-            // Modals & Sync States
             const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
             const [csvTab, setCsvTab] = useState('GOOGLE_SHEETS');
             const [googleSheetUrl, setGoogleSheetUrl] = useState('https://docs.google.com/spreadsheets/d/1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s/edit?usp=drivesdk');
@@ -663,6 +872,7 @@
             const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
             const [isAddShelfModalOpen, setIsAddShelfModalOpen] = useState(false);
             const [isAddWarehouseModalOpen, setIsAddWarehouseModalOpen] = useState(false);
+            const [isEditWarehouseModalOpen, setIsEditWarehouseModalOpen] = useState(false);
             const [isAssignBookModalOpen, setIsAssignBookModalOpen] = useState(false);
             const [assignBookId, setAssignBookId] = useState('');
             const [assignBookTier, setAssignBookTier] = useState(1);
@@ -671,41 +881,24 @@
             const [warehouseCsvText, setWarehouseCsvText] = useState('');
             const [toastMessage, setToastMessage] = useState(null);
 
-            const assignBookFilteredList = useMemo(() => {
-                const q = assignBookSearch.toLowerCase().trim();
-                return books.filter(b => {
-                    if (!q) return true;
-                    const title = (b.title || '').toLowerCase();
-                    const code = (b.code || '').toLowerCase();
-                    const author = (b.author || '').toLowerCase();
-                    const category = (b.category || '').toLowerCase();
-                    return title.includes(q) || code.includes(q) || author.includes(q) || category.includes(q);
-                });
-            }, [books, assignBookSearch]);
-
-            useEffect(() => {
-                if (isAssignBookModalOpen) {
-                    if (assignBookFilteredList.length > 0) {
-                        const exists = assignBookFilteredList.some(b => b.id === assignBookId);
-                        if (!exists) {
-                            setAssignBookId(assignBookFilteredList[0].id);
-                        }
-                    } else {
-                        setAssignBookId('');
-                    }
-                }
-            }, [assignBookSearch, isAssignBookModalOpen, assignBookFilteredList]);
-
             const activeWarehouse = useMemo(() => {
                 return warehouses.find(w => w.id === activeWarehouseId) || warehouses[0];
             }, [warehouses, activeWarehouseId]);
 
             useEffect(() => {
-                localStorage.setItem('lapen_warehouses_v2', JSON.stringify(warehouses));
+                try {
+                    localStorage.setItem('lapen_warehouses_v2', JSON.stringify(warehouses));
+                } catch (e) {
+                    console.warn("Could not save warehouses to localStorage:", e);
+                }
             }, [warehouses]);
 
             useEffect(() => {
-                localStorage.setItem('lapen_books_v2', JSON.stringify(books));
+                try {
+                    localStorage.setItem('lapen_books_v2', JSON.stringify(books));
+                } catch (e) {
+                    console.warn("Could not save books to localStorage:", e);
+                }
             }, [books]);
 
             const showToast = (msg) => {
@@ -713,168 +906,55 @@
                 setTimeout(() => setToastMessage(null), 3800);
             };
 
-            const extractSheetId = (input) => {
-                if (!input) return '1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s';
-                const match = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                if (match) return match[1];
-                if (/^[a-zA-Z0-9_-]{20,}$/.test(input.trim())) return input.trim();
-                return '1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s';
-            };
+            const assignBookFilteredList = useMemo(() => {
+                const searchStr = assignBookSearch.toLowerCase().trim();
+                return books.filter(b => {
+                    if (!searchStr) return true;
+                    const cleanTitle = (b.title || '').replace(/\uFFFD/g, '').toLowerCase();
+                    const cleanAuthor = (b.author || '').replace(/\uFFFD/g, '').toLowerCase();
+                    const cleanCode = (b.code || '').toLowerCase();
+                    return cleanTitle.includes(searchStr) || cleanAuthor.includes(searchStr) || cleanCode.includes(searchStr);
+                });
+            }, [books, assignBookSearch]);
 
-            // Google Sheets Live Fetch (Book_ALL + 倉庫) via Apps Script POST & Proxy Fallback
+            useEffect(() => {
+                if (isAssignBookModalOpen && assignBookFilteredList.length > 0) {
+                    if (!assignBookId || !assignBookFilteredList.some(b => b.id === assignBookId)) {
+                        setAssignBookId(assignBookFilteredList[0].id);
+                    }
+                }
+            }, [isAssignBookModalOpen, assignBookFilteredList, assignBookId]);
+
             const handleSyncFromGoogleSheets = async (showSuccessToast = true) => {
                 setIsSyncingSheets(true);
-                const sheetId = extractSheetId(googleSheetUrl);
-                let importedBooksCount = 0;
-                let importedWarehousesCount = 0;
+                showToast("正在從 Google 試算表同步資料...");
 
                 try {
-                    // 1. 優先透過 Apps Script POST API 取得即時 3D 倉庫與書籍資料
-                    const gasWhRes = await syncWithGAS("FETCH_WAREHOUSES");
-                    if (gasWhRes && gasWhRes.status === "success" && Array.isArray(gasWhRes.data) && gasWhRes.data.length > 0) {
-                        setWarehouses(gasWhRes.data);
-                        importedWarehousesCount = gasWhRes.data.length;
+                    const whRes = await syncWithGAS('FETCH_WAREHOUSES');
+                    if (whRes && whRes.status === 'success' && Array.isArray(whRes.data) && whRes.data.length > 0) {
+                        setWarehouses(whRes.data);
                     }
 
-                    const gasBookRes = await syncWithGAS("FETCH_BOOKS");
-                    if (gasBookRes && gasBookRes.status === "success" && Array.isArray(gasBookRes.data) && gasBookRes.data.length > 0) {
-                        const fetchedBooks = gasBookRes.data.map(b => ({
-                            id: b.id || `BK-${Date.now()}`,
-                            code: b.isbn || b.code || b.id,
-                            title: b.title,
-                            author: b.author || '未知',
-                            year: b.year || '',
-                            category: b.category || '通用學術',
-                            warehouseId: b.warehouseId || '',
-                            shelfId: b.shelfId || '',
-                            tier: parseInt(b.tier) || 1,
-                            stock: parseInt(b.stock) || 0,
-                            price: parseInt(b.price) || 0,
-                            intro: b.intro || '',
-                            warehouseInfo: b.warehouseInfo || ''
-                        }));
-                        fetchedBooks.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
-                        setBooks(fetchedBooks);
-                        importedBooksCount = fetchedBooks.length;
-                    }
-                } catch (e) {
-                    console.warn("GAS API 讀取回退至 CSV 分析:", e);
-                }
-
-                if (importedBooksCount > 0) {
-                    if (showSuccessToast) showToast(`⚡ 成功從 Google Apps Script 即時載入 ${importedBooksCount} 本圖書與 ${importedWarehousesCount} 個倉庫 3D 擺設！`);
-                    setIsSyncingSheets(false);
-                    return;
-                }
-
-                // 2. 若 GAS 尚未回傳，則使用原本 CSV 代理作為備用連線
-                const fetchWithProxyFallback = async (targetUrl) => {
-                    try {
-                        const directResp = await fetch(targetUrl);
-                        if (directResp.ok) {
-                            const text = await directResp.text();
-                            if (text && !text.includes('<!DOCTYPE html>')) return text;
-                        }
-                    } catch (e) {}
-
-                    const proxies = [
-                        (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-                        (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-                        (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
-                    ];
-
-                    for (const getProxyUrl of proxies) {
-                        try {
-                            const proxyUrl = getProxyUrl(targetUrl);
-                            const proxyResp = await fetch(proxyUrl);
-                            if (proxyResp.ok) {
-                                const proxyText = await proxyResp.text();
-                                if (proxyText && !proxyText.includes('<!DOCTYPE html>')) return proxyText;
-                            }
-                        } catch (err) {}
-                    }
-                    return null;
-                };
-
-                try {
-                    const bookUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Book_ALL')}`;
-                    const csvData = await fetchWithProxyFallback(bookUrl);
-
-                    if (csvData) {
-                        const rows = parseCSVText(csvData);
-                        if (rows.length > 1) {
-                            const headers = rows[0];
-                            const idxCode = getColIdx(headers, ['書碼', 'isbn', '編號', 'code', 'id']);
-                            const idxTitle = getColIdx(headers, ['書名', 'title', '名稱']);
-                            const idxAuthor = getColIdx(headers, ['作者', 'author']);
-                            const idxYear = getColIdx(headers, ['出版年', '年份', 'year']);
-                            const idxCategory = getColIdx(headers, ['類別', '叢書', 'category']);
-                            const idxWh = getColIdx(headers, ['倉庫代碼', '倉庫代號', '倉庫編號', '倉庫', 'warehouse']);
-                            const idxShelf = getColIdx(headers, ['書架編號', '書架代碼', '書架代號', '書架', 'shelf']);
-                            const idxTier = getColIdx(headers, ['層數', '層', 'tier']);
-                            const idxStock = getColIdx(headers, ['庫存數量', '庫存', '數量', 'stock']);
-                            const idxPrice = getColIdx(headers, ['定價', '價格', '建議定價', 'price']);
-                            const idxIntro = getColIdx(headers, ['簡介', '說明', 'intro']);
-
-                            const newBooks = [];
-                            for (let i = 1; i < rows.length; i++) {
-                                const row = rows[i];
-                                const title = idxTitle >= 0 ? row[idxTitle] : row[1];
-                                if (!title || title.trim() === '') continue;
-
-                                const code = idxCode >= 0 ? row[idxCode] : row[0] || `BK-${i}`;
-                                const whCode = idxWh >= 0 ? row[idxWh] : '';
-                                const shCode = idxShelf >= 0 ? row[idxShelf] : '';
-
-                                const targetWhStr = cleanCodeStr(whCode);
-                                const foundWh = warehouses.find(w => {
-                                    if (!targetWhStr) return false;
-                                    const wc = cleanCodeStr(w.code);
-                                    const wi = cleanCodeStr(w.id);
-                                    const wn = cleanCodeStr(w.name);
-                                    return wc === targetWhStr || wi === targetWhStr || targetWhStr.includes(wc) || wc.includes(targetWhStr) || wn.includes(targetWhStr);
-                                });
-
-                                const targetShStr = cleanCodeStr(shCode);
-                                const foundSh = foundWh ? foundWh.shelves.find(s => {
-                                    if (!targetShStr) return false;
-                                    const sc = cleanCodeStr(s.code);
-                                    const si = cleanCodeStr(s.id);
-                                    const sn = cleanCodeStr(s.name);
-                                    return sc === targetShStr || si === targetShStr || targetShStr.includes(sc) || sc.includes(targetShStr) || sn.includes(targetShStr);
-                                }) : null;
-
-                                newBooks.push({
-                                    id: `BK-GS-${i}-${Date.now().toString().slice(-4)}`,
-                                    code: code,
-                                    title: title,
-                                    author: idxAuthor >= 0 ? row[idxAuthor] || '未知' : '未知',
-                                    year: idxYear >= 0 ? row[idxYear] || '1971' : '1971',
-                                    category: idxCategory >= 0 ? row[idxCategory] || '通用學術' : '通用學術',
-                                    warehouseId: foundWh ? foundWh.id : (whCode ? whCode : ''),
-                                    shelfId: foundSh ? foundSh.id : (shCode ? shCode : ''),
-                                    tier: idxTier >= 0 ? parseInt(row[idxTier]) || 1 : 1,
-                                    stock: idxStock >= 0 ? parseInt(row[idxStock]) || 10 : 10,
-                                    price: idxPrice >= 0 ? parseInt(row[idxPrice]) || 300 : 300,
-                                    intro: idxIntro >= 0 ? row[idxIntro] || '' : '從 Google 試算表 Book_ALL 分頁同步。'
-                                });
-                            }
-
-                            if (newBooks.length > 0) {
-                                newBooks.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
-                                setBooks(newBooks);
-                                importedBooksCount = newBooks.length;
-                            }
-                        }
-                    }
-
-                    if (importedBooksCount > 0) {
-                        if (showSuccessToast) showToast(`⚡ 雲端同步完成！成功載入 ${importedBooksCount} 本圖書與 ${importedWarehousesCount} 個倉庫排架！`);
-                    } else {
-                        if (showSuccessToast) showToast(`⚠️ 雲端讀取失敗。請確認試算表已設為『知道連結的任何人皆可檢視』，或點選上傳 CSV 檔案！`);
+                    const bkRes = await syncWithGAS('FETCH_BOOKS');
+                    if (bkRes && bkRes.status === 'success' && Array.isArray(bkRes.data) && bkRes.data.length > 0) {
+                        const parsedBooks = bkRes.data.map(b => {
+                            const parsedLoc = parseBookLocation(b, warehouses);
+                            return {
+                                ...b,
+                                code: b.isbn || b.code || b.id,
+                                warehouseId: parsedLoc.warehouseId,
+                                shelfId: parsedLoc.shelfId,
+                                tier: parsedLoc.tier
+                            };
+                        });
+                        parsedBooks.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+                        setBooks(parsedBooks);
+                        if (showSuccessToast) showToast(`⚡ 成功同步！已載入 ${parsedBooks.length} 本圖書！`);
+                    } else if (showSuccessToast) {
+                        showToast("雲端同步已完成！");
                     }
                 } catch (err) {
-                    if (showSuccessToast) showToast(`⚠️ 連線異常，請改用「上傳 CSV 檔案」匯入完整 Book_ALL 書籍！`);
+                    if (showSuccessToast) showToast("雲端同步出現狀況，已載入本機快取資料。");
                 } finally {
                     setIsSyncingSheets(false);
                 }
@@ -909,13 +989,14 @@
 
             const filteredBooks = useMemo(() => {
                 let list = books.filter(b => {
+                    const { wh, isAssigned } = getBookLocationInfo(b, warehouses);
                     let matchWh = true;
                     if (selectedWarehouseFilter === 'CURRENT') {
-                        matchWh = b.warehouseId === activeWarehouseId;
+                        matchWh = wh && wh.id === activeWarehouseId;
                     } else if (selectedWarehouseFilter === 'UNASSIGNED') {
-                        matchWh = !b.warehouseId || b.warehouseId === '';
+                        matchWh = !isAssigned;
                     } else if (selectedWarehouseFilter !== 'ALL') {
-                        matchWh = b.warehouseId === selectedWarehouseFilter;
+                        matchWh = wh && (wh.id === selectedWarehouseFilter || wh.code === selectedWarehouseFilter);
                     }
 
                     const matchCat = selectedCategory === '全部' || b.category === selectedCategory;
@@ -935,22 +1016,19 @@
                     list.sort((a, b) => (b.code || '').localeCompare(a.code || '', undefined, { numeric: true }));
                 } else if (sortBy === 'title') {
                     list.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'zh-Hant'));
-                } else if (sortBy === 'warehouse') {
-                    list.sort((a, b) => (a.warehouseId || 'ZZ').localeCompare(b.warehouseId || 'ZZ'));
                 } else if (sortBy === 'category') {
                     list.sort((a, b) => (a.category || '').localeCompare(b.category || '', 'zh-Hant'));
                 }
 
                 return list;
-            }, [books, activeWarehouseId, selectedWarehouseFilter, selectedCategory, searchQuery, sortBy]);
+            }, [books, activeWarehouseId, selectedWarehouseFilter, selectedCategory, searchQuery, sortBy, warehouses]);
 
             const handleLocateBook = (book) => {
-                if (!book.warehouseId || !book.shelfId) {
-                    return showToast(`《${book.title}》目前為【待入庫/未排架】，請從右側挑選倉庫與書架為其分配！`);
-                }
+                const { wh: targetWh, sh: targetShelf, isAssigned } = getBookLocationInfo(book, warehouses);
 
-                const targetWh = warehouses.find(w => w.id === book.warehouseId || w.code === book.warehouseId);
-                const targetShelf = targetWh ? targetWh.shelves.find(s => s.id === book.shelfId || s.code === book.shelfId) : null;
+                if (!isAssigned) {
+                    return showToast(`《${book.title}》目前為【待入庫/未排架】，請從右側選取倉庫與書架為其分配！`);
+                }
 
                 if (targetWh && targetWh.id !== activeWarehouseId) {
                     setActiveWarehouseId(targetWh.id);
@@ -958,8 +1036,8 @@
                 }
 
                 setHighlightedLocation({
-                    warehouseId: book.warehouseId,
-                    shelfId: book.shelfId,
+                    warehouseId: targetWh.id,
+                    shelfId: targetShelf.id,
                     tier: book.tier
                 });
 
@@ -999,7 +1077,37 @@
                 setActiveWarehouseId(newWhId);
                 setSelectedShelf(null);
                 setIsAddWarehouseModalOpen(false);
-                showToast(`成功建立新倉庫：${newWhName} (${newWhCode})！已同步至雲端。`);
+                showToast(`成功建立新倉庫：${newWhName} (${newWhCode})！`);
+
+                syncWithGAS("SYNC_WAREHOUSES", { warehouses: updatedWhs });
+            };
+
+            const handleEditWarehouse = (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const name = (formData.get('name') || '').trim();
+                const address = (formData.get('address') || '').trim();
+                const width = parseFloat(formData.get('width')) || 24;
+                const depth = parseFloat(formData.get('depth')) || 18;
+                const height = parseFloat(formData.get('height')) || 4.5;
+
+                const updatedWhs = warehouses.map(w => {
+                    if (w.id === activeWarehouseId) {
+                        return {
+                            ...w,
+                            name: name || w.name,
+                            address: address || w.address,
+                            width,
+                            depth,
+                            height
+                        };
+                    }
+                    return w;
+                });
+
+                setWarehouses(updatedWhs);
+                setIsEditWarehouseModalOpen(false);
+                showToast(`成功更新倉庫【${activeWarehouse.code}】尺寸 (${width}m × ${depth}m) 與名稱！`);
 
                 syncWithGAS("SYNC_WAREHOUSES", { warehouses: updatedWhs });
             };
@@ -1055,7 +1163,7 @@
                     return { ...wh, shelves: wh.shelves.filter(s => s.id !== shelfId) };
                 });
                 setWarehouses(updatedWhs);
-                setBooks(prev => prev.map(b => b.shelfId === shelfId ? { ...b, warehouseId: '', shelfId: '' } : b));
+                setBooks(prev => prev.map(b => (b.shelfId === shelfId || cleanCodeStr(b.shelfId) === cleanCodeStr(shelfId)) ? { ...b, warehouseId: '', shelfId: '' } : b));
                 setSelectedShelf(null);
                 showToast("已刪除書架，原書架書籍已移至待上架清單。");
 
@@ -1081,7 +1189,7 @@
                     return b;
                 }));
 
-                const locationStr = `${activeWarehouse.name} (${activeWarehouse.code}) | ${selectedShelf.name} (${selectedShelf.code}) | 第 ${tierNum} 層`;
+                const locationStr = `${activeWarehouse.name} (${activeWarehouse.code}) [${activeWarehouse.id}] | ${selectedShelf.name} (${selectedShelf.code}) [${selectedShelf.id}] | 第 ${tierNum} 層`;
                 showToast(`已成功將《${targetBook ? targetBook.title : ''}》放入 ${selectedShelf.code} 第 ${tierNum} 層！`);
                 
                 syncWithGAS("UPDATE_BOOK_LOCATION", {
@@ -1112,7 +1220,7 @@
                 setBooks(prev => prev.map(b => b.id === bookId ? { ...b, tier: tierNum } : b));
                 showToast(`已調整圖書儲位至第 ${tierNum} 層。`);
 
-                const locationStr = `${activeWarehouse.name} (${activeWarehouse.code}) | ${selectedShelf.name} (${selectedShelf.code}) | 第 ${tierNum} 層`;
+                const locationStr = `${activeWarehouse.name} (${activeWarehouse.code}) [${activeWarehouse.id}] | ${selectedShelf.name} (${selectedShelf.code}) [${selectedShelf.id}] | 第 ${tierNum} 層`;
                 syncWithGAS("UPDATE_BOOK_LOCATION", {
                     bookId: bookId,
                     bookTitle: targetBook ? targetBook.title : "",
@@ -1120,128 +1228,35 @@
                 });
             };
 
-            const handleOpenExportCsv = () => {
-                let bookCsv = "書碼,書名,作者,出版年,叢書類別,倉庫代碼,書架編號,層數,庫存數量,建議定價,書籍簡介\n";
-                const sortedExportBooks = [...books].sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
-                sortedExportBooks.forEach(b => {
-                    const wh = warehouses.find(w => w.id === b.warehouseId || w.code === b.warehouseId);
-                    const sh = wh ? wh.shelves.find(s => s.id === b.shelfId || s.code === b.shelfId) : null;
-                    bookCsv += `"${b.code}","${b.title}","${b.author}","${b.year}","${b.category}","${wh ? wh.code : ''}","${sh ? sh.code : ''}","${b.tier || 1}","${b.stock}","${b.price}","${(b.intro || '').replace(/"/g, '""')}"\n`;
-                });
-                setCsvText(bookCsv);
-
-                let whCsv = "倉庫代碼,倉庫名稱,地址,長度(m),深度(m),高度(m),書架擺設設定(JSON)\n";
-                warehouses.forEach(w => {
-                    whCsv += `"${w.code}","${w.name}","${w.address}","${w.width}","${w.depth}","${w.height}","${JSON.stringify(w.shelves).replace(/"/g, '""')}"\n`;
-                });
-                setWarehouseCsvText(whCsv);
-
-                setIsCsvModalOpen(true);
-            };
-
-            const handleImportCsvText = () => {
-                try {
-                    const lines = parseCSVText(csvText);
-                    if (lines.length <= 1) return showToast("Book_ALL CSV 內容無有效資料列！");
-
-                    const newBooks = [];
-                    for (let i = 1; i < lines.length; i++) {
-                        const row = lines[i];
-                        if (row.length >= 2 && row[1]) {
-                            const whCode = row[5];
-                            const shCode = row[6];
-                            const foundWh = warehouses.find(w => w.code === whCode || w.id === whCode);
-                            const foundSh = foundWh ? foundWh.shelves.find(s => s.code === shCode || s.id === shCode) : null;
-
-                            newBooks.push({
-                                id: `BK-IMP-${i}-${Date.now().toString().slice(-4)}`,
-                                code: row[0] || `IMP-${i}`,
-                                title: row[1],
-                                author: row[2] || '未知',
-                                year: row[3] || '1971',
-                                category: row[4] || '通用學術',
-                                warehouseId: foundWh ? foundWh.id : '',
-                                shelfId: foundSh ? foundSh.id : '',
-                                tier: parseInt(row[7]) || 1,
-                                stock: parseInt(row[8]) || 10,
-                                price: parseInt(row[9]) || 300,
-                                intro: row[10] || '透過 CSV 匯入之 Book_ALL 圖書資料。'
-                            });
-                        }
-                    }
-
-                    if (newBooks.length > 0) {
-                        newBooks.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
-                        setBooks(newBooks);
-                        setIsCsvModalOpen(false);
-                        showToast(`成功從 CSV 匯入 ${newBooks.length} 筆 Book_ALL 圖書資料並依書碼排序！`);
-                    }
-                } catch (err) {
-                    showToast("CSV 解析失敗，請檢查格式是否符合規範。");
-                }
-            };
-
-            const handleImportWarehouseCsvText = () => {
-                try {
-                    const lines = parseCSVText(warehouseCsvText);
-                    if (lines.length <= 1) return showToast("倉庫 CSV 內容無有效資料列！");
-
-                    const newWarehouses = [];
-                    for (let i = 1; i < lines.length; i++) {
-                        const row = lines[i];
-                        if (row.length >= 2 && row[0]) {
-                            let parsedShelves = [];
-                            if (row[6]) {
-                                try { parsedShelves = JSON.parse(row[6]); } catch(e) {}
-                            }
-
-                            newWarehouses.push({
-                                id: `WH-${row[0]}`,
-                                code: row[0],
-                                name: row[1] || `倉庫 ${row[0]}`,
-                                address: row[2] || '台北市',
-                                width: parseFloat(row[3]) || 24,
-                                depth: parseFloat(row[4]) || 18,
-                                height: parseFloat(row[5]) || 4.5,
-                                shelves: parsedShelves.length > 0 ? parsedShelves : [
-                                    { id: `SH-${row[0]}-01`, code: `${row[0].slice(0, 1)}1架`, name: '主要典藏特區架', x: -5, z: -4, rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '綜合學術', color: '#8C5A2B' }
-                                ]
-                            });
-                        }
-                    }
-
-                    if (newWarehouses.length > 0) {
-                        setWarehouses(newWarehouses);
-                        setIsCsvModalOpen(false);
-                        showToast(`成功匯入 ${newWarehouses.length} 個倉庫與 3D 書架擺設設定！`);
-                    }
-                } catch (err) {
-                    showToast("倉庫 CSV 解析失敗，請檢查 JSON 或 CSV 格式。");
-                }
-            };
-
             return (
                 <div className="flex flex-col h-screen w-screen overflow-hidden bg-cream font-sans">
                     {/* Header Bar */}
-                    <header className="h-16 border-b border-borderwood bg-white/80 backdrop-blur-md px-6 flex justify-between items-center z-20 shrink-0 shadow-sm">
+                    <header className="h-16 border-b border-borderwood bg-white/80 backdrop-blur-md px-4 md:px-6 flex justify-between items-center z-20 shrink-0 shadow-sm">
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-amber-800 rounded-xl flex items-center justify-center text-white font-serif font-black text-xl shadow-md">
+                            <button 
+                                onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)} 
+                                className="p-2 rounded-xl bg-paper border border-borderwood text-amber-900 hover:bg-amber-800 hover:text-white transition"
+                                title={isLeftSidebarOpen ? "收折左側欄位" : "展開左側圖書索引"}
+                            >
+                                <Icon name={isLeftSidebarOpen ? "ChevronLeft" : "Menu"} size={18} />
+                            </button>
+                            <div className="w-8 h-8 md:w-9 md:h-9 bg-amber-800 rounded-xl flex items-center justify-center text-white font-serif font-black text-lg md:text-xl shadow-md">
                                 文
                             </div>
                             <div>
-                                <h1 className="text-lg md:text-xl font-black text-amber-900 font-serif-title tracking-wider">
+                                <h1 className="text-base md:text-xl font-black text-amber-900 font-serif-title tracking-wider">
                                     文史哲出版社有限公司
                                 </h1>
-                                <p className="text-[10px] tracking-widest text-amber-800 font-bold uppercase">
-                                    3D 多倉庫暨書架擺設管理與快速索引系統 (GAS 雲端即時雙向同步)
+                                <p className="hidden sm:block text-[10px] tracking-widest text-amber-800 font-bold uppercase">
+                                    3D 多倉庫暨書架擺設管理與快速索引系統 (GAS 雲端雙向同步)
                                 </p>
                             </div>
                         </div>
 
                         {/* Warehouse Selector Controls */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 md:gap-3">
                             <div className="flex items-center bg-paper p-1 rounded-xl border border-borderwood gap-1">
-                                <Icon name="Warehouse" size={16} className="text-amber-800 ml-2" />
+                                <Icon name="Warehouse" size={16} className="text-amber-800 ml-1 md:ml-2 hidden sm:block" />
                                 <select 
                                     value={activeWarehouseId}
                                     onChange={(e) => {
@@ -1249,52 +1264,72 @@
                                         setSelectedShelf(null);
                                         setHighlightedLocation(null);
                                     }}
-                                    className="bg-transparent text-sm font-bold text-amber-900 outline-none pr-2 cursor-pointer"
+                                    className="bg-transparent text-xs md:text-sm font-bold text-amber-900 outline-none pr-1 md:pr-2 cursor-pointer max-w-[120px] sm:max-w-none truncate"
                                 >
                                     {warehouses.map(wh => (
                                         <option key={wh.id} value={wh.id}>{wh.name} ({wh.code})</option>
                                     ))}
                                 </select>
                                 <button
+                                    onClick={() => setIsEditWarehouseModalOpen(true)}
+                                    title="編輯當前倉庫尺寸與名稱"
+                                    className="px-2 py-1 rounded-lg text-xs font-bold bg-amber-800/15 border border-amber-800/30 text-amber-900 hover:bg-amber-800 hover:text-white transition flex items-center gap-1 shrink-0"
+                                >
+                                    <Icon name="Sliders" size={13} />
+                                    <span className="hidden md:inline">編輯倉庫</span>
+                                </button>
+                                <button
                                     onClick={() => setIsAddWarehouseModalOpen(true)}
                                     title="建立新倉庫"
-                                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 transition flex items-center gap-1 shrink-0"
+                                    className="px-2 py-1 rounded-lg text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 transition flex items-center gap-1 shrink-0"
                                 >
                                     <Icon name="Plus" size={13} />
-                                    <span>新增倉庫</span>
+                                    <span className="hidden md:inline">新增倉庫</span>
                                 </button>
                             </div>
 
                             <button 
-                                onClick={handleOpenExportCsv}
-                                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 transition shadow-sm flex items-center gap-1.5"
+                                onClick={() => setIsCsvModalOpen(true)}
+                                className="px-2.5 md:px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 transition shadow-sm flex items-center gap-1.5"
                             >
                                 <Icon name="FileSpreadsheet" size={15} />
-                                <span>☁️ Google 試算表雙向同步 (Book_ALL & 倉庫)</span>
+                                <span className="hidden lg:inline">☁️ Google 試算表同步</span>
                             </button>
 
                             <button 
                                 onClick={() => setIsPrintModalOpen(true)}
-                                className="px-3 py-2 rounded-xl text-xs font-bold bg-white border border-borderwood text-amber-900 hover:bg-paper transition shadow-sm flex items-center gap-1.5"
+                                className="px-2.5 md:px-3 py-2 rounded-xl text-xs font-bold bg-white border border-borderwood text-amber-900 hover:bg-paper transition shadow-sm flex items-center gap-1.5"
                             >
                                 <Icon name="Printer" size={15} />
-                                <span className="hidden sm:inline">列印揀貨藍圖</span>
+                                <span className="hidden md:inline">列印藍圖</span>
                             </button>
                         </div>
                     </header>
 
+                    {/* Main Layout Area */}
                     <div className="flex-1 flex overflow-hidden relative">
-                        {/* Left Sidebar */}
-                        <aside className="w-84 md:w-96 border-r border-borderwood bg-white/70 backdrop-blur-md flex flex-col z-10 shrink-0 shadow-sm">
+                        {/* Collapsible Left Sidebar */}
+                        <aside className={`transition-all duration-300 ease-in-out border-r border-borderwood bg-white/80 backdrop-blur-md flex flex-col z-20 shrink-0 shadow-sm ${
+                            isLeftSidebarOpen ? 'w-80 md:w-96 translate-x-0' : '-translate-x-full absolute h-full pointer-events-none opacity-0'
+                        }`}>
                             <div className="p-4 border-b border-borderwood space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <h2 className="font-serif-title font-bold text-amber-900 flex items-center gap-2">
+                                    <h2 className="font-serif-title font-bold text-amber-900 flex items-center gap-2 text-sm md:text-base">
                                         <Icon name="Search" size={18} className="text-amber-800" />
                                         圖書儲位快速索引
                                     </h2>
-                                    <span className="text-xs font-bold bg-amber-800 text-white px-2.5 py-0.5 rounded-full shadow-xs">
-                                        Book_ALL 共 {filteredBooks.length} 本
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-xs font-bold bg-amber-800 text-white px-2.5 py-0.5 rounded-full shadow-xs">
+                                            {filteredBooks.length} 本
+                                        </span>
+                                        <button 
+                                            onClick={() => setIsLeftSidebarOpen(false)} 
+                                            className="p-1 rounded-lg hover:bg-paper text-amber-900/70"
+                                            title="完全收折左側欄位"
+                                        >
+                                            <Icon name="ChevronLeft" size={18} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="flex items-center gap-1 bg-paper p-1 rounded-xl border border-borderwood text-xs">
@@ -1320,7 +1355,7 @@
                                         type="text" 
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="搜尋書名、作者、ISBN書碼或類別..."
+                                        placeholder="搜尋書名、作者、ISBN書碼..."
                                         className="w-full pl-8 pr-3 py-2 rounded-xl border border-borderwood bg-paper text-xs font-bold text-amber-900 outline-none focus:border-amber-800"
                                     />
                                     <Icon name="Search" size={14} className="absolute left-2.5 top-2.5 text-amber-800/60" />
@@ -1350,16 +1385,14 @@
                             </div>
 
                             {/* Book List */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 hide-scrollbar">
+                            <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2.5 hide-scrollbar">
                                 {filteredBooks.length === 0 ? (
                                     <div className="p-8 text-center text-xs text-amber-800/60 font-bold bg-paper rounded-2xl border border-dashed border-borderwood">
                                         查無符合條件之圖書，請嘗試修改關鍵字或分類！
                                     </div>
                                 ) : (
                                     filteredBooks.map(book => {
-                                        const wh = warehouses.find(w => w.id === book.warehouseId || w.code === book.warehouseId);
-                                        const sh = wh ? wh.shelves.find(s => s.id === book.shelfId || s.code === book.shelfId) : null;
-                                        const isAssigned = !!(wh && sh);
+                                        const { wh, sh, isAssigned } = getBookLocationInfo(book, warehouses);
 
                                         return (
                                             <div 
@@ -1423,24 +1456,36 @@
                             </div>
                         </aside>
 
+                        {/* Floating button to uncollapse sidebar when hidden */}
+                        {!isLeftSidebarOpen && (
+                            <button
+                                onClick={() => setIsLeftSidebarOpen(true)}
+                                className="absolute top-4 left-4 z-30 p-2.5 glass-panel border border-borderwood text-amber-900 rounded-2xl shadow-xl flex items-center gap-1.5 font-bold text-xs hover:bg-amber-800 hover:text-white transition"
+                                title="展開圖書索引欄位"
+                            >
+                                <Icon name="ChevronRight" size={18} />
+                                <span>開啟圖書索引</span>
+                            </button>
+                        )}
+
                         {/* Center Area: 3D Canvas Viewport */}
                         <main className="flex-1 relative overflow-hidden flex flex-col bg-paper">
                             {/* Viewport Control Bar */}
                             <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center pointer-events-none">
-                                <div className="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 pointer-events-auto shadow-sm">
-                                    <span className="font-serif-title font-bold text-amber-900 text-sm flex items-center gap-1.5">
-                                        <Icon name="Building2" size={16} className="text-amber-800" />
+                                <div className={`glass-panel px-3 py-1.5 md:px-4 md:py-2 rounded-2xl flex items-center gap-2 md:gap-3 pointer-events-auto shadow-sm ${!isLeftSidebarOpen ? 'ml-36' : ''}`}>
+                                    <span className="font-serif-title font-bold text-amber-900 text-xs md:text-sm flex items-center gap-1.5">
+                                        <Icon name="Building2" size={16} className="text-amber-800 hidden sm:inline" />
                                         {activeWarehouse.name} ({activeWarehouse.code})
                                     </span>
-                                    <span className="text-xs font-bold text-amber-800/80 bg-paper px-2.5 py-1 rounded-lg border border-borderwood font-mono">
+                                    <span className="text-[10px] md:text-xs font-bold text-amber-800/80 bg-paper px-2 py-0.5 rounded-lg border border-borderwood font-mono">
                                         {activeWarehouse.width}m × {activeWarehouse.depth}m × {activeWarehouse.height}m
                                     </span>
                                 </div>
 
-                                <div className="glass-panel p-1.5 rounded-2xl flex items-center gap-1 pointer-events-auto shadow-sm">
+                                <div className="glass-panel p-1 rounded-2xl flex items-center gap-1 pointer-events-auto shadow-sm">
                                     <button
                                         onClick={() => setViewMode('3D')}
-                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                                        className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl text-xs font-bold transition ${
                                             viewMode === '3D' ? 'bg-amber-800 text-white shadow-xs' : 'text-amber-900 hover:bg-paper'
                                         }`}
                                     >
@@ -1448,7 +1493,7 @@
                                     </button>
                                     <button
                                         onClick={() => setViewMode('2D')}
-                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                                        className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl text-xs font-bold transition ${
                                             viewMode === '2D' ? 'bg-amber-800 text-white shadow-xs' : 'text-amber-900 hover:bg-paper'
                                         }`}
                                     >
@@ -1467,14 +1512,18 @@
                             />
                         </main>
 
-                        {/* Right Panel: Selected Shelf Detailed Controls & Book Assignment */}
+                        {}
+                        {/* Right Panel: Selected Shelf Detailed Controls (Responsive Bottom Sheet on Mobile to prevent viewport obstruction) */}
                         {selectedShelf && (
-                            <aside className="w-80 md:w-88 border-l border-borderwood bg-white/90 backdrop-blur-md p-5 flex flex-col gap-4 z-10 shrink-0 shadow-lg overflow-y-auto">
+                            <aside className="w-full md:w-88 max-h-[55vh] md:max-h-none border-t md:border-t-0 md:border-l border-borderwood bg-white/95 backdrop-blur-md p-4 md:p-5 flex flex-col gap-3.5 md:gap-4 z-30 shrink-0 shadow-2xl md:shadow-lg overflow-y-auto fixed md:absolute bottom-0 left-0 right-0 md:left-auto md:top-0 md:bottom-0 rounded-t-3xl md:rounded-none">
+                                {/* Mobile Drag Handle */}
+                                <div className="md:hidden w-12 h-1.5 bg-amber-800/30 rounded-full mx-auto -mt-1 mb-1"></div>
+
                                 <div className="flex flex-col gap-2 border-b border-borderwood pb-3">
                                     <div className="flex justify-between items-center">
                                         <span className="text-xs font-bold text-amber-800 flex items-center gap-1">
                                             <Icon name="Sliders" size={13} />
-                                            點擊可編輯書架代號與名稱：
+                                            編輯書架代號與名稱：
                                         </span>
                                         <button 
                                             onClick={() => setSelectedShelf(null)}
@@ -1501,7 +1550,7 @@
                                     </div>
                                 </div>
 
-                                <div className="space-y-4 glass-panel p-4 rounded-2xl border border-borderwood">
+                                <div className="space-y-4 glass-panel p-3.5 md:p-4 rounded-2xl border border-borderwood">
                                     <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                                         <Icon name="Move" size={14} className="text-amber-800" />
                                         調整倉庫平面座標位置 (公尺)
@@ -1562,7 +1611,7 @@
                                     </div>
                                 </div>
 
-                                <div className="space-y-3 glass-panel p-4 rounded-2xl border border-borderwood">
+                                <div className="space-y-3 glass-panel p-3.5 md:p-4 rounded-2xl border border-borderwood">
                                     <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                                         <Icon name="Sliders" size={14} className="text-amber-800" />
                                         書架尺寸與層數設定
@@ -1596,7 +1645,10 @@
                                     <div className="flex justify-between items-center">
                                         <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                                             <Icon name="BookOpen" size={14} className="text-amber-800" />
-                                            此架圖書 ({books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code || cleanCodeStr(b.shelfId) === cleanCodeStr(selectedShelf.code)).length} 本)：
+                                            此架圖書 ({books.filter(b => {
+                                                const { sh } = getBookLocationInfo(b, warehouses);
+                                                return sh && sh.id === selectedShelf.id;
+                                            }).length} 本)：
                                         </h4>
                                         <button
                                             onClick={() => {
@@ -1612,13 +1664,19 @@
                                         </button>
                                     </div>
 
-                                    <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                                        {books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code || cleanCodeStr(b.shelfId) === cleanCodeStr(selectedShelf.code)).length === 0 ? (
+                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                        {books.filter(b => {
+                                            const { sh } = getBookLocationInfo(b, warehouses);
+                                            return sh && sh.id === selectedShelf.id;
+                                        }).length === 0 ? (
                                             <div className="p-3 text-center text-xs text-amber-800/60 font-bold bg-paper rounded-xl border border-dashed border-borderwood">
-                                                此書架目前空無一物，點擊上方『放書入此架』放置書籍！
+                                                此書架目前空無一物，點擊『放書入此架』放置書籍！
                                             </div>
                                         ) : (
-                                            books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code || cleanCodeStr(b.shelfId) === cleanCodeStr(selectedShelf.code)).map(book => (
+                                            books.filter(b => {
+                                                const { sh } = getBookLocationInfo(b, warehouses);
+                                                return sh && sh.id === selectedShelf.id;
+                                            }).map(book => (
                                                 <div key={book.id} className="p-2.5 rounded-xl bg-paper border border-borderwood text-xs flex flex-col gap-1.5">
                                                     <div className="flex justify-between items-start">
                                                         <span className="font-bold text-amber-900 line-clamp-1 pr-2">《{book.title}》</span>
@@ -1685,7 +1743,7 @@
                                         </div>
                                         <div>
                                             <label className="block font-bold text-amber-900 mb-1">倉庫名稱</label>
-                                            <input name="name" required placeholder="例如: 新店二倉" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                            <input name="name" required placeholder="例如: 我是馬哈哈特藏倉" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                     </div>
                                     <div>
@@ -1694,21 +1752,72 @@
                                     </div>
                                     <div className="grid grid-cols-3 gap-3">
                                         <div>
-                                            <label className="block font-bold text-amber-900 mb-1">長度 (X軸, 公尺)</label>
+                                            <label className="block font-bold text-amber-900 mb-1">長度 (X軸, 米)</label>
                                             <input name="width" type="number" defaultValue="24" step="1" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                         <div>
-                                            <label className="block font-bold text-amber-900 mb-1">深度 (Z軸, 公尺)</label>
+                                            <label className="block font-bold text-amber-900 mb-1">深度 (Z軸, 米)</label>
                                             <input name="depth" type="number" defaultValue="18" step="1" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                         <div>
-                                            <label className="block font-bold text-amber-900 mb-1">挑高 (Y軸, 公尺)</label>
+                                            <label className="block font-bold text-amber-900 mb-1">挑高 (Y軸, 米)</label>
                                             <input name="height" type="number" defaultValue="4.5" step="0.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                     </div>
                                     <div className="pt-2 flex justify-end gap-2">
                                         <button type="button" onClick={() => setIsAddWarehouseModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold">取消</button>
                                         <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">建立倉庫與基本排架</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modal 1.5: Edit Current Warehouse Modal */}
+                    {isEditWarehouseModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
+                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
+                                    <h3 className="font-serif-title font-bold text-amber-900 text-base flex items-center gap-2">
+                                        <Icon name="Sliders" size={18} className="text-amber-800" />
+                                        編輯倉庫【{activeWarehouse.code}】尺寸與名稱
+                                    </h3>
+                                    <button onClick={() => setIsEditWarehouseModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
+                                        <Icon name="X" size={18} />
+                                    </button>
+                                </div>
+                                <form onSubmit={handleEditWarehouse} className="space-y-3 text-xs">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">倉庫代碼 (不可修改)</label>
+                                            <input value={activeWarehouse.code} disabled className="w-full p-2.5 rounded-xl border border-borderwood bg-paper/60 font-bold text-amber-800 outline-none font-mono cursor-not-allowed" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">倉庫名稱</label>
+                                            <input name="name" required defaultValue={activeWarehouse.name} className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block font-bold text-amber-900 mb-1">地址位置</label>
+                                        <input name="address" defaultValue={activeWarehouse.address} className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">長度 (X軸, 公尺)</label>
+                                            <input name="width" type="number" defaultValue={activeWarehouse.width} step="1" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">深度 (Z軸, 公尺)</label>
+                                            <input name="depth" type="number" defaultValue={activeWarehouse.depth} step="1" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">挑高 (Y軸, 公尺)</label>
+                                            <input name="height" type="number" defaultValue={activeWarehouse.height} step="0.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                    </div>
+                                    <div className="pt-2 flex justify-end gap-2">
+                                        <button type="button" onClick={() => setIsEditWarehouseModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold">取消</button>
+                                        <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">儲存倉庫變更</button>
                                     </div>
                                 </form>
                             </div>
@@ -1764,7 +1873,7 @@
                                             <input name="tiers" type="number" defaultValue="5" min="2" max="8" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                         <div>
-                                            <label className="block font-bold text-amber-900 mb-1">寬度 (Meters)</label>
+                                            <label className="block font-bold text-amber-900 mb-1">寬度 (米)</label>
                                             <input name="width" type="number" defaultValue="3.2" step="0.2" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                         <div>
@@ -1808,7 +1917,7 @@
                                             <Icon name="Search" size={14} className="absolute left-2.5 top-2.5 text-amber-800/60" />
                                         </div>
 
-                                        <div className="max-h-52 overflow-y-auto border border-borderwood rounded-2xl bg-paper p-1.5 space-y-1.5 hide-scrollbar">
+                                        <div className="max-h-48 overflow-y-auto border border-borderwood rounded-2xl bg-paper p-1.5 space-y-1.5 hide-scrollbar">
                                             {assignBookFilteredList.length === 0 ? (
                                                 <div className="p-4 text-center text-amber-800/60 font-bold italic">
                                                     查無符合搜尋條件之圖書！
@@ -1816,11 +1925,7 @@
                                             ) : (
                                                 assignBookFilteredList.map(b => {
                                                     const isSelected = assignBookId === b.id;
-                                                    const wh = warehouses.find(w => w.id === b.warehouseId || w.code === b.warehouseId);
-                                                    const sh = wh ? wh.shelves.find(s => s.id === b.shelfId || s.code === b.shelfId) : null;
-                                                    const isAssigned = !!(wh && sh);
-                                                    const cleanTitle = (b.title || '').replace(/\uFFFD/g, '');
-                                                    const cleanAuthor = (b.author || '').replace(/\uFFFD/g, '');
+                                                    const { wh, sh, isAssigned } = getBookLocationInfo(b, warehouses);
 
                                                     return (
                                                         <div
@@ -1837,10 +1942,10 @@
                                                                     <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${isSelected ? 'bg-amber-900 text-amber-200' : 'bg-amber-800/10 text-amber-800'}`}>
                                                                         #{b.code}
                                                                     </span>
-                                                                    <span className="font-serif-title">《{cleanTitle}》</span>
+                                                                    <span className="font-serif-title">《{(b.title || '').replace(/\uFFFD/g, '')}》</span>
                                                                 </div>
                                                                 <div className={`text-[11px] ${isSelected ? 'text-amber-100' : 'text-amber-800/70'}`}>
-                                                                    作者：{cleanAuthor} | {isAssigned ? `${wh.code} - ${sh.code} (第 ${b.tier || 1} 層)` : '待入庫 / 未排架'}
+                                                                    作者：{(b.author || '').replace(/\uFFFD/g, '')} | {isAssigned ? `${wh.code} - ${sh.code} (第 ${b.tier || 1} 層)` : '待入庫 / 未排架'}
                                                                 </div>
                                                             </div>
                                                             {isSelected && (
@@ -1907,12 +2012,6 @@
                                     >
                                         📄 Book_ALL CSV 檔案/文字匯入匯出
                                     </button>
-                                    <button
-                                        onClick={() => setCsvTab('WAREHOUSE_CSV')}
-                                        className={`px-4 py-2 rounded-xl transition ${csvTab === 'WAREHOUSE_CSV' ? 'bg-amber-800 text-white shadow-xs' : 'bg-paper text-amber-900 border border-borderwood'}`}
-                                    >
-                                        🏢 倉庫擺設 CSV 匯入匯出
-                                    </button>
                                 </div>
 
                                 {csvTab === 'GOOGLE_SHEETS' && (
@@ -1958,31 +2057,6 @@
                                             rows="10"
                                             className="w-full p-3 rounded-xl border border-borderwood bg-paper font-mono text-[11px] text-amber-900 outline-none resize-y"
                                         />
-                                        <div className="flex justify-end gap-2">
-                                            <button onClick={handleImportCsvText} className="px-5 py-2.5 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">
-                                                匯入並更新圖書儲位 (照書碼排序)
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {csvTab === 'WAREHOUSE_CSV' && (
-                                    <div className="space-y-3 text-xs">
-                                        <div className="flex justify-between items-center">
-                                            <label className="font-bold text-amber-900">倉庫與 3D 書架擺設設定 CSV 文字內容：</label>
-                                            <input type="file" accept=".csv" onChange={(e) => handleFileUpload(e, true)} className="text-xs text-amber-800 font-bold" />
-                                        </div>
-                                        <textarea
-                                            value={warehouseCsvText}
-                                            onChange={(e) => setWarehouseCsvText(e.target.value)}
-                                            rows="10"
-                                            className="w-full p-3 rounded-xl border border-borderwood bg-paper font-mono text-[11px] text-amber-900 outline-none resize-y"
-                                        />
-                                        <div className="flex justify-end gap-2">
-                                            <button onClick={handleImportWarehouseCsvText} className="px-5 py-2.5 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">
-                                                匯入並更新倉庫 3D 擺設
-                                            </button>
-                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -2017,7 +2091,10 @@
 
                                     <div className="grid grid-cols-2 gap-4">
                                         {activeWarehouse.shelves.map(shelf => {
-                                            const shelfBooks = books.filter(b => b.shelfId === shelf.id || b.shelfId === shelf.code || cleanCodeStr(b.shelfId) === cleanCodeStr(shelf.code));
+                                            const shelfBooks = books.filter(b => {
+                                                const { sh } = getBookLocationInfo(b, warehouses);
+                                                return sh && sh.id === shelf.id;
+                                            });
                                             return (
                                                 <div key={shelf.id} className="p-3.5 rounded-xl border border-borderwood bg-paper flex flex-col gap-2">
                                                     <div className="flex justify-between items-center font-bold border-b border-borderwood pb-1.5">
