@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文史哲出版社 - 3D多倉庫暨書架擺設管理與快速索引系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        amber: {
+                            800: '#8C5A2B',
+                            900: '#2C241B',
+                        },
+                        cream: '#FDFBF7',
+                        paper: '#F9F6F0',
+                        borderwood: '#E6D5C3',
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.22.20/babel.min.js"></script>
+    <!-- Three.js for 3D Warehouse Visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #8C5A2B;
+            --dark-color: #2C241B;
+            --bg-color: #FDFBF7;
+            --bg-light: #F9F6F0;
+            --border-color: #E6D5C3;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-light);
+            color: #4A3728;
+            overflow-x: hidden;
+        }
+
+        .font-serif-title {
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        .glass-panel {
+            background: rgba(253, 251, 247, 0.88);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(230, 213, 195, 0.8);
+            box-shadow: 0 10px 30px rgba(44, 36, 27, 0.08);
+        }
+
+        .glass-dark {
+            background: rgba(44, 36, 27, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #FDFBF7;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-light);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #C4B29E;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+
+        .canvas-container canvas {
+            outline: none;
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+        // --- Safe Native SVG Icon Component (Fixes Lucide UMD forwardRef error) ---
+        const ICON_SVGS = {
+            Warehouse: () => <g><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"/><path d="M6 18h12M6 14h12M6 10h12"/></g>,
+            FileSpreadsheet: () => <g><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h8M12 10v8"/></g>,
+            Printer: () => <g><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></g>,
+            Search: () => <g><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></g>,
+            MapPin: () => <g><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></g>,
+            Building2: () => <g><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></g>,
+            Box: () => <g><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></g>,
+            LayoutGrid: () => <g><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></g>,
+            Plus: () => <g><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>,
+            X: () => <g><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></g>,
+            Move: () => <g><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></g>,
+            Sliders: () => <g><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></g>,
+            BookOpen: () => <g><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></g>,
+            Trash2: () => <g><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></g>,
+            Copy: () => <g><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></g>,
+            Grid: () => <g><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></g>,
+            PlusCircle: () => <g><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></g>,
+            CheckCircle2: () => <g><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></g>,
+            Compass: () => <g><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></g>,
+            HelpCircle: () => <g><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></g>
+        };
+
+        const Icon = ({ name, size = 18, className = "" }) => {
+            const renderIcon = ICON_SVGS[name] || ICON_SVGS.HelpCircle;
+            return (
+                <svg 
+                    width={size} 
+                    height={size} 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className={className}
+                >
+                    {renderIcon()}
+                </svg>
+            );
+        };
+
+        // --- 預設多倉庫資料 ---
+        const INITIAL_WAREHOUSES = [
+            {
+                id: 'WH-A',
+                name: '羅斯福路總社倉庫 (A倉)',
+                code: 'A-MAIN',
+                address: '臺北市中正區羅斯福路一段72巷4號B1',
+                width: 24, // 24 meters
+                depth: 18, // 18 meters
+                height: 4.5,
+                shelves: [
+                    { id: 'SH-A01', code: 'A1架', name: '文史哲學集成專區', x: -7, z: -5, rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '文史哲學集成', color: '#8C5A2B' },
+                    { id: 'SH-A02', code: 'A2架', name: '文史哲學術叢刊', x: -2, z: -5, rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '文史哲學術叢刊', color: '#6A432D' },
+                    { id: 'SH-A03', code: 'A3架', name: '清史與滿學論集', x: 3, z: -5, rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '歷史學', color: '#2C3E50' },
+                    { id: 'SH-A04', code: 'A4架', name: '文學叢刊與詩集', x: 8, z: -5, rot: 0, width: 3.2, depth: 0.9, tiers: 4, category: '文學叢刊', color: '#A04000' },
+                    { id: 'SH-A05', code: 'A5架', name: '經典文學作品展區', x: -7, z: 3, rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '文學小說', color: '#7D6608' },
+                    { id: 'SH-A06', code: 'A6架', name: '語言文字與經學', x: -2, z: 3, rot: 0, width: 3.2, depth: 0.9, tiers: 4, category: '語言文字', color: '#196F3D' },
+                    { id: 'SH-A07', code: 'A7架', name: '哲學與宗教論著', x: 3, z: 3, rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '哲學宗教', color: '#5B2C6F' },
+                    { id: 'SH-A08', code: 'A8架', name: '新品與熱銷待出貨區', x: 8, z: 3, rot: 90, width: 4.0, depth: 1.0, tiers: 3, category: '暢銷綜合', color: '#C0392B' },
+                ]
+            },
+            {
+                id: 'WH-B',
+                name: '中正區一倉 (B倉 - 學術典藏)',
+                code: 'B-CENTER',
+                address: '臺北市中正區羅斯福路一段72巷6號',
+                width: 20,
+                depth: 16,
+                height: 4.0,
+                shelves: [
+                    { id: 'SH-B01', code: 'B1架', name: '古籍整理與目錄學', x: -5, z: -3, rot: 0, width: 3.0, depth: 0.8, tiers: 5, category: '目錄學', color: '#8C5A2B' },
+                    { id: 'SH-B02', code: 'B2架', name: '中日關係史論集', x: 0, z: -3, rot: 0, width: 3.0, depth: 0.8, tiers: 5, category: '歷史學', color: '#2C3E50' },
+                    { id: 'SH-B03', code: 'B3架', name: '滿語叢刊典藏架', x: 5, z: -3, rot: 0, width: 3.0, depth: 0.8, tiers: 6, category: '滿學', color: '#1B4F72' },
+                    { id: 'SH-B04', code: 'B4架', name: '藝術史與社會科學', x: -2, z: 3, rot: 0, width: 3.5, depth: 0.8, tiers: 4, category: '藝術社會', color: '#7E5109' },
+                ]
+            },
+            {
+                id: 'WH-C',
+                name: '新店備份典藏倉 (C倉)',
+                code: 'C-BACKUP',
+                address: '新北市新店區寶橋路100號',
+                width: 30,
+                depth: 20,
+                height: 5.0,
+                shelves: [
+                    { id: 'SH-C01', code: 'C1架', name: '重刷備份書架一', x: -10, z: -4, rot: 0, width: 4.0, depth: 1.0, tiers: 6, category: '文史哲學集成', color: '#8C5A2B' },
+                    { id: 'SH-C02', code: 'C2架', name: '重刷備份書架二', x: -3, z: -4, rot: 0, width: 4.0, depth: 1.0, tiers: 6, category: '文學叢刊', color: '#A04000' },
+                    { id: 'SH-C03', code: 'C3架', name: '長銷古籍備貨', x: 4, z: -4, rot: 0, width: 4.0, depth: 1.0, tiers: 6, category: '歷史學', color: '#2C3E50' },
+                ]
+            }
+        ];
+
+        // --- 預設圖書資料庫（可與 Google 試算表對接） ---
+        const INITIAL_BOOKS = [
+            { id: 'BK-1001', code: '978-957-549-001', title: '塔裡的女人', author: '無名氏（卜乃夫）', year: '1971', category: '文學小說', warehouseId: 'WH-A', shelfId: 'SH-A05', tier: 3, stock: 120, price: 380, intro: '《塔裡的女人》是一部充滿浪漫與悲劇色彩的經典小說，寫出愛情與現實間的掙扎。' },
+            { id: 'BK-1002', code: '978-957-549-002', title: '中國目錄學', author: '昌彼得', year: '1975', category: '目錄學', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 2, stock: 45, price: 550, intro: '國學與古籍整理基礎必讀典籍，為目錄學研究之權威指南。' },
+            { id: 'BK-1003', code: '978-957-549-003', title: '清史論集（第一集）', author: '莊吉發', year: '1982', category: '歷史學', warehouseId: 'WH-A', shelfId: 'SH-A03', tier: 1, stock: 30, price: 620, intro: '收錄莊吉發教授對清代歷史、檔案與滿洲制度之深刻研究。' },
+            { id: 'BK-1004', code: '978-957-549-004', title: '文心雕龍與經學', author: '蔡宗陽', year: '1988', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 4, stock: 85, price: 480, intro: '深入剖析《文心雕龍》文學理論與經學思想之密切關聯。' },
+            { id: 'BK-1005', code: '978-957-549-005', title: '霧航', author: '馮馮', year: '1980', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 2, stock: 60, price: 420, intro: '著名作家馮馮代表作，刻畫時代變遷下之旅人心情。' },
+            { id: 'BK-1006', code: '978-957-549-006', title: '中日關係史研究論集 (第一冊)', author: '龔鵬程、鄭樑生', year: '1991', category: '歷史學', warehouseId: 'WH-B', shelfId: 'SH-B02', tier: 3, stock: 25, price: 750, intro: '中日交流史重要論文集，全套共14冊。' },
+            { id: 'BK-1007', code: '978-957-549-007', title: '滿語叢刊 (全50冊之一)', author: '文史哲編輯部', year: '1995', category: '滿學', warehouseId: 'WH-B', shelfId: 'SH-B03', tier: 5, stock: 15, price: 1200, intro: '清代滿語研究極具價值之文獻彙編。' },
+            { id: 'BK-1008', code: '978-957-549-008', title: '修辭學探微', author: '蔡宗陽', year: '1993', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 2, stock: 50, price: 360, intro: '系統分析漢語修辭技巧與文章藝術風格。' },
+            { id: 'BK-1009', code: '978-957-549-009', title: '中國哲學思潮史', author: '嚴靈峰', year: '1985', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 3, stock: 40, price: 580, intro: '貫穿先秦至明清哲學思潮之體系著作。' },
+            { id: 'BK-1010', code: '978-957-549-010', title: '紀弦詩選新編', author: '紀弦', year: '1978', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 4, stock: 70, price: 320, intro: '現代詩派發起人紀弦經典詩作集結。' }
+        ];
+
+        // --- 3D 倉庫渲染組件 (Three.js Engine) ---
+        const ThreeWarehouseView = ({ warehouse, selectedShelf, highlightedLocation, onSelectShelf, viewMode }) => {
+            const mountRef = useRef(null);
+            const sceneRef = useRef(null);
+            const rendererRef = useRef(null);
+            const cameraRef = useRef(null);
+            const shelvesGroupRef = useRef(null);
+            const pinMeshRef = useRef(null);
+            const animFrameRef = useRef(null);
+
+            // Orbit State
+            const isDragging = useRef(false);
+            const previousMousePosition = useRef({ x: 0, y: 0 });
+            const cameraAngle = useRef({ theta: Math.PI / 4, phi: Math.PI / 3, radius: 35 });
+
+            // 更新攝影機位置
+            const updateCameraPosition = useCallback(() => {
+                if (!cameraRef.current) return;
+                const cam = cameraRef.current;
+                const r = cameraAngle.current.radius;
+                const theta = cameraAngle.current.theta;
+                const phi = cameraAngle.current.phi;
+
+                cam.position.x = r * Math.sin(phi) * Math.sin(theta);
+                cam.position.y = r * Math.cos(phi);
+                cam.position.z = r * Math.sin(phi) * Math.cos(theta);
+                cam.lookAt(0, 1.5, 0);
+            }, []);
+
+            // 視覺模式切換 (3D vs 2D 平面)
+            useEffect(() => {
+                if (viewMode === '2D') {
+                    cameraAngle.current = { theta: 0, phi: 0.001, radius: 28 };
+                } else {
+                    cameraAngle.current = { theta: Math.PI / 4, phi: Math.PI / 3, radius: 32 };
+                }
+                updateCameraPosition();
+            }, [viewMode, updateCameraPosition]);
+
+            // 定位聚焦點動畫
+            useEffect(() => {
+                if (!highlightedLocation || !warehouse) return;
+                const targetShelf = warehouse.shelves.find(s => s.id === highlightedLocation.shelfId);
+                if (targetShelf) {
+                    onSelectShelf(targetShelf);
+                    // 相機轉向對應座標
+                    const targetX = targetShelf.x;
+                    const targetZ = targetShelf.z;
+                    
+                    // 動畫帶鏡頭
+                    const startTheta = cameraAngle.current.theta;
+                    const targetTheta = Math.atan2(targetX, targetZ) + Math.PI / 6;
+                    cameraAngle.current.theta = targetTheta;
+                    cameraAngle.current.radius = 22;
+                    updateCameraPosition();
+                }
+            }, [highlightedLocation, warehouse, onSelectShelf, updateCameraPosition]);
+
+            // 初始化 Three.js 場景
+            useEffect(() => {
+                const container = mountRef.current;
+                if (!container) return;
+
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                // Scene
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xFDFBF7);
+                scene.fog = new THREE.FogExp2(0xFDFBF7, 0.012);
+                sceneRef.current = scene;
+
+                // Camera
+                const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+                cameraRef.current = camera;
+                updateCameraPosition();
+
+                // Renderer
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(width, height);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                rendererRef.current = renderer;
+
+                container.innerHTML = '';
+                container.appendChild(renderer.domElement);
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+                scene.add(ambientLight);
+
+                const dirLight = new THREE.DirectionalLight(0xfff5ea, 0.8);
+                dirLight.position.set(15, 30, 15);
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 2048;
+                dirLight.shadow.mapSize.height = 2048;
+                scene.add(dirLight);
+
+                const pointLight = new THREE.PointLight(0x8C5A2B, 0.5, 50);
+                pointLight.position.set(0, 10, 0);
+                scene.add(pointLight);
+
+                // Shelves Group
+                const shelvesGroup = new THREE.Group();
+                scene.add(shelvesGroup);
+                shelvesGroupRef.current = shelvesGroup;
+
+                // Bouncing Location Pin Indicator (高亮定位針)
+                const pinGroup = new THREE.Group();
+                const pinGeo = new THREE.ConeGeometry(0.4, 1.0, 8);
+                pinGeo.rotateX(Math.PI);
+                const pinMat = new THREE.MeshStandardMaterial({ color: 0xE74C3C, emissive: 0x900C3F, roughness: 0.3 });
+                const pinMesh = new THREE.Mesh(pinGeo, pinMat);
+                pinGroup.add(pinMesh);
+                pinGroup.visible = false;
+                scene.add(pinGroup);
+                pinMeshRef.current = pinGroup;
+
+                // Mouse Event Handlers for Orbit Control
+                const handleMouseDown = (e) => {
+                    isDragging.current = true;
+                    previousMousePosition.current = { x: e.clientX, y: e.clientY };
+                };
+
+                const handleMouseMove = (e) => {
+                    if (!isDragging.current) return;
+                    const deltaX = e.clientX - previousMousePosition.current.x;
+                    const deltaY = e.clientY - previousMousePosition.current.y;
+
+                    cameraAngle.current.theta -= deltaX * 0.008;
+                    cameraAngle.current.phi = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, cameraAngle.current.phi - deltaY * 0.008));
+
+                    previousMousePosition.current = { x: e.clientX, y: e.clientY };
+                    updateCameraPosition();
+                };
+
+                const handleMouseUp = () => {
+                    isDragging.current = false;
+                };
+
+                const handleWheel = (e) => {
+                    e.preventDefault();
+                    cameraAngle.current.radius = Math.max(10, Math.min(60, cameraAngle.current.radius + e.deltaY * 0.03));
+                    updateCameraPosition();
+                };
+
+                // Raycaster for Shelf Clicking
+                const raycaster = new THREE.Raycaster();
+                const mouse = new THREE.Vector2();
+
+                const handleClick = (e) => {
+                    if (!shelvesGroupRef.current) return;
+                    const rect = renderer.domElement.getBoundingClientRect();
+                    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObjects(shelvesGroupRef.current.children, true);
+
+                    if (intersects.length > 0) {
+                        let obj = intersects[0].object;
+                        while (obj.parent && !obj.userData.shelfData) {
+                            obj = obj.parent;
+                        }
+                        if (obj.userData && obj.userData.shelfData) {
+                            onSelectShelf(obj.userData.shelfData);
+                        }
+                    }
+                };
+
+                const domEl = renderer.domElement;
+                domEl.addEventListener('mousedown', handleMouseDown);
+                window.addEventListener('mousemove', handleMouseMove);
+                window.addEventListener('mouseup', handleMouseUp);
+                domEl.addEventListener('wheel', handleWheel, { passive: false });
+                domEl.addEventListener('click', handleClick);
+
+                // Window Resize
+                const handleResize = () => {
+                    if (!mountRef.current || !rendererRef.current || !cameraRef.current) return;
+                    const w = mountRef.current.clientWidth;
+                    const h = mountRef.current.clientHeight;
+                    cameraRef.current.aspect = w / h;
+                    cameraRef.current.updateProjectionMatrix();
+                    rendererRef.current.setSize(w, h);
+                };
+                window.addEventListener('resize', handleResize);
+
+                // Animation Loop
+                let time = 0;
+                const animate = () => {
+                    time += 0.03;
+                    if (pinMeshRef.current && pinMeshRef.current.visible) {
+                        pinMeshRef.current.position.y += Math.sin(time * 3) * 0.008;
+                        pinMeshRef.current.rotation.y += 0.02;
+                    }
+                    if (rendererRef.current && sceneRef.current && cameraRef.current) {
+                        rendererRef.current.render(sceneRef.current, cameraRef.current);
+                    }
+                    animFrameRef.current = requestAnimationFrame(animate);
+                };
+                animate();
+
+                return () => {
+                    window.removeEventListener('mousemove', handleMouseMove);
+                    window.removeEventListener('mouseup', handleMouseUp);
+                    window.removeEventListener('resize', handleResize);
+                    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+                    if (domEl) {
+                        domEl.removeEventListener('mousedown', handleMouseDown);
+                        domEl.removeEventListener('wheel', handleWheel);
+                        domEl.removeEventListener('click', handleClick);
+                    }
+                };
+            }, [updateCameraPosition, onSelectShelf]);
+
+            // 當倉庫或選擇書架變動時更新 3D 物件
+            useEffect(() => {
+                if (!sceneRef.current || !shelvesGroupRef.current || !warehouse) return;
+
+                const scene = sceneRef.current;
+                const shelvesGroup = shelvesGroupRef.current;
+
+                // 清除舊書架
+                while (shelvesGroup.children.length > 0) {
+                    const child = shelvesGroup.children[0];
+                    shelvesGroup.remove(child);
+                }
+
+                // 清除舊地板網格
+                const oldFloor = scene.getObjectByName("warehouseFloor");
+                if (oldFloor) scene.remove(oldFloor);
+
+                const oldGrid = scene.getObjectByName("warehouseGrid");
+                if (oldGrid) scene.remove(oldGrid);
+
+                // 建立倉庫地板
+                const floorGeo = new THREE.PlaneGeometry(warehouse.width, warehouse.depth);
+                const floorMat = new THREE.MeshStandardMaterial({
+                    color: 0xE6D5C3,
+                    roughness: 0.8,
+                    metalness: 0.1,
+                    side: THREE.DoubleSide
+                });
+                const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+                floorMesh.rotation.x = Math.PI / 2;
+                floorMesh.receiveShadow = true;
+                floorMesh.name = "warehouseFloor";
+                scene.add(floorMesh);
+
+                // 建立網格座標線
+                const gridHelper = new THREE.GridHelper(Math.max(warehouse.width, warehouse.depth), 24, 0x8C5A2B, 0xC4B29E);
+                gridHelper.position.y = 0.01;
+                gridHelper.name = "warehouseGrid";
+                scene.add(gridHelper);
+
+                // 牆面邊界引導線
+                const wallGeo = new THREE.BoxGeometry(warehouse.width, 0.2, warehouse.depth);
+                const wallWire = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(wallGeo),
+                    new THREE.LineBasicMaterial({ color: 0x8C5A2B, linewidth: 2 })
+                );
+                wallWire.position.y = 0.1;
+                shelvesGroup.add(wallWire);
+
+                // 建構各個 3D 書架 (Wood/Metal Rack with Tiers & Books)
+                warehouse.shelves.forEach(shelf => {
+                    const shelfGroup = new THREE.Group();
+                    shelfGroup.position.set(shelf.x, 0, shelf.z);
+                    shelfGroup.rotation.y = (shelf.rot * Math.PI) / 180;
+                    shelfGroup.userData = { shelfData: shelf };
+
+                    const isSelected = selectedShelf && selectedShelf.id === shelf.id;
+                    const shelfHeight = 2.4;
+                    const frameColor = isSelected ? 0xF39C12 : 0x4A3728;
+
+                    // 1. 支架柱子 (4立柱)
+                    const postGeo = new THREE.BoxGeometry(0.08, shelfHeight, 0.08);
+                    const postMat = new THREE.MeshStandardMaterial({
+                        color: frameColor,
+                        roughness: 0.4,
+                        metalness: 0.3
+                    });
+
+                    const hW = shelf.width / 2;
+                    const hD = shelf.depth / 2;
+                    const hH = shelfHeight / 2;
+
+                    [[-hW, hD], [hW, hD], [-hW, -hD], [hW, -hD]].forEach(([px, pz]) => {
+                        const post = new THREE.Mesh(postGeo, postMat);
+                        post.position.set(px, hH, pz);
+                        post.castShadow = true;
+                        shelfGroup.add(post);
+                    });
+
+                    // 2. 層板 (Tiers)
+                    const tierCount = shelf.tiers || 4;
+                    const tierGap = shelfHeight / tierCount;
+
+                    for (let i = 0; i <= tierCount; i++) {
+                        const plankGeo = new THREE.BoxGeometry(shelf.width, 0.05, shelf.depth);
+                        const plankMat = new THREE.MeshStandardMaterial({
+                            color: isSelected ? 0xF5B041 : 0x8C5A2B,
+                            roughness: 0.6
+                        });
+                        const plank = new THREE.Mesh(plankGeo, plankMat);
+                        const py = i * tierGap;
+                        plank.position.set(0, py, 0);
+                        plank.receiveShadow = true;
+                        shelfGroup.add(plank);
+
+                        // 3. 在每層放置擬真書籍塊 (3D Book Stacks)
+                        if (i < tierCount) {
+                            const bookStackGroup = new THREE.Group();
+                            const booksInTier = 6 + Math.floor(Math.random() * 8);
+                            let startX = -hW + 0.2;
+
+                            for (let b = 0; b < booksInTier; b++) {
+                                const bW = 0.08 + Math.random() * 0.06;
+                                const bH = tierGap * 0.65 + Math.random() * 0.1;
+                                const bD = shelf.depth * 0.7;
+
+                                const bookGeo = new THREE.BoxGeometry(bW, bH, bD);
+                                // 書背顏色：古典文史哲調色
+                                const bookColors = [0x8C5A2B, 0x2C241B, 0x1B4F72, 0x7D6608, 0x196F3D, 0x5B2C6F, 0x900C3F];
+                                const bColor = bookColors[b % bookColors.length];
+
+                                const bookMat = new THREE.MeshStandardMaterial({ color: bColor, roughness: 0.5 });
+                                const bookMesh = new THREE.Mesh(bookGeo, bookMat);
+                                bookMesh.position.set(startX + bW / 2, py + bH / 2 + 0.02, 0);
+                                bookMesh.castShadow = true;
+                                bookStackGroup.add(bookMesh);
+
+                                startX += bW + 0.02;
+                                if (startX > hW - 0.2) break;
+                            }
+                            shelfGroup.add(bookStackGroup);
+                        }
+                    }
+
+                    // 4. 書架頂部標籤板 (Shelf Code Label Bar)
+                    const labelGeo = new THREE.BoxGeometry(shelf.width * 0.6, 0.25, 0.05);
+                    const labelMat = new THREE.MeshStandardMaterial({ color: 0x2C241B, roughness: 0.2 });
+                    const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+                    labelMesh.position.set(0, shelfHeight + 0.15, hD);
+                    shelfGroup.add(labelMesh);
+
+                    // 若被選取，外圍加金黃色高亮框
+                    if (isSelected) {
+                        const bboxGeo = new THREE.BoxGeometry(shelf.width + 0.2, shelfHeight + 0.3, shelf.depth + 0.2);
+                        const bboxWire = new THREE.LineSegments(
+                            new THREE.EdgesGeometry(bboxGeo),
+                            new THREE.LineBasicMaterial({ color: 0xF39C12, linewidth: 3 })
+                        );
+                        bboxWire.position.y = shelfHeight / 2;
+                        shelfGroup.add(bboxWire);
+                    }
+
+                    shelvesGroup.add(shelfGroup);
+                });
+
+                // 更新高亮定位針的位置
+                if (highlightedLocation && pinMeshRef.current) {
+                    const targetShelf = warehouse.shelves.find(s => s.id === highlightedLocation.shelfId);
+                    if (targetShelf) {
+                        const shelfHeight = 2.4;
+                        const tierGap = shelfHeight / (targetShelf.tiers || 4);
+                        const tierY = (highlightedLocation.tier || 1) * tierGap;
+
+                        pinMeshRef.current.position.set(targetShelf.x, tierY + 0.8, targetShelf.z);
+                        pinMeshRef.current.visible = true;
+                    } else {
+                        pinMeshRef.current.visible = false;
+                    }
+                } else if (pinMeshRef.current) {
+                    pinMeshRef.current.visible = false;
+                }
+
+            }, [warehouse, selectedShelf, highlightedLocation]);
+
+            return (
+                <div className="w-full h-full relative canvas-container">
+                    <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+                    
+                    {/* 3D 視角操作提示 Legend Overlay */}
+                    <div className="absolute bottom-4 left-4 glass-dark text-xs p-3 rounded-xl pointer-events-none flex flex-col gap-1 border border-white/10 font-sans shadow-lg">
+                        <div className="font-bold text-amber-300 flex items-center gap-1.5 mb-0.5">
+                            <Icon name="Compass" size={14} /> 3D 視角操作說明：
+                        </div>
+                        <div>• 按住滑鼠左鍵拖曳：旋轉視角</div>
+                        <div>• 滾輪縮放：放大 / 縮小視野</div>
+                        <div>• 點擊 3D 書架：選取並調整座標位置</div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 主應用程式組件 ---
+        function App() {
+            const [warehouses, setWarehouses] = useState(() => {
+                const local = localStorage.getItem('lapen_warehouses_v1');
+                return local ? JSON.parse(local) : INITIAL_WAREHOUSES;
+            });
+            const [books, setBooks] = useState(() => {
+                const local = localStorage.getItem('lapen_books_v1');
+                return local ? JSON.parse(local) : INITIAL_BOOKS;
+            });
+
+            const [activeWarehouseId, setActiveWarehouseId] = useState('WH-A');
+            const [selectedShelf, setSelectedShelf] = useState(null);
+            const [highlightedLocation, setHighlightedLocation] = useState(null);
+            const [viewMode, setViewMode] = useState('3D'); // '3D' | '2D'
+
+            // Search & Filter
+            const [searchQuery, setSearchQuery] = useState('');
+            const [selectedCategory, setSelectedCategory] = useState('全部');
+
+            // Modals
+            const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+            const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+            const [isAddShelfModalOpen, setIsAddShelfModalOpen] = useState(false);
+            const [csvText, setCsvText] = useState('');
+            const [toastMessage, setToastMessage] = useState(null);
+
+            // 當前選中的倉庫物件
+            const activeWarehouse = useMemo(() => {
+                return warehouses.find(w => w.id === activeWarehouseId) || warehouses[0];
+            }, [warehouses, activeWarehouseId]);
+
+            // 儲存至 LocalStorage
+            useEffect(() => {
+                localStorage.setItem('lapen_warehouses_v1', JSON.stringify(warehouses));
+            }, [warehouses]);
+
+            useEffect(() => {
+                localStorage.setItem('lapen_books_v1', JSON.stringify(books));
+            }, [books]);
+
+            const showToast = (msg) => {
+                setToastMessage(msg);
+                setTimeout(() => setToastMessage(null), 3500);
+            };
+
+            // 分類清單
+            const categories = useMemo(() => {
+                const set = new Set(books.map(b => b.category).filter(Boolean));
+                return ['全部', ...Array.from(set)];
+            }, [books]);
+
+            // 過濾後的書籍搜尋結果
+            const filteredBooks = useMemo(() => {
+                return books.filter(b => {
+                    const matchWh = b.warehouseId === activeWarehouseId;
+                    const matchCat = selectedCategory === '全部' || b.category === selectedCategory;
+                    const q = searchQuery.toLowerCase().trim();
+                    const matchQ = !q || (
+                        (b.title && b.title.toLowerCase().includes(q)) ||
+                        (b.author && b.author.toLowerCase().includes(q)) ||
+                        (b.code && b.code.toLowerCase().includes(q)) ||
+                        (b.category && b.category.toLowerCase().includes(q))
+                    );
+                    return matchWh && matchCat && matchQ;
+                });
+            }, [books, activeWarehouseId, selectedCategory, searchQuery]);
+
+            // 點擊搜尋結果，直接 3D 鏡頭定位到對應書架與層數
+            const handleLocateBook = (book) => {
+                if (!book.shelfId) return showToast("該書籍尚未設定書架位置！");
+                setHighlightedLocation({
+                    warehouseId: book.warehouseId,
+                    shelfId: book.shelfId,
+                    tier: book.tier
+                });
+                const shelf = activeWarehouse.shelves.find(s => s.id === book.shelfId);
+                if (shelf) setSelectedShelf(shelf);
+                showToast(`已 3D 聚焦至《${book.title}》位置：${shelf ? shelf.code : '書架'} - 第 ${book.tier} 層`);
+            };
+
+            // 更新書架座標與屬性
+            const handleUpdateShelf = (updatedShelf) => {
+                setWarehouses(prev => prev.map(wh => {
+                    if (wh.id !== activeWarehouseId) return wh;
+                    return {
+                        ...wh,
+                        shelves: wh.shelves.map(s => s.id === updatedShelf.id ? updatedShelf : s)
+                    };
+                }));
+                setSelectedShelf(updatedShelf);
+            };
+
+            // 新增書架
+            const handleAddShelf = (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const newShelf = {
+                    id: `SH-${Date.now().toString().slice(-4)}`,
+                    code: form.code.value,
+                    name: form.name.value,
+                    x: parseFloat(form.x.value) || 0,
+                    z: parseFloat(form.z.value) || 0,
+                    rot: parseInt(form.rot.value) || 0,
+                    width: parseFloat(form.width.value) || 3.0,
+                    depth: parseFloat(form.depth.value) || 0.9,
+                    tiers: parseInt(form.tiers.value) || 5,
+                    category: form.category.value || '綜合',
+                    color: '#8C5A2B'
+                };
+
+                setWarehouses(prev => prev.map(wh => {
+                    if (wh.id !== activeWarehouseId) return wh;
+                    return { ...wh, shelves: [...wh.shelves, newShelf] };
+                }));
+
+                setSelectedShelf(newShelf);
+                setIsAddShelfModalOpen(false);
+                showToast(`成功新增書架：${newShelf.code} (${newShelf.name})`);
+            };
+
+            // 刪除書架
+            const handleDeleteShelf = (shelfId) => {
+                if (!window.confirm("確定要刪除此書架嗎？放在此書架的書籍關聯將需要重新設定。")) return;
+                setWarehouses(prev => prev.map(wh => {
+                    if (wh.id !== activeWarehouseId) return wh;
+                    return { ...wh, shelves: wh.shelves.filter(s => s.id !== shelfId) };
+                }));
+                setSelectedShelf(null);
+                showToast("已刪除書架。");
+            };
+
+            // 生成匯出 CSV 格式 (Google 試算表相容)
+            const handleOpenExportCsv = () => {
+                let csv = "書碼,書名,作者,出版年,叢書類別,倉庫代碼,書架編號,層數,庫存數量,建議定價\n";
+                books.forEach(b => {
+                    const wh = warehouses.find(w => w.id === b.warehouseId);
+                    const sh = wh ? wh.shelves.find(s => s.id === b.shelfId) : null;
+                    csv += `"${b.code}","${b.title}","${b.author}","${b.year}","${b.category}","${wh ? wh.code : ''}","${sh ? sh.code : ''}","${b.tier}","${b.stock}","${b.price}"\n`;
+                });
+                setCsvText(csv);
+                setIsCsvModalOpen(true);
+            };
+
+            // 匯入 CSV 貼上資料
+            const handleImportCsvText = () => {
+                try {
+                    const lines = csvText.trim().split('\n');
+                    if (lines.length <= 1) return showToast("CSV 內容無有效資料列！");
+
+                    const newBooks = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const row = lines[i].split(',').map(s => s.replace(/^"|"$/g, '').trim());
+                        if (row.length >= 2 && row[1]) {
+                            // 比對倉庫與書架
+                            const whCode = row[5];
+                            const shCode = row[6];
+                            const foundWh = warehouses.find(w => w.code === whCode) || warehouses[0];
+                            const foundSh = foundWh.shelves.find(s => s.code === shCode);
+
+                            newBooks.push({
+                                id: `BK-IMP-${i}-${Date.now().toString().slice(-4)}`,
+                                code: row[0] || `IMP-${i}`,
+                                title: row[1],
+                                author: row[2] || '未知',
+                                year: row[3] || '1971',
+                                category: row[4] || '通用學術',
+                                warehouseId: foundWh ? foundWh.id : 'WH-A',
+                                shelfId: foundSh ? foundSh.id : (foundWh.shelves[0] ? foundWh.shelves[0].id : ''),
+                                tier: parseInt(row[7]) || 1,
+                                stock: parseInt(row[8]) || 10,
+                                price: parseInt(row[9]) || 300,
+                                intro: '透過 Google 試算表 CSV 快速匯入之書目資料。'
+                            });
+                        }
+                    }
+
+                    if (newBooks.length > 0) {
+                        setBooks(newBooks);
+                        setIsCsvModalOpen(false);
+                        showToast(`成功從 Google 試算表 CSV 匯入 ${newBooks.length} 筆書籍資料！`);
+                    }
+                } catch (err) {
+                    showToast("CSV 解析失敗，請檢查格式是否符合規範。");
+                }
+            };
+
+            return (
+                <div className="flex flex-col h-screen w-screen overflow-hidden bg-cream font-sans">
+                    {/* Top Header Navigation */}
+                    <header className="h-16 border-b border-borderwood bg-white/80 backdrop-blur-md px-6 flex justify-between items-center z-20 shrink-0 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-amber-800 rounded-xl flex items-center justify-center text-white font-serif font-black text-xl shadow-md">
+                                文
+                            </div>
+                            <div>
+                                <h1 className="text-lg md:text-xl font-black text-amber-900 font-serif-title tracking-wider">
+                                    文史哲出版社有限公司
+                                </h1>
+                                <p className="text-[10px] tracking-widest text-amber-800 font-bold uppercase">
+                                    3D 多倉庫暨書架擺設管理與快速索引系統
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Warehouse Switcher & Actions */}
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center bg-paper p-1 rounded-xl border border-borderwood">
+                                <Icon name="Warehouse" size={16} className="text-amber-800 ml-2 mr-1" />
+                                <select 
+                                    value={activeWarehouseId}
+                                    onChange={(e) => {
+                                        setActiveWarehouseId(e.target.value);
+                                        setSelectedShelf(null);
+                                        setHighlightedLocation(null);
+                                    }}
+                                    className="bg-transparent text-sm font-bold text-amber-900 outline-none pr-2 cursor-pointer"
+                                >
+                                    {warehouses.map(wh => (
+                                        <option key={wh.id} value={wh.id}>{wh.name} ({wh.code})</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <button 
+                                onClick={handleOpenExportCsv}
+                                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 transition shadow-sm flex items-center gap-1.5"
+                            >
+                                <Icon name="FileSpreadsheet" size={15} />
+                                <span>Google 試算表 CSV 同步</span>
+                            </button>
+
+                            <button 
+                                onClick={() => setIsPrintModalOpen(true)}
+                                className="px-3 py-2 rounded-xl text-xs font-bold bg-white border border-borderwood text-amber-900 hover:bg-paper transition shadow-sm flex items-center gap-1.5"
+                            >
+                                <Icon name="Printer" size={15} />
+                                <span className="hidden sm:inline">列印擺設藍圖</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Main Workbench Body */}
+                    <div className="flex-1 flex overflow-hidden relative">
+                        {/* Left Panel: Book Indexing & Fast Search */}
+                        <aside className="w-80 md:w-96 border-r border-borderwood bg-white/70 backdrop-blur-md flex flex-col z-10 shrink-0 shadow-sm">
+                            <div className="p-4 border-b border-borderwood space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="font-serif-title font-bold text-amber-900 flex items-center gap-2">
+                                        <Icon name="Search" size={18} className="text-amber-800" />
+                                        圖書儲位快速索引
+                                    </h2>
+                                    <span className="text-xs font-bold bg-amber-800/10 text-amber-800 px-2 py-0.5 rounded-full">
+                                        共 {filteredBooks.length} 本
+                                    </span>
+                                </div>
+
+                                {/* Search Bar */}
+                                <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="搜尋書名、作者、ISBN 或類別..."
+                                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-borderwood bg-paper text-sm text-amber-900 outline-none focus:border-amber-800 font-medium"
+                                    />
+                                    <Icon name="Search" size={16} className="absolute left-3 top-2.5 text-amber-800/60" />
+                                </div>
+
+                                {/* Category Pills */}
+                                <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+                                    {categories.map(cat => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setSelectedCategory(cat)}
+                                            className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition ${
+                                                selectedCategory === cat
+                                                    ? 'bg-amber-900 text-white shadow-xs'
+                                                    : 'bg-paper border border-borderwood text-amber-800 hover:bg-amber-800/10'
+                                            }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Book Results List */}
+                            <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                                {filteredBooks.length === 0 ? (
+                                    <div className="text-center py-12 text-amber-800/60 text-xs font-bold">
+                                        無符合之書籍儲位資料
+                                    </div>
+                                ) : (
+                                    filteredBooks.map(book => {
+                                        const shelf = activeWarehouse.shelves.find(s => s.id === book.shelfId);
+                                        return (
+                                            <div 
+                                                key={book.id}
+                                                onClick={() => handleLocateBook(book)}
+                                                className="p-3 rounded-xl bg-white border border-borderwood/80 hover:border-amber-800 hover:shadow-md transition cursor-pointer group flex flex-col gap-1.5"
+                                            >
+                                                <div className="flex justify-between items-start">
+                                                    <span className="text-xs font-bold text-amber-800 bg-paper px-2 py-0.5 rounded border border-borderwood">
+                                                        {book.category}
+                                                    </span>
+                                                    <span className="text-[11px] font-mono font-bold text-amber-900/60">
+                                                        {book.code}
+                                                    </span>
+                                                </div>
+
+                                                <h3 className="font-bold text-sm text-amber-900 group-hover:text-amber-800 font-serif-title leading-snug">
+                                                    《{book.title}》
+                                                </h3>
+
+                                                <div className="text-xs text-amber-900/70 flex justify-between items-center pt-1 border-t border-dashed border-borderwood/60">
+                                                    <span>作者：{book.author}</span>
+                                                    <span className="font-bold text-amber-800 bg-amber-800/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                        <Icon name="MapPin" size={12} />
+                                                        {shelf ? shelf.code : '未擺設'} - 第{book.tier}層
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </aside>
+
+                        {/* Center Viewport: Interactive 3D Warehouse Viewport */}
+                        <main className="flex-1 relative bg-cream flex flex-col">
+                            {/* Top Floating Viewport Control Bar */}
+                            <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center pointer-events-none">
+                                <div className="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 shadow-md pointer-events-auto border border-borderwood">
+                                    <div className="flex items-center gap-2">
+                                        <Icon name="Building2" size={18} className="text-amber-800" />
+                                        <span className="font-serif-title font-bold text-amber-900">
+                                            {activeWarehouse.name}
+                                        </span>
+                                    </div>
+                                    <span className="text-xs font-mono text-amber-800/70">
+                                        [長 {activeWarehouse.width}m × 寬 {activeWarehouse.depth}m × 高 {activeWarehouse.height}m]
+                                    </span>
+                                </div>
+
+                                <div className="glass-panel p-1 rounded-2xl flex items-center gap-1 shadow-md pointer-events-auto border border-borderwood">
+                                    <button 
+                                        onClick={() => setViewMode('3D')}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                                            viewMode === '3D' ? 'bg-amber-800 text-white shadow-xs' : 'text-amber-900 hover:bg-paper'
+                                        }`}
+                                    >
+                                        <Icon name="Box" size={14} /> 3D 立體視角
+                                    </button>
+                                    <button 
+                                        onClick={() => setViewMode('2D')}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                                            viewMode === '2D' ? 'bg-amber-800 text-white shadow-xs' : 'text-amber-900 hover:bg-paper'
+                                        }`}
+                                    >
+                                        <Icon name="LayoutGrid" size={14} /> 2D 平面藍圖
+                                    </button>
+                                    <button 
+                                        onClick={() => setIsAddShelfModalOpen(true)}
+                                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-900 text-white hover:bg-amber-800 transition flex items-center gap-1 ml-1"
+                                    >
+                                        <Icon name="Plus" size={14} /> 新增書架
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 3D Canvas Container */}
+                            <div className="flex-1 w-full h-full relative">
+                                <ThreeWarehouseView 
+                                    warehouse={activeWarehouse}
+                                    selectedShelf={selectedShelf}
+                                    highlightedLocation={highlightedLocation}
+                                    onSelectShelf={setSelectedShelf}
+                                    viewMode={viewMode}
+                                />
+                            </div>
+                        </main>
+
+                        {}
+                        {/* Right Panel: Selected Shelf Inspector & Layout Configurator */}
+                        {selectedShelf && (
+                            <aside className="w-80 md:w-88 border-l border-borderwood bg-white/90 backdrop-blur-md p-5 flex flex-col gap-4 z-10 shrink-0 shadow-lg overflow-y-auto">
+                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
+                                    <div>
+                                        <div className="text-xs font-bold text-amber-800 font-mono">
+                                            書架代號：{selectedShelf.code}
+                                        </div>
+                                        <h3 className="font-serif-title font-black text-lg text-amber-900">
+                                            {selectedShelf.name}
+                                        </h3>
+                                    </div>
+                                    <button 
+                                        onClick={() => setSelectedShelf(null)}
+                                        className="p-1 rounded-full hover:bg-paper text-amber-900/60"
+                                    >
+                                        <Icon name="X" size={18} />
+                                    </button>
+                                </div>
+
+                                {/* Shelf Interactive Coordinates Controls (X, Z Position Slider) */}
+                                <div className="space-y-4 glass-panel p-4 rounded-2xl border border-borderwood">
+                                    <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                                        <Icon name="Move" size={14} className="text-amber-800" />
+                                        調整倉庫平面座標位置 (公尺)
+                                    </h4>
+
+                                    {/* X Position */}
+                                    <div>
+                                        <div className="flex justify-between text-xs font-bold text-amber-900 mb-1">
+                                            <span>左右位置 (X 軸)</span>
+                                            <span className="font-mono text-amber-800">{selectedShelf.x.toFixed(1)} m</span>
+                                        </div>
+                                        <input 
+                                            type="range" 
+                                            min={-activeWarehouse.width / 2 + 1}
+                                            max={activeWarehouse.width / 2 - 1}
+                                            step="0.5"
+                                            value={selectedShelf.x}
+                                            onChange={(e) => handleUpdateShelf({ ...selectedShelf, x: parseFloat(e.target.value) })}
+                                            className="w-full accent-amber-800 cursor-pointer"
+                                        />
+                                    </div>
+
+                                    {/* Z Position */}
+                                    <div>
+                                        <div className="flex justify-between text-xs font-bold text-amber-900 mb-1">
+                                            <span>前後位置 (Z 軸)</span>
+                                            <span className="font-mono text-amber-800">{selectedShelf.z.toFixed(1)} m</span>
+                                        </div>
+                                        <input 
+                                            type="range" 
+                                            min={-activeWarehouse.depth / 2 + 1}
+                                            max={activeWarehouse.depth / 2 - 1}
+                                            step="0.5"
+                                            value={selectedShelf.z}
+                                            onChange={(e) => handleUpdateShelf({ ...selectedShelf, z: parseFloat(e.target.value) })}
+                                            className="w-full accent-amber-800 cursor-pointer"
+                                        />
+                                    </div>
+
+                                    {/* Rotation Angle */}
+                                    <div>
+                                        <div className="flex justify-between text-xs font-bold text-amber-900 mb-1">
+                                            <span>擺放旋轉角度</span>
+                                            <span className="font-mono text-amber-800">{selectedShelf.rot}°</span>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-1.5">
+                                            {[0, 90, 180, 270].map(deg => (
+                                                <button 
+                                                    key={deg}
+                                                    onClick={() => handleUpdateShelf({ ...selectedShelf, rot: deg })}
+                                                    className={`py-1 rounded-lg text-xs font-bold transition ${
+                                                        selectedShelf.rot === deg 
+                                                            ? 'bg-amber-800 text-white' 
+                                                            : 'bg-paper border border-borderwood text-amber-900'
+                                                    }`}
+                                                >
+                                                    {deg}°
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Shelf Specifications Form */}
+                                <div className="space-y-3 glass-panel p-4 rounded-2xl border border-borderwood">
+                                    <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                                        <Icon name="Sliders" size={14} className="text-amber-800" />
+                                        書架尺寸與層數設定
+                                    </h4>
+
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                            <label className="block text-amber-900/70 font-bold mb-1">層數 (Tiers)</label>
+                                            <input 
+                                                type="number"
+                                                min="2" max="8"
+                                                value={selectedShelf.tiers}
+                                                onChange={(e) => handleUpdateShelf({ ...selectedShelf, tiers: parseInt(e.target.value) || 4 })}
+                                                className="w-full p-2 rounded-lg border border-borderwood bg-paper font-bold text-amber-900 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-amber-900/70 font-bold mb-1">寬度 (Meters)</label>
+                                            <input 
+                                                type="number"
+                                                step="0.2"
+                                                value={selectedShelf.width}
+                                                onChange={(e) => handleUpdateShelf({ ...selectedShelf, width: parseFloat(e.target.value) || 3.0 })}
+                                                className="w-full p-2 rounded-lg border border-borderwood bg-paper font-bold text-amber-900 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Shelf Books List */}
+                                <div className="flex-1 space-y-2">
+                                    <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                                        <Icon name="BookOpen" size={14} className="text-amber-800" />
+                                        此書架目前擺放之書籍 ({books.filter(b => b.shelfId === selectedShelf.id).length} 本)：
+                                    </h4>
+                                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                                        {books.filter(b => b.shelfId === selectedShelf.id).map(book => (
+                                            <div key={book.id} className="p-2 rounded-lg bg-paper border border-borderwood text-xs flex justify-between items-center">
+                                                <span className="font-bold text-amber-900 truncate pr-2">《{book.title}》</span>
+                                                <span className="text-[10px] font-bold bg-amber-800/10 text-amber-800 px-1.5 py-0.5 rounded shrink-0">
+                                                    第 {book.tier} 層
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button 
+                                    onClick={() => handleDeleteShelf(selectedShelf.id)}
+                                    className="w-full py-2.5 rounded-xl border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 transition text-xs font-bold flex justify-center items-center gap-1.5"
+                                >
+                                    <Icon name="Trash2" size={15} />
+                                    刪除此書架
+                                </button>
+                            </aside>
+                        )}
+                    </div>
+
+                    {}
+                    {/* Modal 1: Google 試算表 CSV 同步 Modal */}
+                    {isCsvModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="bg-cream border-2 border-borderwood w-full max-w-3xl rounded-3xl shadow-2xl p-6 flex flex-col gap-4 font-sans animate-in">
+                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
+                                    <h3 className="text-lg font-bold font-serif-title text-amber-900 flex items-center gap-2">
+                                        <Icon name="FileSpreadsheet" size={20} className="text-amber-800" />
+                                        Google 試算表 (CSV) 雙向同步
+                                    </h3>
+                                    <button onClick={() => setIsCsvModalOpen(false)} className="p-1 rounded-full hover:bg-paper">
+                                        <Icon name="X" size={20} />
+                                    </button>
+                                </div>
+
+                                <p className="text-xs text-amber-900/80 leading-relaxed bg-paper p-3 rounded-xl border border-borderwood">
+                                    💡 <strong>操作說明：</strong> 您可以複製下方標準 CSV 文字貼至 Google 試算表進行編修；或從 Google 試算表複製 CSV 內容貼於下方，點擊「匯入書籍庫」即可完成圖書儲位同步。
+                                </p>
+
+                                <textarea 
+                                    value={csvText}
+                                    onChange={(e) => setCsvText(e.target.value)}
+                                    rows="12"
+                                    className="w-full p-4 rounded-xl border border-borderwood bg-white text-xs font-mono text-amber-900 outline-none focus:border-amber-800 leading-relaxed"
+                                    placeholder="貼上 Google 試算表 CSV 內容..."
+                                />
+
+                                <div className="flex justify-between items-center pt-2">
+                                    <button 
+                                        onClick={() => {
+                                            document.execCommand('copy');
+                                            showToast("已將 CSV 數據複製到剪貼簿，可直接貼上至 Google 試算表！");
+                                        }}
+                                        className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-borderwood text-amber-900 hover:bg-paper transition flex items-center gap-1.5"
+                                    >
+                                        <Icon name="Copy" size={15} /> 複製 CSV 數據
+                                    </button>
+
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setIsCsvModalOpen(false)}
+                                            className="px-4 py-2 rounded-xl text-xs font-bold bg-paper border border-borderwood text-amber-900"
+                                        >
+                                            取消
+                                        </button>
+                                        <button 
+                                            onClick={handleImportCsvText}
+                                            className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm"
+                                        >
+                                            匯入並更新書籍儲位
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modal 2: 列印倉庫擺設明細藍圖 */}
+                    {isPrintModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="bg-white border-2 border-borderwood w-full max-w-2xl rounded-3xl shadow-2xl p-8 flex flex-col gap-5 font-sans animate-in">
+                                <div className="text-center border-b border-borderwood pb-4">
+                                    <h2 className="text-2xl font-black text-amber-900 font-serif-title">
+                                        文史哲出版社 - 倉庫擺設明細與揀貨藍圖
+                                    </h2>
+                                    <p className="text-xs text-amber-800 font-bold mt-1">
+                                        {activeWarehouse.name} ({activeWarehouse.code}) ‧ {new Date().toLocaleDateString()}
+                                    </p>
+                                </div>
+
+                                <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                                    <h3 className="font-bold text-amber-900 text-sm flex items-center gap-1.5">
+                                        <Icon name="Grid" size={16} className="text-amber-800" />
+                                        目前書架佈局對照表：
+                                    </h3>
+                                    <table className="w-full text-left text-xs border-collapse">
+                                        <thead>
+                                            <tr className="bg-paper border-b border-borderwood text-amber-900 font-bold">
+                                                <th className="p-2">書架代號</th>
+                                                <th className="p-2">書架名稱</th>
+                                                <th className="p-2">X, Z 座標</th>
+                                                <th className="p-2">層數</th>
+                                                <th className="p-2">擺放書籍種數</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {activeWarehouse.shelves.map(sh => (
+                                                <tr key={sh.id} className="border-b border-borderwood/50">
+                                                    <td className="p-2 font-mono font-bold text-amber-800">{sh.code}</td>
+                                                    <td className="p-2 font-bold text-amber-900">{sh.name}</td>
+                                                    <td className="p-2 font-mono">({sh.x}, {sh.z})</td>
+                                                    <td className="p-2">{sh.tiers} 層</td>
+                                                    <td className="p-2 font-bold">{books.filter(b => b.shelfId === sh.id).length} 種</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t border-borderwood">
+                                    <button 
+                                        onClick={() => setIsPrintModalOpen(false)}
+                                        className="px-4 py-2 rounded-xl text-xs font-bold bg-paper border border-borderwood text-amber-900"
+                                    >
+                                        關閉
+                                    </button>
+                                    <button 
+                                        onClick={() => window.print()}
+                                        className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm flex items-center gap-1.5"
+                                    >
+                                        <Icon name="Printer" size={15} /> 列印此藍圖報表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {}
+                    {/* Modal 3: 新增書架 Modal */}
+                    {isAddShelfModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <form onSubmit={handleAddShelf} className="bg-cream border-2 border-borderwood w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col gap-4 font-sans animate-in">
+                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
+                                    <h3 className="text-base font-bold font-serif-title text-amber-900 flex items-center gap-2">
+                                        <Icon name="PlusCircle" size={18} className="text-amber-800" />
+                                        新增書架至 {activeWarehouse.name}
+                                    </h3>
+                                    <button type="button" onClick={() => setIsAddShelfModalOpen(false)} className="p-1 rounded-full hover:bg-paper">
+                                        <Icon name="X" size={18} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3 text-xs">
+                                    <div>
+                                        <label className="block text-amber-900 font-bold mb-1">書架代號 (如: A9架)</label>
+                                        <input name="code" required defaultValue={`A${activeWarehouse.shelves.length + 1}架`} className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-amber-900 font-bold mb-1">書架區塊名稱</label>
+                                        <input name="name" required placeholder="例如：臺灣文學特藏區" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-amber-900 font-bold mb-1">X 軸座標 (公尺)</label>
+                                            <input name="x" type="number" step="0.5" defaultValue="0" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-amber-900 font-bold mb-1">Z 軸座標 (公尺)</label>
+                                            <input name="z" type="number" step="0.5" defaultValue="0" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div>
+                                            <label className="block text-amber-900 font-bold mb-1">旋轉角度</label>
+                                            <select name="rot" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none">
+                                                <option value="0">0°</option>
+                                                <option value="90">90°</option>
+                                                <option value="180">180°</option>
+                                                <option value="270">270°</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-amber-900 font-bold mb-1">層數</label>
+                                            <input name="tiers" type="number" min="2" max="8" defaultValue="5" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-amber-900 font-bold mb-1">寬度(m)</label>
+                                            <input name="width" type="number" step="0.2" defaultValue="3.2" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-amber-900 font-bold mb-1">主要書籍類別</label>
+                                        <input name="category" defaultValue="文學叢刊" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2 pt-2 border-t border-borderwood">
+                                    <button type="button" onClick={() => setIsAddShelfModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-bold bg-paper text-amber-900">
+                                        取消
+                                    </button>
+                                    <button type="submit" className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm">
+                                        確認新增
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Toast Notification */}
+                    {toastMessage && (
+                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-amber-900 text-white px-5 py-3 rounded-2xl shadow-2xl z-50 text-xs font-bold flex items-center gap-2 border border-white/20 animate-in">
+                            <Icon name="CheckCircle2" size={16} className="text-amber-300" />
+                            <span>{toastMessage}</span>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
