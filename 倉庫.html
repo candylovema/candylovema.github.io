@@ -68,7 +68,6 @@
             color: #FDFBF7;
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -90,6 +89,14 @@
             width: 100% !important;
             height: 100% !important;
         }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -98,7 +105,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // --- Safe Native SVG Icon Component (Fixes Lucide UMD forwardRef error) ---
+        // Native SVG Icon Components
         const ICON_SVGS = {
             Warehouse: () => <g><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"/><path d="M6 18h12M6 14h12M6 10h12"/></g>,
             FileSpreadsheet: () => <g><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h8M12 10v8"/></g>,
@@ -109,6 +116,7 @@
             Box: () => <g><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></g>,
             LayoutGrid: () => <g><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></g>,
             Plus: () => <g><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>,
+            ArrowUpDown: () => <g><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/><path d="M12 4v16"/></g>,
             X: () => <g><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></g>,
             Move: () => <g><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></g>,
             Sliders: () => <g><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></g>,
@@ -119,6 +127,9 @@
             PlusCircle: () => <g><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></g>,
             CheckCircle2: () => <g><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></g>,
             Compass: () => <g><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></g>,
+            Filter: () => <g><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></g>,
+            AlertCircle: () => <g><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></g>,
+            RefreshCw: () => <g><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></g>,
             HelpCircle: () => <g><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></g>
         };
 
@@ -141,15 +152,53 @@
             );
         };
 
-        // --- 預設多倉庫資料 ---
+        const parseCSVText = (text) => {
+            if (!text) return [];
+            const lines = text.split(/\r?\n/);
+            return lines.map(line => {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        if (inQuotes && line[i + 1] === '"') {
+                            current += '"';
+                            i++;
+                        } else {
+                            inQuotes = !inQuotes;
+                        }
+                    } else if (char === ',' && !inQuotes) {
+                        result.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current.trim());
+                return result;
+            }).filter(row => row.some(cell => cell !== ''));
+        };
+
+        const getColIdx = (headers, keywords) => {
+            if (!headers || !keywords) return -1;
+            for (let i = 0; i < headers.length; i++) {
+                const header = (headers[i] || '').toLowerCase().replace(/[\s_"]/g, '');
+                for (const kw of keywords) {
+                    if (header.includes(kw.toLowerCase())) return i;
+                }
+            }
+            return -1;
+        };
+
         const INITIAL_WAREHOUSES = [
             {
                 id: 'WH-A',
                 name: '羅斯福路總社倉庫 (A倉)',
                 code: 'A-MAIN',
                 address: '臺北市中正區羅斯福路一段72巷4號B1',
-                width: 24, // 24 meters
-                depth: 18, // 18 meters
+                width: 24,
+                depth: 18,
                 height: 4.5,
                 shelves: [
                     { id: 'SH-A01', code: 'A1架', name: '文史哲學集成專區', x: -7, z: -5, rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '文史哲學集成', color: '#8C5A2B' },
@@ -174,7 +223,7 @@
                     { id: 'SH-B01', code: 'B1架', name: '古籍整理與目錄學', x: -5, z: -3, rot: 0, width: 3.0, depth: 0.8, tiers: 5, category: '目錄學', color: '#8C5A2B' },
                     { id: 'SH-B02', code: 'B2架', name: '中日關係史論集', x: 0, z: -3, rot: 0, width: 3.0, depth: 0.8, tiers: 5, category: '歷史學', color: '#2C3E50' },
                     { id: 'SH-B03', code: 'B3架', name: '滿語叢刊典藏架', x: 5, z: -3, rot: 0, width: 3.0, depth: 0.8, tiers: 6, category: '滿學', color: '#1B4F72' },
-                    { id: 'SH-B04', code: 'B4架', name: '藝術史與社會科學', x: -2, z: 3, rot: 0, width: 3.5, depth: 0.8, tiers: 4, category: '藝術社會', color: '#7E5109' },
+                    { id: 'SH-B04', code: 'B4架', name: '藝術史與戲曲研究', x: -2, z: 3, rot: 0, width: 3.5, depth: 0.8, tiers: 5, category: '藝術社會', color: '#7E5109' },
                 ]
             },
             {
@@ -186,28 +235,65 @@
                 depth: 20,
                 height: 5.0,
                 shelves: [
-                    { id: 'SH-C01', code: 'C1架', name: '重刷備份書架一', x: -10, z: -4, rot: 0, width: 4.0, depth: 1.0, tiers: 6, category: '文史哲學集成', color: '#8C5A2B' },
-                    { id: 'SH-C02', code: 'C2架', name: '重刷備份書架二', x: -3, z: -4, rot: 0, width: 4.0, depth: 1.0, tiers: 6, category: '文學叢刊', color: '#A04000' },
-                    { id: 'SH-C03', code: 'C3架', name: '長銷古籍備貨', x: 4, z: -4, rot: 0, width: 4.0, depth: 1.0, tiers: 6, category: '歷史學', color: '#2C3E50' },
+                    { id: 'SH-C01', code: 'C1架', name: '大套書與珍本典藏架', x: -6, z: -2, rot: 0, width: 4.0, depth: 1.0, tiers: 6, category: '歷史學', color: '#1B4F72' },
+                    { id: 'SH-C02', code: 'C2架', name: '哲學與宗教備份架', x: 2, z: -2, rot: 0, width: 4.0, depth: 1.0, tiers: 5, category: '哲學宗教', color: '#5B2C6F' }
                 ]
             }
         ];
 
-        // --- 預設圖書資料庫（可與 Google 試算表對接） ---
         const INITIAL_BOOKS = [
-            { id: 'BK-1001', code: '978-957-549-001', title: '塔裡的女人', author: '無名氏（卜乃夫）', year: '1971', category: '文學小說', warehouseId: 'WH-A', shelfId: 'SH-A05', tier: 3, stock: 120, price: 380, intro: '《塔裡的女人》是一部充滿浪漫與悲劇色彩的經典小說，寫出愛情與現實間的掙扎。' },
-            { id: 'BK-1002', code: '978-957-549-002', title: '中國目錄學', author: '昌彼得', year: '1975', category: '目錄學', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 2, stock: 45, price: 550, intro: '國學與古籍整理基礎必讀典籍，為目錄學研究之權威指南。' },
-            { id: 'BK-1003', code: '978-957-549-003', title: '清史論集（第一集）', author: '莊吉發', year: '1982', category: '歷史學', warehouseId: 'WH-A', shelfId: 'SH-A03', tier: 1, stock: 30, price: 620, intro: '收錄莊吉發教授對清代歷史、檔案與滿洲制度之深刻研究。' },
-            { id: 'BK-1004', code: '978-957-549-004', title: '文心雕龍與經學', author: '蔡宗陽', year: '1988', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 4, stock: 85, price: 480, intro: '深入剖析《文心雕龍》文學理論與經學思想之密切關聯。' },
-            { id: 'BK-1005', code: '978-957-549-005', title: '霧航', author: '馮馮', year: '1980', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 2, stock: 60, price: 420, intro: '著名作家馮馮代表作，刻畫時代變遷下之旅人心情。' },
-            { id: 'BK-1006', code: '978-957-549-006', title: '中日關係史研究論集 (第一冊)', author: '龔鵬程、鄭樑生', year: '1991', category: '歷史學', warehouseId: 'WH-B', shelfId: 'SH-B02', tier: 3, stock: 25, price: 750, intro: '中日交流史重要論文集，全套共14冊。' },
-            { id: 'BK-1007', code: '978-957-549-007', title: '滿語叢刊 (全50冊之一)', author: '文史哲編輯部', year: '1995', category: '滿學', warehouseId: 'WH-B', shelfId: 'SH-B03', tier: 5, stock: 15, price: 1200, intro: '清代滿語研究極具價值之文獻彙編。' },
-            { id: 'BK-1008', code: '978-957-549-008', title: '修辭學探微', author: '蔡宗陽', year: '1993', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 2, stock: 50, price: 360, intro: '系統分析漢語修辭技巧與文章藝術風格。' },
-            { id: 'BK-1009', code: '978-957-549-009', title: '中國哲學思潮史', author: '嚴靈峰', year: '1985', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 3, stock: 40, price: 580, intro: '貫穿先秦至明清哲學思潮之體系著作。' },
-            { id: 'BK-1010', code: '978-957-549-010', title: '紀弦詩選新編', author: '紀弦', year: '1978', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 4, stock: 70, price: 320, intro: '現代詩派發起人紀弦經典詩作集結。' }
+            { id: 'BK-1001', code: '978-957-549-001', title: '塔裡的女人', author: '無名氏（卜乃夫）', year: '1971', category: '文學小說', warehouseId: 'WH-A', shelfId: 'SH-A05', tier: 3, stock: 120, price: 380, intro: '《塔裡的女人》是一部深刻浪漫的悲劇經典。' },
+            { id: 'BK-1002', code: '978-957-549-002', title: '中國目錄學', author: '昌彼得', year: '1975', category: '目錄學', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 2, stock: 45, price: 550, intro: '國學與古籍整理基礎必讀典籍。' },
+            { id: 'BK-1003', code: '978-957-549-003', title: '清史論集（第一集）', author: '莊吉發', year: '1982', category: '歷史學', warehouseId: 'WH-A', shelfId: 'SH-A03', tier: 1, stock: 30, price: 620, intro: '莊吉發教授對清代歷史與檔案之深刻研究。' },
+            { id: 'BK-1004', code: '978-957-549-004', title: '文心雕龍與經學', author: '蔡宗陽', year: '1988', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 4, stock: 85, price: 480, intro: '剖析《文心雕龍》文學理論與經學思想。' },
+            { id: 'BK-1005', code: '978-957-549-005', title: '霧航', author: '馮馮', year: '1980', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 2, stock: 60, price: 420, intro: '著名作家馮馮代表作。' },
+            { id: 'BK-1006', code: '978-957-549-006', title: '中日關係史研究論集 (第一冊)', author: '龔鵬程、鄭樑生', year: '1991', category: '歷史學', warehouseId: 'WH-B', shelfId: 'SH-B02', tier: 3, stock: 25, price: 750, intro: '中日交流史重要論文集。' },
+            { id: 'BK-1007', code: '978-957-549-007', title: '滿語叢刊 (全50冊之一)', author: '文史哲編輯部', year: '1995', category: '滿學', warehouseId: 'WH-B', shelfId: 'SH-B03', tier: 5, stock: 15, price: 1200, intro: '清代滿語研究文獻彙編。' },
+            { id: 'BK-1008', code: '978-957-549-008', title: '修辭學探微', author: '蔡宗陽', year: '1993', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 2, stock: 50, price: 360, intro: '漢語修辭技巧與文章風格。' },
+            { id: 'BK-1009', code: '978-957-549-009', title: '中國哲學思潮史', author: '嚴靈峰', year: '1985', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 3, stock: 40, price: 580, intro: '貫穿先秦至明清哲學思潮。' },
+            { id: 'BK-1010', code: '978-957-549-010', title: '紀弦詩選新編', author: '紀弦', year: '1978', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 4, stock: 70, price: 320, intro: '現代詩派發起人紀弦詩集。' },
+            { id: 'BK-1011', code: '978-957-549-011', title: '周易折中註譯', author: '高明', year: '1983', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 2, stock: 55, price: 680, intro: '易學名家高明教授考訂註釋本。' },
+            { id: 'BK-1012', code: '978-957-549-012', title: '尚書通論', author: '屈萬里', year: '1979', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 3, stock: 40, price: 520, intro: '屈萬里教授尚書研究集大成。' },
+            { id: 'BK-1013', code: '978-957-549-013', title: '詩經研究續集', author: '潘重規', year: '1987', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A02', tier: 1, stock: 35, price: 600, intro: '探討詩經作品背景與文化意涵。' },
+            { id: 'BK-1014', code: '978-957-549-014', title: '楚辭補注點校', author: '林尹', year: '1984', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 1, stock: 50, price: 580, intro: '林尹教授精研楚辭經典校釋。' },
+            { id: 'BK-1015', code: '978-957-549-015', title: '史記會注考證補遺', author: '水澤利忠 / 編輯部', year: '1990', category: '歷史學', warehouseId: 'WH-A', shelfId: 'SH-A03', tier: 2, stock: 28, price: 850, intro: '史記研究考據著作。' },
+            { id: 'BK-1016', code: '978-957-549-016', title: '莊子集釋校正', author: '嚴靈峰', year: '1986', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 1, stock: 65, price: 720, intro: '莊子各家注釋之精密彙析。' },
+            { id: 'BK-1017', code: '978-957-549-017', title: '訓詁學概論', author: '陳新雄', year: '1992', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 4, stock: 90, price: 450, intro: '中文系聲韻訓詁學權威教材。' },
+            { id: 'BK-1018', code: '978-957-549-018', title: '清代邊政與滿洲檔案', author: '莊吉發', year: '1998', category: '歷史學', warehouseId: 'WH-B', shelfId: 'SH-B03', tier: 4, stock: 32, price: 680, intro: '故宮清代滿漢檔案第一手研究。' },
+            { id: 'BK-1019', code: '978-957-549-019', title: '中國文學批評史論', author: '黃永武', year: '1989', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A02', tier: 3, stock: 48, price: 560, intro: '系統整理歷代文學批評論著。' },
+            { id: 'BK-1020', code: '978-957-549-020', title: '古典藝術與美學新探', author: '龔鵬程', year: '1996', category: '藝術社會', warehouseId: 'WH-B', shelfId: 'SH-B04', tier: 2, stock: 38, price: 490, intro: '貫通古典文學與藝術美學。' },
+            { id: 'BK-1021', code: '978-957-549-021', title: '中晚清經說疏論', author: '曾聖益', year: '2023', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 5, stock: 42, price: 360, intro: '探討晚清經學思想變遷。' },
+            { id: 'BK-1022', code: '978-957-549-022', title: '從廟堂到田園：先唐士人的心路歷程', author: '王玫', year: '2024', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A02', tier: 2, stock: 50, price: 420, intro: '剖析先唐士人政治抱負與田園思想。' },
+            { id: 'BK-1023', code: '978-957-549-023', title: '漢語音韻學', author: '董同龢', year: '2022', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 3, stock: 65, price: 400, intro: '董同龢教授音韻學經典著述。' },
+            { id: 'BK-1024', code: '978-957-549-024', title: '禮記集解（上冊）', author: '孫希旦', year: '1990', category: '文史哲學集成', warehouseId: 'WH-C', shelfId: 'SH-C01', tier: 1, stock: 20, price: 800, intro: '清代禮記研究權威集解。' },
+            { id: 'BK-1025', code: '978-957-549-025', title: '禮記集解（下冊）', author: '孫希旦', year: '1990', category: '文史哲學集成', warehouseId: 'WH-C', shelfId: 'SH-C01', tier: 2, stock: 20, price: 800, intro: '清代禮記研究權威集解。' },
+            { id: 'BK-1026', code: '978-957-549-026', title: '易經符號詮釋學', author: '張易生', year: '2022', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 4, stock: 35, price: 460, intro: '當代華人格物致知理論與易學實踐。' },
+            { id: 'BK-1027', code: '978-957-549-027', title: '國學大師勞思光專題研究', author: '勞思光 / 編輯部', year: '2001', category: '國學大師叢書', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 3, stock: 30, price: 500, intro: '探討勞思光哲學思想體系。' },
+            { id: 'BK-1028', code: '978-957-549-028', title: '王靜芝國學論文集', author: '王靜芝', year: '1997', category: '國學大師叢書', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 4, stock: 25, price: 580, intro: '王靜芝教授國學與藝術論文集。' },
+            { id: 'BK-1029', code: '978-957-549-029', title: '中國圖書館事業史', author: '盧荷生', year: '1988', category: '目錄學', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 5, stock: 40, price: 480, intro: '梳理中國歷代藏書與圖書館發展。' },
+            { id: 'BK-1030', code: '978-957-549-030', title: '中國戲曲史演變考', author: '文史哲編輯部', year: '1994', category: '戲曲研究', warehouseId: 'WH-B', shelfId: 'SH-B04', tier: 1, stock: 35, price: 620, intro: '古典戲曲與地方劇種研究。' },
+            { id: 'BK-1031', code: '978-957-549-031', title: '再鴻門：詩集', author: '陳大為', year: '1997', category: '文史哲詩叢', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 3, stock: 45, price: 300, intro: '以古喻今敘事詩集。' },
+            { id: 'BK-1032', code: '978-957-549-032', title: '繪畫創作研究', author: '池振周', year: '1972', category: '藝術社會', warehouseId: 'WH-B', shelfId: 'SH-B04', tier: 3, stock: 20, price: 380, intro: '探討繪畫美學與創作理論。' },
+            { id: 'BK-1033', code: '978-957-549-033', title: '藝術概論', author: '池振周', year: '1971', category: '藝術社會', warehouseId: 'WH-B', shelfId: 'SH-B04', tier: 4, stock: 15, price: 350, intro: '創社初期經典藝術教科書。' },
+            { id: 'BK-1034', code: '978-957-549-034', title: '微曦四部曲 (一)', author: '馮馮', year: '1981', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A05', tier: 1, stock: 30, price: 450, intro: '馮馮自傳體長篇小說大作。' },
+            { id: 'BK-1035', code: '978-957-549-035', title: '羅門創作大系 (詩卷)', author: '羅門', year: '1995', category: '文史哲詩叢', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 5, stock: 40, price: 600, intro: '都市詩人羅門詩歌精選。' },
+            { id: 'BK-1036', code: '978-957-549-036', title: '明版善本書文獻考', author: '彭正雄編', year: '1973', category: '目錄學', warehouseId: 'WH-C', shelfId: 'SH-C01', tier: 3, stock: 10, price: 950, intro: '創辦人彭正雄先生輯錄明版善本。' },
+            { id: 'BK-1037', code: '978-957-549-037', title: '先秦諸子思想通論', author: '嚴靈峰', year: '1987', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 5, stock: 50, price: 550, intro: '解析先秦諸家學說核心。' },
+            { id: 'BK-1038', code: '978-957-549-038', title: '韓非子集解校正', author: '嚴靈峰', year: '1989', category: '哲學宗教', warehouseId: 'WH-C', shelfId: 'SH-C02', tier: 1, stock: 22, price: 700, intro: '《韓非子》精密彙校考訂本。' },
+            { id: 'BK-1039', code: '978-957-549-039', title: '魏晉南北朝文學論集', author: '黃永武', year: '1991', category: '文史哲學術叢刊', warehouseId: 'WH-A', shelfId: 'SH-A02', tier: 4, stock: 45, price: 520, intro: '魏晉風骨與南北朝詩賦風格。' },
+            { id: 'BK-1040', code: '978-957-549-040', title: '唐詩意象學', author: '黃永武', year: '1993', category: '文史哲學術叢刊', warehouseId: 'WH-A', shelfId: 'SH-A02', tier: 5, stock: 60, price: 480, intro: '分析唐代詩歌審美結構。' },
+            { id: 'BK-1041', code: '978-957-549-041', title: '宋代理學與文學', author: '李威熊', year: '1992', category: '文史哲學術叢刊', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 1, stock: 38, price: 540, intro: '宋代理學家文學觀研究。' },
+            { id: 'BK-1042', code: '978-957-549-042', title: '元代戲曲雜劇研究', author: '王更生', year: '1990', category: '戲曲研究', warehouseId: 'WH-B', shelfId: 'SH-B04', tier: 5, stock: 30, price: 580, intro: '元雜劇結構與語言專題論著。' },
+            { id: 'BK-1043', code: '978-957-549-043', title: '明清小說審美思潮', author: '蔡宗陽', year: '1999', category: '文學小說', warehouseId: 'WH-A', shelfId: 'SH-A05', tier: 4, stock: 55, price: 460, intro: '明清小說美學價值探討。' },
+            { id: 'BK-1044', code: '978-957-549-044', title: '聲韻學隨筆', author: '陳新雄', year: '1995', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 5, stock: 70, price: 380, intro: '談漢語音韻、反切與古音學。' },
+            { id: 'BK-1045', code: '978-957-549-045', title: '中國史學史綱', author: '莊吉發', year: '2002', category: '歷史學', warehouseId: 'WH-A', shelfId: 'SH-A03', tier: 3, stock: 40, price: 650, intro: '貫穿歷代史官制度與史學思想。' },
+            { id: 'BK-1046', code: '978-957-549-046', title: '故宮滿文檔案考釋', author: '莊吉發', year: '2005', category: '滿學', warehouseId: 'WH-B', shelfId: 'SH-B03', tier: 2, stock: 18, price: 880, intro: '故宮藏滿文書檔之翻譯與考證。' },
+            { id: 'BK-1047', code: '978-957-549-047', title: '台灣文史考輯 (待入庫備貨)', author: '文史哲編輯部', year: '2024', category: '歷史學', warehouseId: '', shelfId: '', tier: 1, stock: 100, price: 420, intro: '新近印製完成，待倉管人員指定儲位。' },
+            { id: 'BK-1048', code: '978-957-549-048', title: '國學導讀講義 (待入庫備貨)', author: '高明', year: '2025', category: '國學大師叢書', warehouseId: '', shelfId: '', tier: 1, stock: 80, price: 390, intro: '高明教授國學講義新版。' },
+            { id: 'BK-1049', code: '978-957-549-049', title: '現代西方哲學概論', author: '韓秋紅', year: '2018', category: '哲學宗教', warehouseId: 'WH-C', shelfId: 'SH-C02', tier: 2, stock: 35, price: 520, intro: '從叔本華到羅蒂之哲學流派講義。' },
+            { id: 'BK-1050', code: '978-957-549-050', title: '綜合閩南臺灣話基本字典', author: '吳守禮', year: '1987', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 1, stock: 25, price: 1100, intro: '吳守禮教授編著工具書。' }
         ];
 
-        // --- 3D 倉庫渲染組件 (Three.js Engine) ---
         const ThreeWarehouseView = ({ warehouse, selectedShelf, highlightedLocation, onSelectShelf, viewMode }) => {
             const mountRef = useRef(null);
             const sceneRef = useRef(null);
@@ -217,12 +303,10 @@
             const pinMeshRef = useRef(null);
             const animFrameRef = useRef(null);
 
-            // Orbit State
             const isDragging = useRef(false);
             const previousMousePosition = useRef({ x: 0, y: 0 });
             const cameraAngle = useRef({ theta: Math.PI / 4, phi: Math.PI / 3, radius: 35 });
 
-            // 更新攝影機位置
             const updateCameraPosition = useCallback(() => {
                 if (!cameraRef.current) return;
                 const cam = cameraRef.current;
@@ -236,7 +320,6 @@
                 cam.lookAt(0, 1.5, 0);
             }, []);
 
-            // 視覺模式切換 (3D vs 2D 平面)
             useEffect(() => {
                 if (viewMode === '2D') {
                     cameraAngle.current = { theta: 0, phi: 0.001, radius: 28 };
@@ -246,18 +329,14 @@
                 updateCameraPosition();
             }, [viewMode, updateCameraPosition]);
 
-            // 定位聚焦點動畫
             useEffect(() => {
                 if (!highlightedLocation || !warehouse) return;
                 const targetShelf = warehouse.shelves.find(s => s.id === highlightedLocation.shelfId);
                 if (targetShelf) {
                     onSelectShelf(targetShelf);
-                    // 相機轉向對應座標
                     const targetX = targetShelf.x;
                     const targetZ = targetShelf.z;
                     
-                    // 動畫帶鏡頭
-                    const startTheta = cameraAngle.current.theta;
                     const targetTheta = Math.atan2(targetX, targetZ) + Math.PI / 6;
                     cameraAngle.current.theta = targetTheta;
                     cameraAngle.current.radius = 22;
@@ -265,7 +344,6 @@
                 }
             }, [highlightedLocation, warehouse, onSelectShelf, updateCameraPosition]);
 
-            // 初始化 Three.js 場景
             useEffect(() => {
                 const container = mountRef.current;
                 if (!container) return;
@@ -273,18 +351,15 @@
                 const width = container.clientWidth;
                 const height = container.clientHeight;
 
-                // Scene
                 const scene = new THREE.Scene();
                 scene.background = new THREE.Color(0xFDFBF7);
                 scene.fog = new THREE.FogExp2(0xFDFBF7, 0.012);
                 sceneRef.current = scene;
 
-                // Camera
                 const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
                 cameraRef.current = camera;
                 updateCameraPosition();
 
-                // Renderer
                 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setSize(width, height);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -295,7 +370,6 @@
                 container.innerHTML = '';
                 container.appendChild(renderer.domElement);
 
-                // Lighting
                 const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
                 scene.add(ambientLight);
 
@@ -310,12 +384,10 @@
                 pointLight.position.set(0, 10, 0);
                 scene.add(pointLight);
 
-                // Shelves Group
                 const shelvesGroup = new THREE.Group();
                 scene.add(shelvesGroup);
                 shelvesGroupRef.current = shelvesGroup;
 
-                // Bouncing Location Pin Indicator (高亮定位針)
                 const pinGroup = new THREE.Group();
                 const pinGeo = new THREE.ConeGeometry(0.4, 1.0, 8);
                 pinGeo.rotateX(Math.PI);
@@ -326,7 +398,6 @@
                 scene.add(pinGroup);
                 pinMeshRef.current = pinGroup;
 
-                // Mouse Event Handlers for Orbit Control
                 const handleMouseDown = (e) => {
                     isDragging.current = true;
                     previousMousePosition.current = { x: e.clientX, y: e.clientY };
@@ -354,7 +425,6 @@
                     updateCameraPosition();
                 };
 
-                // Raycaster for Shelf Clicking
                 const raycaster = new THREE.Raycaster();
                 const mouse = new THREE.Vector2();
 
@@ -385,7 +455,6 @@
                 domEl.addEventListener('wheel', handleWheel, { passive: false });
                 domEl.addEventListener('click', handleClick);
 
-                // Window Resize
                 const handleResize = () => {
                     if (!mountRef.current || !rendererRef.current || !cameraRef.current) return;
                     const w = mountRef.current.clientWidth;
@@ -396,7 +465,6 @@
                 };
                 window.addEventListener('resize', handleResize);
 
-                // Animation Loop
                 let time = 0;
                 const animate = () => {
                     time += 0.03;
@@ -424,27 +492,23 @@
                 };
             }, [updateCameraPosition, onSelectShelf]);
 
-            // 當倉庫或選擇書架變動時更新 3D 物件
             useEffect(() => {
                 if (!sceneRef.current || !shelvesGroupRef.current || !warehouse) return;
 
                 const scene = sceneRef.current;
                 const shelvesGroup = shelvesGroupRef.current;
 
-                // 清除舊書架
                 while (shelvesGroup.children.length > 0) {
                     const child = shelvesGroup.children[0];
                     shelvesGroup.remove(child);
                 }
 
-                // 清除舊地板網格
                 const oldFloor = scene.getObjectByName("warehouseFloor");
                 if (oldFloor) scene.remove(oldFloor);
 
                 const oldGrid = scene.getObjectByName("warehouseGrid");
                 if (oldGrid) scene.remove(oldGrid);
 
-                // 建立倉庫地板
                 const floorGeo = new THREE.PlaneGeometry(warehouse.width, warehouse.depth);
                 const floorMat = new THREE.MeshStandardMaterial({
                     color: 0xE6D5C3,
@@ -458,13 +522,11 @@
                 floorMesh.name = "warehouseFloor";
                 scene.add(floorMesh);
 
-                // 建立網格座標線
                 const gridHelper = new THREE.GridHelper(Math.max(warehouse.width, warehouse.depth), 24, 0x8C5A2B, 0xC4B29E);
                 gridHelper.position.y = 0.01;
                 gridHelper.name = "warehouseGrid";
                 scene.add(gridHelper);
 
-                // 牆面邊界引導線
                 const wallGeo = new THREE.BoxGeometry(warehouse.width, 0.2, warehouse.depth);
                 const wallWire = new THREE.LineSegments(
                     new THREE.EdgesGeometry(wallGeo),
@@ -473,7 +535,6 @@
                 wallWire.position.y = 0.1;
                 shelvesGroup.add(wallWire);
 
-                // 建構各個 3D 書架 (Wood/Metal Rack with Tiers & Books)
                 warehouse.shelves.forEach(shelf => {
                     const shelfGroup = new THREE.Group();
                     shelfGroup.position.set(shelf.x, 0, shelf.z);
@@ -484,13 +545,8 @@
                     const shelfHeight = 2.4;
                     const frameColor = isSelected ? 0xF39C12 : 0x4A3728;
 
-                    // 1. 支架柱子 (4立柱)
                     const postGeo = new THREE.BoxGeometry(0.08, shelfHeight, 0.08);
-                    const postMat = new THREE.MeshStandardMaterial({
-                        color: frameColor,
-                        roughness: 0.4,
-                        metalness: 0.3
-                    });
+                    const postMat = new THREE.MeshStandardMaterial({ color: frameColor, roughness: 0.4, metalness: 0.3 });
 
                     const hW = shelf.width / 2;
                     const hD = shelf.depth / 2;
@@ -503,7 +559,6 @@
                         shelfGroup.add(post);
                     });
 
-                    // 2. 層板 (Tiers)
                     const tierCount = shelf.tiers || 4;
                     const tierGap = shelfHeight / tierCount;
 
@@ -519,7 +574,6 @@
                         plank.receiveShadow = true;
                         shelfGroup.add(plank);
 
-                        // 3. 在每層放置擬真書籍塊 (3D Book Stacks)
                         if (i < tierCount) {
                             const bookStackGroup = new THREE.Group();
                             const booksInTier = 6 + Math.floor(Math.random() * 8);
@@ -531,7 +585,6 @@
                                 const bD = shelf.depth * 0.7;
 
                                 const bookGeo = new THREE.BoxGeometry(bW, bH, bD);
-                                // 書背顏色：古典文史哲調色
                                 const bookColors = [0x8C5A2B, 0x2C241B, 0x1B4F72, 0x7D6608, 0x196F3D, 0x5B2C6F, 0x900C3F];
                                 const bColor = bookColors[b % bookColors.length];
 
@@ -548,14 +601,12 @@
                         }
                     }
 
-                    // 4. 書架頂部標籤板 (Shelf Code Label Bar)
                     const labelGeo = new THREE.BoxGeometry(shelf.width * 0.6, 0.25, 0.05);
                     const labelMat = new THREE.MeshStandardMaterial({ color: 0x2C241B, roughness: 0.2 });
                     const labelMesh = new THREE.Mesh(labelGeo, labelMat);
                     labelMesh.position.set(0, shelfHeight + 0.15, hD);
                     shelfGroup.add(labelMesh);
 
-                    // 若被選取，外圍加金黃色高亮框
                     if (isSelected) {
                         const bboxGeo = new THREE.BoxGeometry(shelf.width + 0.2, shelfHeight + 0.3, shelf.depth + 0.2);
                         const bboxWire = new THREE.LineSegments(
@@ -569,7 +620,6 @@
                     shelvesGroup.add(shelfGroup);
                 });
 
-                // 更新高亮定位針的位置
                 if (highlightedLocation && pinMeshRef.current) {
                     const targetShelf = warehouse.shelves.find(s => s.id === highlightedLocation.shelfId);
                     if (targetShelf) {
@@ -591,8 +641,6 @@
             return (
                 <div className="w-full h-full relative canvas-container">
                     <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
-                    
-                    {/* 3D 視角操作提示 Legend Overlay */}
                     <div className="absolute bottom-4 left-4 glass-dark text-xs p-3 rounded-xl pointer-events-none flex flex-col gap-1 border border-white/10 font-sans shadow-lg">
                         <div className="font-bold text-amber-300 flex items-center gap-1.5 mb-0.5">
                             <Icon name="Compass" size={14} /> 3D 視角操作說明：
@@ -605,62 +653,258 @@
             );
         };
 
-        // --- 主應用程式組件 ---
         function App() {
             const [warehouses, setWarehouses] = useState(() => {
-                const local = localStorage.getItem('lapen_warehouses_v1');
+                const local = localStorage.getItem('lapen_warehouses_v2');
                 return local ? JSON.parse(local) : INITIAL_WAREHOUSES;
             });
             const [books, setBooks] = useState(() => {
-                const local = localStorage.getItem('lapen_books_v1');
+                const local = localStorage.getItem('lapen_books_v2');
                 return local ? JSON.parse(local) : INITIAL_BOOKS;
             });
 
             const [activeWarehouseId, setActiveWarehouseId] = useState('WH-A');
             const [selectedShelf, setSelectedShelf] = useState(null);
             const [highlightedLocation, setHighlightedLocation] = useState(null);
-            const [viewMode, setViewMode] = useState('3D'); // '3D' | '2D'
+            const [viewMode, setViewMode] = useState('3D');
 
-            // Search & Filter
+            // Search & Filter State
             const [searchQuery, setSearchQuery] = useState('');
             const [selectedCategory, setSelectedCategory] = useState('全部');
+            const [selectedWarehouseFilter, setSelectedCategoryWarehouseFilter] = useState('ALL');
+            const [sortBy, setSortBy] = useState('code_asc');
 
-            // Modals
+            // Modals & Sync States
             const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+            const [csvTab, setCsvCsvTab] = useState('GOOGLE_SHEETS');
+            const [googleSheetUrl, setGoogleSheetUrl] = useState('https://docs.google.com/spreadsheets/d/1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s/edit?usp=drivesdk');
+            const [isSyncingSheets, setIsSyncingSheets] = useState(false);
+
             const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
             const [isAddShelfModalOpen, setIsAddShelfModalOpen] = useState(false);
+            const [isAddWarehouseModalOpen, setIsAddWarehouseModalOpen] = useState(false);
             const [csvText, setCsvText] = useState('');
+            const [warehouseCsvText, setWarehouseCsvText] = useState('');
             const [toastMessage, setToastMessage] = useState(null);
 
-            // 當前選中的倉庫物件
             const activeWarehouse = useMemo(() => {
                 return warehouses.find(w => w.id === activeWarehouseId) || warehouses[0];
             }, [warehouses, activeWarehouseId]);
 
-            // 儲存至 LocalStorage
             useEffect(() => {
-                localStorage.setItem('lapen_warehouses_v1', JSON.stringify(warehouses));
+                localStorage.setItem('lapen_warehouses_v2', JSON.stringify(warehouses));
             }, [warehouses]);
 
             useEffect(() => {
-                localStorage.setItem('lapen_books_v1', JSON.stringify(books));
+                localStorage.setItem('lapen_books_v2', JSON.stringify(books));
             }, [books]);
 
             const showToast = (msg) => {
                 setToastMessage(msg);
-                setTimeout(() => setToastMessage(null), 3500);
+                setTimeout(() => setToastMessage(null), 3800);
             };
 
-            // 分類清單
+            const extractSheetId = (input) => {
+                if (!input) return '1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s';
+                const match = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (match) return match[1];
+                if (/^[a-zA-Z0-9_-]{20,}$/.test(input.trim())) return input.trim();
+                return '1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s';
+            };
+
+            // Google Sheets Live Fetch (Book_ALL + 倉庫) with CORS Proxy Fallback
+            const handleSyncFromGoogleSheets = async (showSuccessToast = true) => {
+                setIsSyncingSheets(true);
+                const sheetId = extractSheetId(googleSheetUrl);
+                let importedBooksCount = 0;
+                let importedWarehousesCount = 0;
+
+                const fetchWithProxyFallback = async (targetUrl) => {
+                    try {
+                        const directResp = await fetch(targetUrl);
+                        if (directResp.ok) {
+                            const text = await directResp.text();
+                            if (text && !text.includes('<!DOCTYPE html>')) return text;
+                        }
+                    } catch (e) {
+                        console.warn("Direct fetch failed, trying proxy...", e);
+                    }
+
+                    try {
+                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+                        const proxyResp = await fetch(proxyUrl);
+                        if (proxyResp.ok) {
+                            const proxyText = await proxyResp.text();
+                            if (proxyText && !proxyText.includes('<!DOCTYPE html>')) return proxyText;
+                        }
+                    } catch (err) {
+                        console.error("Proxy fetch failed:", err);
+                    }
+                    return null;
+                };
+
+                try {
+                    // Fetch Book_ALL sheet
+                    const bookUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Book_ALL')}`;
+                    const csvData = await fetchWithProxyFallback(bookUrl);
+
+                    if (csvData) {
+                        const rows = parseCSVText(csvData);
+                        if (rows.length > 1) {
+                            const headers = rows[0];
+                            const idxCode = getColIdx(headers, ['書碼', 'isbn', '編號', 'code', 'id']);
+                            const idxTitle = getColIdx(headers, ['書名', 'title', '名稱']);
+                            const idxAuthor = getColIdx(headers, ['作者', 'author']);
+                            const idxYear = getColIdx(headers, ['出版年', '年份', 'year']);
+                            const idxCategory = getColIdx(headers, ['類別', '叢書', 'category']);
+                            const idxWh = getColIdx(headers, ['倉庫代碼', '倉庫代號', '倉庫編號', '倉庫', 'warehouse']);
+                            const idxShelf = getColIdx(headers, ['書架編號', '書架代碼', '書架代號', '書架', 'shelf']);
+                            const idxTier = getColIdx(headers, ['層數', '層', 'tier']);
+                            const idxStock = getColIdx(headers, ['庫存數量', '庫存', '數量', 'stock']);
+                            const idxPrice = getColIdx(headers, ['定價', '價格', '建議定價', 'price']);
+                            const idxIntro = getColIdx(headers, ['簡介', '說明', 'intro']);
+
+                            const newBooks = [];
+                            for (let i = 1; i < rows.length; i++) {
+                                const row = rows[i];
+                                const title = idxTitle >= 0 ? row[idxTitle] : row[1];
+                                if (!title || title.trim() === '') continue;
+
+                                const code = idxCode >= 0 ? row[idxCode] : row[0] || `BK-${i}`;
+                                const whCode = idxWh >= 0 ? row[idxWh] : '';
+                                const shCode = idxShelf >= 0 ? row[idxShelf] : '';
+
+                                const foundWh = warehouses.find(w => w.code === whCode || w.id === whCode);
+                                const foundSh = foundWh ? foundWh.shelves.find(s => s.code === shCode || s.id === shCode) : null;
+
+                                newBooks.push({
+                                    id: `BK-GS-${i}-${Date.now().toString().slice(-4)}`,
+                                    code: code,
+                                    title: title,
+                                    author: idxAuthor >= 0 ? row[idxAuthor] || '未知' : '未知',
+                                    year: idxYear >= 0 ? row[idxYear] || '1971' : '1971',
+                                    category: idxCategory >= 0 ? row[idxCategory] || '通用學術' : '通用學術',
+                                    warehouseId: foundWh ? foundWh.id : (whCode ? whCode : ''),
+                                    shelfId: foundSh ? foundSh.id : (shCode ? shCode : ''),
+                                    tier: idxTier >= 0 ? parseInt(row[idxTier]) || 1 : 1,
+                                    stock: idxStock >= 0 ? parseInt(row[idxStock]) || 10 : 10,
+                                    price: idxPrice >= 0 ? parseInt(row[idxPrice]) || 300 : 300,
+                                    intro: idxIntro >= 0 ? row[idxIntro] || '' : '從 Google 試算表 Book_ALL 分頁同步。'
+                                });
+                            }
+
+                            if (newBooks.length > 0) {
+                                newBooks.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+                                setBooks(newBooks);
+                                importedBooksCount = newBooks.length;
+                            }
+                        }
+                    }
+
+                    // Fetch 倉庫 sheet
+                    const whUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('倉庫')}`;
+                    const whCsvData = await fetchWithProxyFallback(whUrl);
+
+                    if (whCsvData) {
+                        const whRows = parseCSVText(whCsvData);
+                        if (whRows.length > 1) {
+                            const headers = whRows[0];
+                            const idxWhCode = getColIdx(headers, ['倉庫代碼', '代碼', 'code']);
+                            const idxWhName = getColIdx(headers, ['倉庫名稱', '名稱', 'name']);
+                            const idxWhAddress = getColIdx(headers, ['地址', '位置', 'address']);
+                            const idxWhWidth = getColIdx(headers, ['長度', '長', 'width']);
+                            const idxWhDepth = getColIdx(headers, ['深度', '寬', 'depth']);
+                            const idxWhHeight = getColIdx(headers, ['高度', '高', 'height']);
+                            const idxWhShelves = getColIdx(headers, ['書架資料', '書架擺設', 'shelves']);
+
+                            const newWarehouses = [];
+                            for (let i = 1; i < whRows.length; i++) {
+                                const row = whRows[i];
+                                const code = idxWhCode >= 0 ? row[idxWhCode] : row[0];
+                                const name = idxWhName >= 0 ? row[idxWhName] : row[1];
+                                if (!code || !name) continue;
+
+                                let parsedShelves = null;
+                                if (idxWhShelves >= 0 && row[idxWhShelves]) {
+                                    try {
+                                        parsedShelves = JSON.parse(row[idxWhShelves]);
+                                    } catch(e) {}
+                                }
+
+                                const existingWh = warehouses.find(w => w.code === code || w.id === code);
+                                newWarehouses.push({
+                                    id: existingWh ? existingWh.id : `WH-${code}`,
+                                    code: code,
+                                    name: name,
+                                    address: idxWhAddress >= 0 ? row[idxWhAddress] || '台北市' : '台北市',
+                                    width: idxWhWidth >= 0 ? parseFloat(row[idxWhWidth]) || 24 : 24,
+                                    depth: idxWhDepth >= 0 ? parseFloat(row[idxWhDepth]) || 18 : 18,
+                                    height: idxWhHeight >= 0 ? parseFloat(row[idxWhHeight]) || 4.5 : 4.5,
+                                    shelves: parsedShelves || (existingWh ? existingWh.shelves : [
+                                        { id: `SH-${code}-01`, code: `${code.slice(0, 1)}1架`, name: '主要典藏特區架', x: -5, z: -4, rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '綜合學術', color: '#8C5A2B' }
+                                    ])
+                                });
+                            }
+
+                            if (newWarehouses.length > 0) {
+                                setWarehouses(newWarehouses);
+                                importedWarehousesCount = newWarehouses.length;
+                            }
+                        }
+                    }
+
+                    if (importedBooksCount > 0) {
+                        if (showSuccessToast) showToast(`⚡ 雲端同步完成！成功載入 ${importedBooksCount} 本圖書與 ${importedWarehousesCount} 個倉庫排架！`);
+                    } else {
+                        if (showSuccessToast) showToast(`⚠️ 雲端讀取失敗或權限未開啟。請確認 Google 試算表設定為『知道連結的任何人皆可檢視』，或直接點選上傳 CSV 檔案！`);
+                    }
+                } catch (err) {
+                    if (showSuccessToast) {
+                        showToast(`⚠️ 連線異常，請改用「上傳 CSV 檔案」匯入完整 Book_ALL 書籍！`);
+                    }
+                } finally {
+                    setIsSyncingSheets(false);
+                }
+            };
+
+            const handleFileUpload = (e, isWarehouseFile = false) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const text = event.target.result;
+                    if (isWarehouseFile) {
+                        setWarehouseCsvText(text);
+                        showToast("已載入倉庫 CSV 檔案，點擊『匯入並更新倉庫 3D 擺設』即可套用！");
+                    } else {
+                        setCsvText(text);
+                        showToast("已載入 Book_ALL CSV 檔案，點擊『匯入並更新圖書儲位』即可一次載入全部書籍！");
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+            useEffect(() => {
+                handleSyncFromGoogleSheets(false);
+            }, []);
+
             const categories = useMemo(() => {
                 const set = new Set(books.map(b => b.category).filter(Boolean));
                 return ['全部', ...Array.from(set)];
             }, [books]);
 
-            // 過濾後的書籍搜尋結果
             const filteredBooks = useMemo(() => {
-                return books.filter(b => {
-                    const matchWh = b.warehouseId === activeWarehouseId;
+                let list = books.filter(b => {
+                    let matchWh = true;
+                    if (selectedWarehouseFilter === 'CURRENT') {
+                        matchWh = b.warehouseId === activeWarehouseId;
+                    } else if (selectedWarehouseFilter === 'UNASSIGNED') {
+                        matchWh = !b.warehouseId || b.warehouseId === '';
+                    } else if (selectedWarehouseFilter !== 'ALL') {
+                        matchWh = b.warehouseId === selectedWarehouseFilter;
+                    }
+
                     const matchCat = selectedCategory === '全部' || b.category === selectedCategory;
                     const q = searchQuery.toLowerCase().trim();
                     const matchQ = !q || (
@@ -671,22 +915,79 @@
                     );
                     return matchWh && matchCat && matchQ;
                 });
-            }, [books, activeWarehouseId, selectedCategory, searchQuery]);
 
-            // 點擊搜尋結果，直接 3D 鏡頭定位到對應書架與層數
+                if (sortBy === 'code_asc') {
+                    list.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+                } else if (sortBy === 'code_desc') {
+                    list.sort((a, b) => (b.code || '').localeCompare(a.code || '', undefined, { numeric: true }));
+                } else if (sortBy === 'title') {
+                    list.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'zh-Hant'));
+                } else if (sortBy === 'warehouse') {
+                    list.sort((a, b) => (a.warehouseId || 'ZZ').localeCompare(b.warehouseId || 'ZZ'));
+                } else if (sortBy === 'category') {
+                    list.sort((a, b) => (a.category || '').localeCompare(b.category || '', 'zh-Hant'));
+                }
+
+                return list;
+            }, [books, activeWarehouseId, selectedWarehouseFilter, selectedCategory, searchQuery, sortBy]);
+
             const handleLocateBook = (book) => {
-                if (!book.shelfId) return showToast("該書籍尚未設定書架位置！");
+                if (!book.warehouseId || !book.shelfId) {
+                    return showToast(`《${book.title}》目前為【待入庫/未排架】，請從右側挑選倉庫與書架為其分配！`);
+                }
+
+                const targetWh = warehouses.find(w => w.id === book.warehouseId || w.code === book.warehouseId);
+                const targetShelf = targetWh ? targetWh.shelves.find(s => s.id === book.shelfId || s.code === book.shelfId) : null;
+
+                if (targetWh && targetWh.id !== activeWarehouseId) {
+                    setActiveWarehouseId(targetWh.id);
+                    showToast(`已自動切換視角至【${targetWh.name}】！`);
+                }
+
                 setHighlightedLocation({
                     warehouseId: book.warehouseId,
                     shelfId: book.shelfId,
                     tier: book.tier
                 });
-                const shelf = activeWarehouse.shelves.find(s => s.id === book.shelfId);
-                if (shelf) setSelectedShelf(shelf);
-                showToast(`已 3D 聚焦至《${book.title}》位置：${shelf ? shelf.code : '書架'} - 第 ${book.tier} 層`);
+
+                if (targetShelf) setSelectedShelf(targetShelf);
+                showToast(`已 3D 聚焦至《${book.title}》位置：${targetWh ? targetWh.code : ''} - ${targetShelf ? targetShelf.code : '書架'} 第 ${book.tier} 層`);
             };
 
-            // 更新書架座標與屬性
+            const handleAddWarehouse = (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const newWhId = `WH-${Date.now().toString().slice(-4)}`;
+                const newWhCode = form.code.value.toUpperCase().trim();
+                const newWhName = form.name.value.trim();
+                const newWhAddress = form.address.value.trim() || '台北市中正區';
+                const width = parseFloat(form.width.value) || 24;
+                const depth = parseFloat(form.depth.value) || 18;
+                const height = parseFloat(form.height.value) || 4.5;
+
+                const defaultShelves = [
+                    { id: `SH-${newWhCode}-01`, code: `${newWhCode.slice(0, 1)}1架`, name: '主要典藏特區架', x: -Math.floor(width/4), z: -Math.floor(depth/4), rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '綜合學術', color: '#8C5A2B' },
+                    { id: `SH-${newWhCode}-02`, code: `${newWhCode.slice(0, 1)}2架`, name: '新品與熱銷待揀貨架', x: Math.floor(width/4), z: Math.floor(depth/4), rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '暢銷綜合', color: '#6A432D' },
+                ];
+
+                const newWarehouse = {
+                    id: newWhId,
+                    name: newWhName,
+                    code: newWhCode,
+                    address: newWhAddress,
+                    width,
+                    depth,
+                    height,
+                    shelves: defaultShelves
+                };
+
+                setWarehouses(prev => [...prev, newWarehouse]);
+                setActiveWarehouseId(newWhId);
+                setSelectedShelf(null);
+                setIsAddWarehouseModalOpen(false);
+                showToast(`成功建立新倉庫：${newWhName} (${newWhCode})！已切換至 3D 視角。`);
+            };
+
             const handleUpdateShelf = (updatedShelf) => {
                 setWarehouses(prev => prev.map(wh => {
                     if (wh.id !== activeWarehouseId) return wh;
@@ -698,7 +999,6 @@
                 setSelectedShelf(updatedShelf);
             };
 
-            // 新增書架
             const handleAddShelf = (e) => {
                 e.preventDefault();
                 const form = e.target;
@@ -726,44 +1026,49 @@
                 showToast(`成功新增書架：${newShelf.code} (${newShelf.name})`);
             };
 
-            // 刪除書架
             const handleDeleteShelf = (shelfId) => {
-                if (!window.confirm("確定要刪除此書架嗎？放在此書架的書籍關聯將需要重新設定。")) return;
+                if (!window.confirm("確定要刪除此書架嗎？放置於此書架之書籍儲位設定將變更為待上架。")) return;
                 setWarehouses(prev => prev.map(wh => {
                     if (wh.id !== activeWarehouseId) return wh;
                     return { ...wh, shelves: wh.shelves.filter(s => s.id !== shelfId) };
                 }));
+                setBooks(prev => prev.map(b => b.shelfId === shelfId ? { ...b, warehouseId: '', shelfId: '' } : b));
                 setSelectedShelf(null);
-                showToast("已刪除書架。");
+                showToast("已刪除書架，原書架書籍已移至待上架清單。");
             };
 
-            // 生成匯出 CSV 格式 (Google 試算表相容)
             const handleOpenExportCsv = () => {
-                let csv = "書碼,書名,作者,出版年,叢書類別,倉庫代碼,書架編號,層數,庫存數量,建議定價\n";
-                books.forEach(b => {
-                    const wh = warehouses.find(w => w.id === b.warehouseId);
-                    const sh = wh ? wh.shelves.find(s => s.id === b.shelfId) : null;
-                    csv += `"${b.code}","${b.title}","${b.author}","${b.year}","${b.category}","${wh ? wh.code : ''}","${sh ? sh.code : ''}","${b.tier}","${b.stock}","${b.price}"\n`;
+                let bookCsv = "書碼,書名,作者,出版年,叢書類別,倉庫代碼,書架編號,層數,庫存數量,建議定價,書籍簡介\n";
+                const sortedExportBooks = [...books].sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+                sortedExportBooks.forEach(b => {
+                    const wh = warehouses.find(w => w.id === b.warehouseId || w.code === b.warehouseId);
+                    const sh = wh ? wh.shelves.find(s => s.id === b.shelfId || s.code === b.shelfId) : null;
+                    bookCsv += `"${b.code}","${b.title}","${b.author}","${b.year}","${b.category}","${wh ? wh.code : ''}","${sh ? sh.code : ''}","${b.tier || 1}","${b.stock}","${b.price}","${(b.intro || '').replace(/"/g, '""')}"\n`;
                 });
-                setCsvText(csv);
+                setCsvText(bookCsv);
+
+                let whCsv = "倉庫代碼,倉庫名稱,地址,長度(m),深度(m),高度(m),書架擺設設定(JSON)\n";
+                warehouses.forEach(w => {
+                    whCsv += `"${w.code}","${w.name}","${w.address}","${w.width}","${w.depth}","${w.height}","${JSON.stringify(w.shelves).replace(/"/g, '""')}"\n`;
+                });
+                setWarehouseCsvText(whCsv);
+
                 setIsCsvModalOpen(true);
             };
 
-            // 匯入 CSV 貼上資料
             const handleImportCsvText = () => {
                 try {
-                    const lines = csvText.trim().split('\n');
-                    if (lines.length <= 1) return showToast("CSV 內容無有效資料列！");
+                    const lines = parseCSVText(csvText);
+                    if (lines.length <= 1) return showToast("Book_ALL CSV 內容無有效資料列！");
 
                     const newBooks = [];
                     for (let i = 1; i < lines.length; i++) {
-                        const row = lines[i].split(',').map(s => s.replace(/^"|"$/g, '').trim());
+                        const row = lines[i];
                         if (row.length >= 2 && row[1]) {
-                            // 比對倉庫與書架
                             const whCode = row[5];
                             const shCode = row[6];
-                            const foundWh = warehouses.find(w => w.code === whCode) || warehouses[0];
-                            const foundSh = foundWh.shelves.find(s => s.code === shCode);
+                            const foundWh = warehouses.find(w => w.code === whCode || w.id === whCode);
+                            const foundSh = foundWh ? foundWh.shelves.find(s => s.code === shCode || s.id === shCode) : null;
 
                             newBooks.push({
                                 id: `BK-IMP-${i}-${Date.now().toString().slice(-4)}`,
@@ -772,29 +1077,69 @@
                                 author: row[2] || '未知',
                                 year: row[3] || '1971',
                                 category: row[4] || '通用學術',
-                                warehouseId: foundWh ? foundWh.id : 'WH-A',
-                                shelfId: foundSh ? foundSh.id : (foundWh.shelves[0] ? foundWh.shelves[0].id : ''),
+                                warehouseId: foundWh ? foundWh.id : '',
+                                shelfId: foundSh ? foundSh.id : '',
                                 tier: parseInt(row[7]) || 1,
                                 stock: parseInt(row[8]) || 10,
                                 price: parseInt(row[9]) || 300,
-                                intro: '透過 Google 試算表 CSV 快速匯入之書目資料。'
+                                intro: row[10] || '透過 CSV 匯入之 Book_ALL 圖書資料。'
                             });
                         }
                     }
 
                     if (newBooks.length > 0) {
+                        newBooks.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
                         setBooks(newBooks);
                         setIsCsvModalOpen(false);
-                        showToast(`成功從 Google 試算表 CSV 匯入 ${newBooks.length} 筆書籍資料！`);
+                        showToast(`成功從 CSV 匯入 ${newBooks.length} 筆 Book_ALL 圖書資料並依書碼排序！`);
                     }
                 } catch (err) {
                     showToast("CSV 解析失敗，請檢查格式是否符合規範。");
                 }
             };
 
+            const handleImportWarehouseCsvText = () => {
+                try {
+                    const lines = parseCSVText(warehouseCsvText);
+                    if (lines.length <= 1) return showToast("倉庫 CSV 內容無有效資料列！");
+
+                    const newWarehouses = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const row = lines[i];
+                        if (row.length >= 2 && row[0]) {
+                            let parsedShelves = [];
+                            if (row[6]) {
+                                try { parsedShelves = JSON.parse(row[6]); } catch(e) {}
+                            }
+
+                            newWarehouses.push({
+                                id: `WH-${row[0]}`,
+                                code: row[0],
+                                name: row[1] || `倉庫 ${row[0]}`,
+                                address: row[2] || '台北市',
+                                width: parseFloat(row[3]) || 24,
+                                depth: parseFloat(row[4]) || 18,
+                                height: parseFloat(row[5]) || 4.5,
+                                shelves: parsedShelves.length > 0 ? parsedShelves : [
+                                    { id: `SH-${row[0]}-01`, code: `${row[0].slice(0, 1)}1架`, name: '主要典藏特區架', x: -5, z: -4, rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '綜合學術', color: '#8C5A2B' }
+                                ]
+                            });
+                        }
+                    }
+
+                    if (newWarehouses.length > 0) {
+                        setWarehouses(newWarehouses);
+                        setIsCsvModalOpen(false);
+                        showToast(`成功匯入 ${newWarehouses.length} 個倉庫與 3D 書架擺設設定！`);
+                    }
+                } catch (err) {
+                    showToast("倉庫 CSV 解析失敗，請檢查 JSON 或 CSV 格式。");
+                }
+            };
+
             return (
                 <div className="flex flex-col h-screen w-screen overflow-hidden bg-cream font-sans">
-                    {/* Top Header Navigation */}
+                    {/* Header Bar */}
                     <header className="h-16 border-b border-borderwood bg-white/80 backdrop-blur-md px-6 flex justify-between items-center z-20 shrink-0 shadow-sm">
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 bg-amber-800 rounded-xl flex items-center justify-center text-white font-serif font-black text-xl shadow-md">
@@ -805,15 +1150,15 @@
                                     文史哲出版社有限公司
                                 </h1>
                                 <p className="text-[10px] tracking-widest text-amber-800 font-bold uppercase">
-                                    3D 多倉庫暨書架擺設管理與快速索引系統
+                                    3D 多倉庫暨書架擺設管理與快速索引系統 (Book_ALL & 倉庫分頁同步)
                                 </p>
                             </div>
                         </div>
 
-                        {/* Warehouse Switcher & Actions */}
+                        {/* Warehouse Selector Controls */}
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center bg-paper p-1 rounded-xl border border-borderwood">
-                                <Icon name="Warehouse" size={16} className="text-amber-800 ml-2 mr-1" />
+                            <div className="flex items-center bg-paper p-1 rounded-xl border border-borderwood gap-1">
+                                <Icon name="Warehouse" size={16} className="text-amber-800 ml-2" />
                                 <select 
                                     value={activeWarehouseId}
                                     onChange={(e) => {
@@ -827,6 +1172,14 @@
                                         <option key={wh.id} value={wh.id}>{wh.name} ({wh.code})</option>
                                     ))}
                                 </select>
+                                <button
+                                    onClick={() => setIsAddWarehouseModalOpen(true)}
+                                    title="建立新倉庫"
+                                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 transition flex items-center gap-1 shrink-0"
+                                >
+                                    <Icon name="Plus" size={13} />
+                                    <span>新增倉庫</span>
+                                </button>
                             </div>
 
                             <button 
@@ -834,7 +1187,7 @@
                                 className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 transition shadow-sm flex items-center gap-1.5"
                             >
                                 <Icon name="FileSpreadsheet" size={15} />
-                                <span>Google 試算表 CSV 同步</span>
+                                <span>☁️ Google 試算表雙向同步 (Book_ALL & 倉庫)</span>
                             </button>
 
                             <button 
@@ -842,39 +1195,73 @@
                                 className="px-3 py-2 rounded-xl text-xs font-bold bg-white border border-borderwood text-amber-900 hover:bg-paper transition shadow-sm flex items-center gap-1.5"
                             >
                                 <Icon name="Printer" size={15} />
-                                <span className="hidden sm:inline">列印擺設藍圖</span>
+                                <span className="hidden sm:inline">列印揀貨藍圖</span>
                             </button>
                         </div>
                     </header>
 
-                    {/* Main Workbench Body */}
+                    {}
                     <div className="flex-1 flex overflow-hidden relative">
-                        {/* Left Panel: Book Indexing & Fast Search */}
-                        <aside className="w-80 md:w-96 border-r border-borderwood bg-white/70 backdrop-blur-md flex flex-col z-10 shrink-0 shadow-sm">
+                        {/* Left Sidebar */}
+                        <aside className="w-84 md:w-96 border-r border-borderwood bg-white/70 backdrop-blur-md flex flex-col z-10 shrink-0 shadow-sm">
                             <div className="p-4 border-b border-borderwood space-y-3">
                                 <div className="flex justify-between items-center">
                                     <h2 className="font-serif-title font-bold text-amber-900 flex items-center gap-2">
                                         <Icon name="Search" size={18} className="text-amber-800" />
                                         圖書儲位快速索引
                                     </h2>
-                                    <span className="text-xs font-bold bg-amber-800/10 text-amber-800 px-2 py-0.5 rounded-full">
-                                        共 {filteredBooks.length} 本
+                                    <span className="text-xs font-bold bg-amber-800 text-white px-2.5 py-0.5 rounded-full shadow-xs">
+                                        Book_ALL 共 {filteredBooks.length} 本
                                     </span>
                                 </div>
 
-                                {/* Search Bar */}
+                                <div className="flex items-center gap-1 bg-paper p-1 rounded-xl border border-borderwood text-xs">
+                                    <Icon name="Filter" size={14} className="text-amber-800 ml-1.5 shrink-0" />
+                                    <select
+                                        value={selectedWarehouseFilter}
+                                        onChange={(e) => setSelectedCategoryWarehouseFilter(e.target.value)}
+                                        className="w-full bg-transparent text-amber-900 font-bold outline-none cursor-pointer"
+                                    >
+                                        <option value="ALL">全社圖書總庫 (Book_ALL)</option>
+                                        <option value="CURRENT">當前 3D 視角倉庫 ({activeWarehouse.code})</option>
+                                        <option value="UNASSIGNED">待入庫 / 未排架圖書</option>
+                                        <optgroup label="各倉庫別明細：">
+                                            {warehouses.map(w => (
+                                                <option key={w.id} value={w.id}>{w.name} ({w.code})</option>
+                                            ))}
+                                        </optgroup>
+                                    </select>
+                                </div>
+
                                 <div className="relative">
                                     <input 
                                         type="text" 
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="搜尋書名、作者、ISBN 或類別..."
+                                        placeholder="搜尋書名、作者、ISBN書碼或類別..."
                                         className="w-full pl-9 pr-3 py-2 rounded-xl border border-borderwood bg-paper text-sm text-amber-900 outline-none focus:border-amber-800 font-medium"
                                     />
                                     <Icon name="Search" size={16} className="absolute left-3 top-2.5 text-amber-800/60" />
                                 </div>
 
-                                {/* Category Pills */}
+                                <div className="flex items-center justify-between text-xs pt-1">
+                                    <span className="font-bold text-amber-900/70 flex items-center gap-1">
+                                        <Icon name="ArrowUpDown" size={13} />
+                                        排序方式：
+                                    </span>
+                                    <select 
+                                        value={sortBy} 
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        className="bg-paper border border-borderwood rounded-lg px-2 py-1 text-xs font-bold text-amber-900 outline-none cursor-pointer"
+                                    >
+                                        <option value="code_asc">依書碼編號 (升冪 1→50...)</option>
+                                        <option value="code_desc">依書碼編號 (降冪 50→1...)</option>
+                                        <option value="title">依書名筆劃</option>
+                                        <option value="warehouse">依倉庫及儲位區域</option>
+                                        <option value="category">依叢書類別</option>
+                                    </select>
+                                </div>
+
                                 <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
                                     {categories.map(cat => (
                                         <button
@@ -892,7 +1279,6 @@
                                 </div>
                             </div>
 
-                            {/* Book Results List */}
                             <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
                                 {filteredBooks.length === 0 ? (
                                     <div className="text-center py-12 text-amber-800/60 text-xs font-bold">
@@ -900,19 +1286,26 @@
                                     </div>
                                 ) : (
                                     filteredBooks.map(book => {
-                                        const shelf = activeWarehouse.shelves.find(s => s.id === book.shelfId);
+                                        const wh = warehouses.find(w => w.id === book.warehouseId || w.code === book.warehouseId);
+                                        const shelf = wh ? wh.shelves.find(s => s.id === book.shelfId || s.code === book.shelfId) : null;
+                                        const isUnassigned = !book.warehouseId || !book.shelfId;
+
                                         return (
                                             <div 
                                                 key={book.id}
                                                 onClick={() => handleLocateBook(book)}
-                                                className="p-3 rounded-xl bg-white border border-borderwood/80 hover:border-amber-800 hover:shadow-md transition cursor-pointer group flex flex-col gap-1.5"
+                                                className={`p-3 rounded-xl border transition cursor-pointer group flex flex-col gap-1.5 ${
+                                                    isUnassigned 
+                                                        ? 'bg-amber-50/60 border-dashed border-amber-300 hover:border-amber-800' 
+                                                        : 'bg-white border-borderwood/80 hover:border-amber-800 hover:shadow-md'
+                                                }`}
                                             >
                                                 <div className="flex justify-between items-start">
                                                     <span className="text-xs font-bold text-amber-800 bg-paper px-2 py-0.5 rounded border border-borderwood">
                                                         {book.category}
                                                     </span>
-                                                    <span className="text-[11px] font-mono font-bold text-amber-900/60">
-                                                        {book.code}
+                                                    <span className="text-[11px] font-mono font-bold text-amber-900/80 bg-amber-800/10 px-1.5 py-0.5 rounded">
+                                                        #{book.code}
                                                     </span>
                                                 </div>
 
@@ -922,10 +1315,18 @@
 
                                                 <div className="text-xs text-amber-900/70 flex justify-between items-center pt-1 border-t border-dashed border-borderwood/60">
                                                     <span>作者：{book.author}</span>
-                                                    <span className="font-bold text-amber-800 bg-amber-800/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                                        <Icon name="MapPin" size={12} />
-                                                        {shelf ? shelf.code : '未擺設'} - 第{book.tier}層
-                                                    </span>
+                                                    
+                                                    {isUnassigned ? (
+                                                        <span className="font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                            <Icon name="AlertCircle" size={12} />
+                                                            待入庫
+                                                        </span>
+                                                    ) : (
+                                                        <span className="font-bold text-amber-800 bg-amber-800/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                            <Icon name="MapPin" size={12} />
+                                                            {wh ? wh.code : ''} ‧ {shelf ? shelf.code : '排架'} - 第{book.tier}層
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -934,15 +1335,14 @@
                             </div>
                         </aside>
 
-                        {/* Center Viewport: Interactive 3D Warehouse Viewport */}
+                        {/* Center Panel */}
                         <main className="flex-1 relative bg-cream flex flex-col">
-                            {/* Top Floating Viewport Control Bar */}
                             <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center pointer-events-none">
                                 <div className="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 shadow-md pointer-events-auto border border-borderwood">
                                     <div className="flex items-center gap-2">
                                         <Icon name="Building2" size={18} className="text-amber-800" />
                                         <span className="font-serif-title font-bold text-amber-900">
-                                            {activeWarehouse.name}
+                                            {activeWarehouse.name} ({activeWarehouse.code})
                                         </span>
                                     </div>
                                     <span className="text-xs font-mono text-amber-800/70">
@@ -976,7 +1376,6 @@
                                 </div>
                             </div>
 
-                            {/* 3D Canvas Container */}
                             <div className="flex-1 w-full h-full relative">
                                 <ThreeWarehouseView 
                                     warehouse={activeWarehouse}
@@ -989,7 +1388,6 @@
                         </main>
 
                         {}
-                        {/* Right Panel: Selected Shelf Inspector & Layout Configurator */}
                         {selectedShelf && (
                             <aside className="w-80 md:w-88 border-l border-borderwood bg-white/90 backdrop-blur-md p-5 flex flex-col gap-4 z-10 shrink-0 shadow-lg overflow-y-auto">
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
@@ -1009,14 +1407,12 @@
                                     </button>
                                 </div>
 
-                                {/* Shelf Interactive Coordinates Controls (X, Z Position Slider) */}
                                 <div className="space-y-4 glass-panel p-4 rounded-2xl border border-borderwood">
                                     <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                                         <Icon name="Move" size={14} className="text-amber-800" />
                                         調整倉庫平面座標位置 (公尺)
                                     </h4>
 
-                                    {/* X Position */}
                                     <div>
                                         <div className="flex justify-between text-xs font-bold text-amber-900 mb-1">
                                             <span>左右位置 (X 軸)</span>
@@ -1033,7 +1429,6 @@
                                         />
                                     </div>
 
-                                    {/* Z Position */}
                                     <div>
                                         <div className="flex justify-between text-xs font-bold text-amber-900 mb-1">
                                             <span>前後位置 (Z 軸)</span>
@@ -1050,7 +1445,6 @@
                                         />
                                     </div>
 
-                                    {/* Rotation Angle */}
                                     <div>
                                         <div className="flex justify-between text-xs font-bold text-amber-900 mb-1">
                                             <span>擺放旋轉角度</span>
@@ -1074,7 +1468,6 @@
                                     </div>
                                 </div>
 
-                                {/* Shelf Specifications Form */}
                                 <div className="space-y-3 glass-panel p-4 rounded-2xl border border-borderwood">
                                     <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                                         <Icon name="Sliders" size={14} className="text-amber-800" />
@@ -1105,14 +1498,13 @@
                                     </div>
                                 </div>
 
-                                {/* Shelf Books List */}
                                 <div className="flex-1 space-y-2">
                                     <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                                         <Icon name="BookOpen" size={14} className="text-amber-800" />
-                                        此書架目前擺放之書籍 ({books.filter(b => b.shelfId === selectedShelf.id).length} 本)：
+                                        目前放置於此書架之圖書 ({books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code).length} 本)：
                                     </h4>
                                     <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                                        {books.filter(b => b.shelfId === selectedShelf.id).map(book => (
+                                        {books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code).map(book => (
                                             <div key={book.id} className="p-2 rounded-lg bg-paper border border-borderwood text-xs flex justify-between items-center">
                                                 <span className="font-bold text-amber-900 truncate pr-2">《{book.title}》</span>
                                                 <span className="text-[10px] font-bold bg-amber-800/10 text-amber-800 px-1.5 py-0.5 rounded shrink-0">
@@ -1135,63 +1527,170 @@
                     </div>
 
                     {}
-                    {/* Modal 1: Google 試算表 CSV 同步 Modal */}
+                    {/* Modal 1: Google Sheets & CSV Multi-Tab Sync Modal */}
                     {isCsvModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="bg-cream border-2 border-borderwood w-full max-w-3xl rounded-3xl shadow-2xl p-6 flex flex-col gap-4 font-sans animate-in">
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
                                     <h3 className="text-lg font-bold font-serif-title text-amber-900 flex items-center gap-2">
                                         <Icon name="FileSpreadsheet" size={20} className="text-amber-800" />
-                                        Google 試算表 (CSV) 雙向同步
+                                        Google 試算表 (Book_ALL & 倉庫) 雙向同步
                                     </h3>
                                     <button onClick={() => setIsCsvModalOpen(false)} className="p-1 rounded-full hover:bg-paper">
                                         <Icon name="X" size={20} />
                                     </button>
                                 </div>
 
-                                <p className="text-xs text-amber-900/80 leading-relaxed bg-paper p-3 rounded-xl border border-borderwood">
-                                    💡 <strong>操作說明：</strong> 您可以複製下方標準 CSV 文字貼至 Google 試算表進行編修；或從 Google 試算表複製 CSV 內容貼於下方，點擊「匯入書籍庫」即可完成圖書儲位同步。
-                                </p>
-
-                                <textarea 
-                                    value={csvText}
-                                    onChange={(e) => setCsvText(e.target.value)}
-                                    rows="12"
-                                    className="w-full p-4 rounded-xl border border-borderwood bg-white text-xs font-mono text-amber-900 outline-none focus:border-amber-800 leading-relaxed"
-                                    placeholder="貼上 Google 試算表 CSV 內容..."
-                                />
-
-                                <div className="flex justify-between items-center pt-2">
+                                <div className="flex gap-2 border-b border-borderwood/80 pb-2">
                                     <button 
-                                        onClick={() => {
-                                            document.execCommand('copy');
-                                            showToast("已將 CSV 數據複製到剪貼簿，可直接貼上至 Google 試算表！");
-                                        }}
-                                        className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-borderwood text-amber-900 hover:bg-paper transition flex items-center gap-1.5"
+                                        onClick={() => setCsvCsvTab('GOOGLE_SHEETS')}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+                                            csvTab === 'GOOGLE_SHEETS' 
+                                                ? 'bg-amber-800 text-white shadow-xs' 
+                                                : 'bg-paper text-amber-900 border border-borderwood'
+                                        }`}
                                     >
-                                        <Icon name="Copy" size={15} /> 複製 CSV 數據
+                                        ☁️ 雲端即時連線同步
                                     </button>
-
-                                    <div className="flex gap-2">
-                                        <button 
-                                            onClick={() => setIsCsvModalOpen(false)}
-                                            className="px-4 py-2 rounded-xl text-xs font-bold bg-paper border border-borderwood text-amber-900"
-                                        >
-                                            取消
-                                        </button>
-                                        <button 
-                                            onClick={handleImportCsvText}
-                                            className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm"
-                                        >
-                                            匯入並更新書籍儲位
-                                        </button>
-                                    </div>
+                                    <button 
+                                        onClick={() => setCsvCsvTab('BOOKS_CSV')}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+                                            csvTab === 'BOOKS_CSV' 
+                                                ? 'bg-amber-800 text-white shadow-xs' 
+                                                : 'bg-paper text-amber-900 border border-borderwood'
+                                        }`}
+                                    >
+                                        📚 Book_ALL 試算表 CSV (剪貼)
+                                    </button>
+                                    <button 
+                                        onClick={() => setCsvCsvTab('WAREHOUSES_CSV')}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+                                            csvTab === 'WAREHOUSES_CSV' 
+                                                ? 'bg-amber-800 text-white shadow-xs' 
+                                                : 'bg-paper text-amber-900 border border-borderwood'
+                                        }`}
+                                    >
+                                        🏢 倉庫分頁 CSV (剪貼)
+                                    </button>
                                 </div>
+
+                                {csvTab === 'GOOGLE_SHEETS' && (
+                                    <div className="space-y-4 py-2">
+                                        <div className="text-xs text-amber-900/90 leading-relaxed bg-paper p-4 rounded-xl border border-borderwood space-y-2">
+                                            <div className="font-bold text-amber-900 text-sm flex items-center gap-1.5">
+                                                <Icon name="AlertCircle" size={16} className="text-amber-800" />
+                                                如何確保成功讀取 Google 試算表中的所有書籍？
+                                            </div>
+                                            <div>1. 請確保 Google 試算表右上角【共用】按鈕，權限已改為<strong>「知道連結的任何人」</strong>。</div>
+                                            <div>2. 試算表內部需包含名稱為 <strong>Book_ALL</strong> 與 <strong>倉庫</strong> 的兩個工作表分頁。</div>
+                                            <div>3. 若設定權限後仍受阻，可於下欄選擇 <strong>Book_ALL 試算表 CSV (剪貼)</strong> 頁籤直接選擇檔案一次匯入！</div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-amber-900 mb-1">
+                                                Google 試算表網址：
+                                            </label>
+                                            <input 
+                                                type="text"
+                                                value={googleSheetUrl}
+                                                onChange={(e) => setGoogleSheetUrl(e.target.value)}
+                                                className="w-full p-3 rounded-xl border border-borderwood bg-white text-xs font-mono font-bold text-amber-900 outline-none focus:border-amber-800 shadow-inner"
+                                            />
+                                        </div>
+
+                                        <div className="flex justify-end gap-2 pt-2">
+                                            <button 
+                                                onClick={() => handleSyncFromGoogleSheets(true)}
+                                                disabled={isSyncingSheets}
+                                                className="w-full py-3.5 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 transition shadow-md flex items-center justify-center gap-2 text-sm"
+                                            >
+                                                <Icon name="RefreshCw" size={16} className={isSyncingSheets ? 'animate-spin' : ''} />
+                                                <span>{isSyncingSheets ? "正在連線下載雲端全社資料..." : "⚡ 立即從 Google 試算表同步 (Book_ALL + 倉庫)"}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {csvTab === 'BOOKS_CSV' && (
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center bg-paper p-3 rounded-xl border border-borderwood">
+                                            <span className="text-xs text-amber-900 font-bold">📂 直接選擇試算表 CSV 檔案上傳：</span>
+                                            <input 
+                                                type="file" 
+                                                accept=".csv"
+                                                onChange={(e) => handleFileUpload(e, false)}
+                                                className="text-xs text-amber-900 font-bold file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-800 file:text-white hover:file:bg-amber-900 cursor-pointer"
+                                            />
+                                        </div>
+                                        <textarea 
+                                            value={csvText}
+                                            onChange={(e) => setCsvText(e.target.value)}
+                                            rows="8"
+                                            className="w-full p-3 rounded-xl border border-borderwood bg-white text-xs font-mono text-amber-900 outline-none focus:border-amber-800 leading-relaxed"
+                                            placeholder="貼上 Book_ALL CSV 內容..."
+                                        />
+                                        <div className="flex justify-between items-center">
+                                            <button 
+                                                onClick={() => {
+                                                    document.execCommand('copy');
+                                                    showToast("已複製 Book_ALL CSV 數據到剪貼簿！");
+                                                }}
+                                                className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-borderwood text-amber-900 hover:bg-paper transition flex items-center gap-1.5"
+                                            >
+                                                <Icon name="Copy" size={15} /> 複製 Book_ALL CSV 數據
+                                            </button>
+                                            <button 
+                                                onClick={handleImportCsvText}
+                                                className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm"
+                                            >
+                                                一鍵匯入並更新圖書儲位
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {csvTab === 'WAREHOUSES_CSV' && (
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center bg-paper p-3 rounded-xl border border-borderwood">
+                                            <span className="text-xs text-amber-900 font-bold">🏢 直接選擇倉庫 CSV 檔案上傳：</span>
+                                            <input 
+                                                type="file" 
+                                                accept=".csv"
+                                                onChange={(e) => handleFileUpload(e, true)}
+                                                className="text-xs text-amber-900 font-bold file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-800 file:text-white hover:file:bg-amber-900 cursor-pointer"
+                                            />
+                                        </div>
+                                        <textarea 
+                                            value={warehouseCsvText}
+                                            onChange={(e) => setWarehouseCsvText(e.target.value)}
+                                            rows="8"
+                                            className="w-full p-3 rounded-xl border border-borderwood bg-white text-xs font-mono text-amber-900 outline-none focus:border-amber-800 leading-relaxed"
+                                            placeholder="貼上 倉庫分頁 CSV 內容..."
+                                        />
+                                        <div className="flex justify-between items-center">
+                                            <button 
+                                                onClick={() => {
+                                                    document.execCommand('copy');
+                                                    showToast("已複製 倉庫分頁 CSV 數據到剪貼簿！");
+                                                }}
+                                                className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-borderwood text-amber-900 hover:bg-paper transition flex items-center gap-1.5"
+                                            >
+                                                <Icon name="Copy" size={15} /> 複製倉庫分頁 CSV 數據
+                                            </button>
+                                            <button 
+                                                onClick={handleImportWarehouseCsvText}
+                                                className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm"
+                                            >
+                                                一鍵匯入並更新倉庫 3D 擺設
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* Modal 2: 列印倉庫擺設明細藍圖 */}
+                    {/* Modal 2: Print Blueprint Report */}
                     {isPrintModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="bg-white border-2 border-borderwood w-full max-w-2xl rounded-3xl shadow-2xl p-8 flex flex-col gap-5 font-sans animate-in">
@@ -1226,7 +1725,7 @@
                                                     <td className="p-2 font-bold text-amber-900">{sh.name}</td>
                                                     <td className="p-2 font-mono">({sh.x}, {sh.z})</td>
                                                     <td className="p-2">{sh.tiers} 層</td>
-                                                    <td className="p-2 font-bold">{books.filter(b => b.shelfId === sh.id).length} 種</td>
+                                                    <td className="p-2 font-bold">{books.filter(b => b.shelfId === sh.id || b.shelfId === sh.code).length} 種</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -1251,8 +1750,7 @@
                         </div>
                     )}
 
-                    {}
-                    {/* Modal 3: 新增書架 Modal */}
+                    {/* Modal 3: Add New Shelf Modal */}
                     {isAddShelfModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <form onSubmit={handleAddShelf} className="bg-cream border-2 border-borderwood w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col gap-4 font-sans animate-in">
@@ -1316,6 +1814,61 @@
                                     </button>
                                     <button type="submit" className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm">
                                         確認新增
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Modal 4: Add New Warehouse Modal */}
+                    {isAddWarehouseModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <form onSubmit={handleAddWarehouse} className="bg-cream border-2 border-borderwood w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col gap-4 font-sans animate-in">
+                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
+                                    <h3 className="text-base font-bold font-serif-title text-amber-900 flex items-center gap-2">
+                                        <Icon name="Building2" size={18} className="text-amber-800" />
+                                        建立新文史哲圖書倉庫
+                                    </h3>
+                                    <button type="button" onClick={() => setIsAddWarehouseModalOpen(false)} className="p-1 rounded-full hover:bg-paper">
+                                        <Icon name="X" size={18} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3 text-xs">
+                                    <div>
+                                        <label className="block text-amber-900 font-bold mb-1">倉庫名稱</label>
+                                        <input name="name" required placeholder="例如：羅斯福路二倉 (D倉)" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-amber-900 font-bold mb-1">倉庫代碼 (如: D-MAIN)</label>
+                                        <input name="code" required defaultValue={`WH-D`} className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none uppercase" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-amber-900 font-bold mb-1">倉庫地址/位置</label>
+                                        <input name="address" required placeholder="例如：臺北市中正區羅斯福路一段72巷8號B1" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div>
+                                            <label className="block text-amber-900 font-bold mb-1">長度 (m)</label>
+                                            <input name="width" type="number" step="1" defaultValue="25" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-amber-900 font-bold mb-1">深度/寬 (m)</label>
+                                            <input name="depth" type="number" step="1" defaultValue="18" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-amber-900 font-bold mb-1">屋頂高度 (m)</label>
+                                            <input name="height" type="number" step="0.5" defaultValue="4.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold outline-none" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2 pt-2 border-t border-borderwood">
+                                    <button type="button" onClick={() => setIsAddWarehouseModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-bold bg-paper text-amber-900">
+                                        取消
+                                    </button>
+                                    <button type="submit" className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm">
+                                        建立新倉庫
                                     </button>
                                 </div>
                             </form>
