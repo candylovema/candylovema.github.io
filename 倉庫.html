@@ -683,6 +683,10 @@
             const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
             const [isAddShelfModalOpen, setIsAddShelfModalOpen] = useState(false);
             const [isAddWarehouseModalOpen, setIsAddWarehouseModalOpen] = useState(false);
+            const [isAssignBookModalOpen, setIsAssignBookModalOpen] = useState(false);
+            const [assignBookId, setAssignBookId] = useState('');
+            const [assignBookTier, setAssignBookTier] = useState(1);
+            const [assignBookSearch, setAssignBookSearch] = useState('');
             const [csvText, setCsvText] = useState('');
             const [warehouseCsvText, setWarehouseCsvText] = useState('');
             const [toastMessage, setToastMessage] = useState(null);
@@ -965,14 +969,14 @@
 
             const handleAddWarehouse = (e) => {
                 e.preventDefault();
-                const form = e.target;
+                const formData = new FormData(e.currentTarget);
                 const newWhId = `WH-${Date.now().toString().slice(-4)}`;
-                const newWhCode = form.code.value.toUpperCase().trim();
-                const newWhName = form.name.value.trim();
-                const newWhAddress = form.address.value.trim() || '台北市中正區';
-                const width = parseFloat(form.width.value) || 24;
-                const depth = parseFloat(form.depth.value) || 18;
-                const height = parseFloat(form.height.value) || 4.5;
+                const newWhCode = (formData.get('code') || '').toUpperCase().trim();
+                const newWhName = (formData.get('name') || '').trim();
+                const newWhAddress = (formData.get('address') || '').trim() || '台北市中正區';
+                const width = parseFloat(formData.get('width')) || 24;
+                const depth = parseFloat(formData.get('depth')) || 18;
+                const height = parseFloat(formData.get('height')) || 4.5;
 
                 const defaultShelves = [
                     { id: `SH-${newWhCode}-01`, code: `${newWhCode.slice(0, 1)}1架`, name: '主要典藏特區架', x: -Math.floor(width/4), z: -Math.floor(depth/4), rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '綜合學術', color: '#8C5A2B' },
@@ -1010,18 +1014,18 @@
 
             const handleAddShelf = (e) => {
                 e.preventDefault();
-                const form = e.target;
+                const formData = new FormData(e.currentTarget);
                 const newShelf = {
                     id: `SH-${Date.now().toString().slice(-4)}`,
-                    code: form.code.value,
-                    name: form.name.value,
-                    x: parseFloat(form.x.value) || 0,
-                    z: parseFloat(form.z.value) || 0,
-                    rot: parseInt(form.rot.value) || 0,
-                    width: parseFloat(form.width.value) || 3.0,
-                    depth: parseFloat(form.depth.value) || 0.9,
-                    tiers: parseInt(form.tiers.value) || 5,
-                    category: form.category.value || '綜合',
+                    code: formData.get('code') || '',
+                    name: formData.get('name') || '',
+                    x: parseFloat(formData.get('x')) || 0,
+                    z: parseFloat(formData.get('z')) || 0,
+                    rot: parseInt(formData.get('rot')) || 0,
+                    width: parseFloat(formData.get('width')) || 3.0,
+                    depth: parseFloat(formData.get('depth')) || 0.9,
+                    tiers: parseInt(formData.get('tiers')) || 5,
+                    category: formData.get('category') || '綜合',
                     color: '#8C5A2B'
                 };
 
@@ -1044,6 +1048,38 @@
                 setBooks(prev => prev.map(b => b.shelfId === shelfId ? { ...b, warehouseId: '', shelfId: '' } : b));
                 setSelectedShelf(null);
                 showToast("已刪除書架，原書架書籍已移至待上架清單。");
+            };
+
+            const handleAssignBookToShelf = (e) => {
+                e.preventDefault();
+                if (!assignBookId || !selectedShelf) return showToast("請選擇欲放入的圖書！");
+
+                setBooks(prev => prev.map(b => {
+                    if (b.id === assignBookId) {
+                        return {
+                            ...b,
+                            warehouseId: activeWarehouseId,
+                            shelfId: selectedShelf.id,
+                            tier: parseInt(assignBookTier) || 1
+                        };
+                    }
+                    return b;
+                }));
+
+                const targetBook = books.find(b => b.id === assignBookId);
+                showToast(`已成功將《${targetBook ? targetBook.title : ''}》放入 ${selectedShelf.code} 第 ${assignBookTier} 層！`);
+                setIsAssignBookModalOpen(false);
+                setAssignBookId('');
+            };
+
+            const handleRemoveBookFromShelf = (bookId) => {
+                setBooks(prev => prev.map(b => b.id === bookId ? { ...b, warehouseId: '', shelfId: '', tier: 1 } : b));
+                showToast("已將圖書移出此書架（變更為待入庫）。");
+            };
+
+            const handleChangeBookTier = (bookId, newTier) => {
+                setBooks(prev => prev.map(b => b.id === bookId ? { ...b, tier: parseInt(newTier) || 1 } : b));
+                showToast(`已調整圖書儲位至第 ${newTier} 層。`);
             };
 
             const handleOpenExportCsv = () => {
@@ -1248,172 +1284,184 @@
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="搜尋書名、作者、ISBN書碼或類別..."
-                                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-borderwood bg-paper text-sm text-amber-900 outline-none focus:border-amber-800 font-medium"
+                                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-borderwood bg-paper text-xs font-bold text-amber-900 outline-none focus:border-amber-800"
                                     />
-                                    <Icon name="Search" size={16} className="absolute left-3 top-2.5 text-amber-800/60" />
+                                    <Icon name="Search" size={14} className="absolute left-2.5 top-2.5 text-amber-800/60" />
                                 </div>
 
-                                <div className="flex items-center justify-between text-xs pt-1">
-                                    <span className="font-bold text-amber-900/70 flex items-center gap-1">
-                                        <Icon name="ArrowUpDown" size={13} />
-                                        排序方式：
-                                    </span>
-                                    <select 
-                                        value={sortBy} 
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                        className="bg-paper border border-borderwood rounded-lg px-2 py-1 text-xs font-bold text-amber-900 outline-none cursor-pointer"
+                                <div className="flex justify-between items-center gap-2 text-xs">
+                                    <select
+                                        value={selectedCategory}
+                                        onChange={(e) => setSelectedCategory(e.target.value)}
+                                        className="w-1/2 p-2 rounded-xl border border-borderwood bg-paper text-amber-900 font-bold outline-none cursor-pointer"
                                     >
-                                        <option value="code_asc">依書碼編號 (升冪 1→50...)</option>
-                                        <option value="code_desc">依書碼編號 (降冪 50→1...)</option>
-                                        <option value="title">依書名筆劃</option>
-                                        <option value="warehouse">依倉庫及儲位區域</option>
-                                        <option value="category">依叢書類別</option>
+                                        {categories.map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
                                     </select>
-                                </div>
-
-                                <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-                                    {categories.map(cat => (
-                                        <button
-                                            key={cat}
-                                            onClick={() => setSelectedCategory(cat)}
-                                            className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition ${
-                                                selectedCategory === cat
-                                                    ? 'bg-amber-900 text-white shadow-xs'
-                                                    : 'bg-paper border border-borderwood text-amber-800 hover:bg-amber-800/10'
-                                            }`}
-                                        >
-                                            {cat}
-                                        </button>
-                                    ))}
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        className="w-1/2 p-2 rounded-xl border border-borderwood bg-paper text-amber-900 font-bold outline-none cursor-pointer"
+                                    >
+                                        <option value="code_asc">依書碼 1 → 9 排序</option>
+                                        <option value="code_desc">依書碼 9 → 1 排序</option>
+                                        <option value="title">依書名筆劃排序</option>
+                                        <option value="category">依叢書類別排序</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                            {/* Book List */}
+                            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 hide-scrollbar">
                                 {filteredBooks.length === 0 ? (
-                                    <div className="text-center py-12 text-amber-800/60 text-xs font-bold">
-                                        無符合之書籍儲位資料
+                                    <div className="p-8 text-center text-xs text-amber-800/60 font-bold bg-paper rounded-2xl border border-dashed border-borderwood">
+                                        查無符合條件之圖書，請嘗試修改關鍵字或分類！
                                     </div>
                                 ) : (
                                     filteredBooks.map(book => {
                                         const wh = warehouses.find(w => w.id === book.warehouseId || w.code === book.warehouseId);
-                                        const shelf = wh ? wh.shelves.find(s => s.id === book.shelfId || s.code === book.shelfId) : null;
-                                        const isUnassigned = !book.warehouseId || !book.shelfId;
+                                        const sh = wh ? wh.shelves.find(s => s.id === book.shelfId || s.code === book.shelfId) : null;
+                                        const isAssigned = !!(wh && sh);
 
                                         return (
                                             <div 
-                                                key={book.id}
-                                                onClick={() => handleLocateBook(book)}
-                                                className={`p-3 rounded-xl border transition cursor-pointer group flex flex-col gap-1.5 ${
-                                                    isUnassigned 
-                                                        ? 'bg-amber-50/60 border-dashed border-amber-300 hover:border-amber-800' 
-                                                        : 'bg-white border-borderwood/80 hover:border-amber-800 hover:shadow-md'
-                                                }`}
+                                                key={book.id} 
+                                                className="p-3 rounded-2xl bg-paper border border-borderwood hover:border-amber-800/60 hover:shadow-md transition flex flex-col gap-2"
                                             >
-                                                <div className="flex justify-between items-start">
-                                                    <span className="text-xs font-bold text-amber-800 bg-paper px-2 py-0.5 rounded border border-borderwood">
-                                                        {book.category}
-                                                    </span>
-                                                    <span className="text-[11px] font-mono font-bold text-amber-900/80 bg-amber-800/10 px-1.5 py-0.5 rounded">
-                                                        #{book.code}
+                                                <div className="flex justify-between items-start gap-2">
+                                                    <div>
+                                                        <span className="font-mono text-[10px] text-amber-800 font-bold bg-amber-800/10 px-1.5 py-0.5 rounded mr-1.5">
+                                                            #{book.code}
+                                                        </span>
+                                                        <span className="font-bold text-amber-900 text-xs font-serif-title">
+                                                            《{book.title}》
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[10px] font-bold text-amber-800 shrink-0">
+                                                        NT$ {book.price}
                                                     </span>
                                                 </div>
 
-                                                <h3 className="font-bold text-sm text-amber-900 group-hover:text-amber-800 font-serif-title leading-snug">
-                                                    《{book.title}》
-                                                </h3>
-
-                                                <div className="text-xs text-amber-900/70 flex justify-between items-center pt-1 border-t border-dashed border-borderwood/60">
+                                                <div className="flex justify-between items-center text-[11px] text-amber-800/80">
                                                     <span>作者：{book.author}</span>
-                                                    
-                                                    {isUnassigned ? (
-                                                        <span className="font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                                            <Icon name="AlertCircle" size={12} />
-                                                            待入庫
+                                                    <span>類別：{book.category}</span>
+                                                </div>
+
+                                                <div className="flex justify-between items-center pt-1 border-t border-borderwood/60 text-[11px]">
+                                                    {isAssigned ? (
+                                                        <span className="font-bold text-emerald-800 flex items-center gap-1">
+                                                            <Icon name="MapPin" size={12} />
+                                                            {wh.code} / {sh.code} 第 {book.tier || 1} 層
                                                         </span>
                                                     ) : (
-                                                        <span className="font-bold text-amber-800 bg-amber-800/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                                            <Icon name="MapPin" size={12} />
-                                                            {wh ? wh.code : ''} ‧ {shelf ? shelf.code : '排架'} - 第{book.tier}層
+                                                        <span className="font-bold text-amber-700/70 italic flex items-center gap-1">
+                                                            <Icon name="AlertCircle" size={12} />
+                                                            待入庫 / 未排架
                                                         </span>
                                                     )}
+
+                                                    <button
+                                                        onClick={() => handleLocateBook(book)}
+                                                        className="px-2.5 py-1 rounded-lg bg-amber-800 text-white hover:bg-amber-900 text-[10px] font-bold shadow-xs flex items-center gap-1"
+                                                    >
+                                                        <Icon name="Compass" size={11} />
+                                                        <span>聚焦 3D</span>
+                                                    </button>
                                                 </div>
                                             </div>
                                         );
                                     })
                                 )}
                             </div>
+
+                            <div className="p-3 border-t border-borderwood bg-paper flex justify-between items-center text-xs font-bold text-amber-900">
+                                <button
+                                    onClick={() => setIsAddShelfModalOpen(true)}
+                                    className="w-full py-2.5 rounded-xl bg-amber-800 text-white hover:bg-amber-900 transition flex items-center justify-center gap-1.5 shadow-sm"
+                                >
+                                    <Icon name="Plus" size={15} />
+                                    <span>新增書架至 {activeWarehouse.code}</span>
+                                </button>
+                            </div>
                         </aside>
 
-                        {/* Center Panel */}
-                        <main className="flex-1 relative bg-cream flex flex-col">
+                        {/* Center Area: 3D Canvas Viewport */}
+                        <main className="flex-1 relative overflow-hidden flex flex-col bg-paper">
+                            {/* Viewport Control Bar */}
                             <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center pointer-events-none">
-                                <div className="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 shadow-md pointer-events-auto border border-borderwood">
-                                    <div className="flex items-center gap-2">
-                                        <Icon name="Building2" size={18} className="text-amber-800" />
-                                        <span className="font-serif-title font-bold text-amber-900">
-                                            {activeWarehouse.name} ({activeWarehouse.code})
-                                        </span>
-                                    </div>
-                                    <span className="text-xs font-mono text-amber-800/70">
-                                        [長 {activeWarehouse.width}m × 寬 {activeWarehouse.depth}m × 高 {activeWarehouse.height}m]
+                                <div className="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 pointer-events-auto shadow-sm">
+                                    <span className="font-serif-title font-bold text-amber-900 text-sm flex items-center gap-1.5">
+                                        <Icon name="Building2" size={16} className="text-amber-800" />
+                                        {activeWarehouse.name} ({activeWarehouse.code})
+                                    </span>
+                                    <span className="text-xs font-bold text-amber-800/80 bg-paper px-2.5 py-1 rounded-lg border border-borderwood font-mono">
+                                        {activeWarehouse.width}m × {activeWarehouse.depth}m × {activeWarehouse.height}m
                                     </span>
                                 </div>
 
-                                <div className="glass-panel p-1 rounded-2xl flex items-center gap-1 shadow-md pointer-events-auto border border-borderwood">
-                                    <button 
+                                <div className="glass-panel p-1.5 rounded-2xl flex items-center gap-1 pointer-events-auto shadow-sm">
+                                    <button
                                         onClick={() => setViewMode('3D')}
-                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                                             viewMode === '3D' ? 'bg-amber-800 text-white shadow-xs' : 'text-amber-900 hover:bg-paper'
                                         }`}
                                     >
-                                        <Icon name="Box" size={14} /> 3D 立體視角
+                                        3D 透視
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setViewMode('2D')}
-                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                                             viewMode === '2D' ? 'bg-amber-800 text-white shadow-xs' : 'text-amber-900 hover:bg-paper'
                                         }`}
                                     >
-                                        <Icon name="LayoutGrid" size={14} /> 2D 平面藍圖
-                                    </button>
-                                    <button 
-                                        onClick={() => setIsAddShelfModalOpen(true)}
-                                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-900 text-white hover:bg-amber-800 transition flex items-center gap-1 ml-1"
-                                    >
-                                        <Icon name="Plus" size={14} /> 新增書架
+                                        2D 平面
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="flex-1 w-full h-full relative">
-                                <ThreeWarehouseView 
-                                    warehouse={activeWarehouse}
-                                    selectedShelf={selectedShelf}
-                                    highlightedLocation={highlightedLocation}
-                                    onSelectShelf={setSelectedShelf}
-                                    viewMode={viewMode}
-                                />
-                            </div>
+                            {/* Three.js Canvas Container */}
+                            <ThreeWarehouseView 
+                                warehouse={activeWarehouse}
+                                selectedShelf={selectedShelf}
+                                highlightedLocation={highlightedLocation}
+                                onSelectShelf={setSelectedShelf}
+                                viewMode={viewMode}
+                            />
                         </main>
 
-                        {}
+                        {/* Right Panel: Selected Shelf Detailed Controls & Book Assignment */}
                         {selectedShelf && (
                             <aside className="w-80 md:w-88 border-l border-borderwood bg-white/90 backdrop-blur-md p-5 flex flex-col gap-4 z-10 shrink-0 shadow-lg overflow-y-auto">
-                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
-                                    <div>
-                                        <div className="text-xs font-bold text-amber-800 font-mono">
-                                            書架代號：{selectedShelf.code}
-                                        </div>
-                                        <h3 className="font-serif-title font-black text-lg text-amber-900">
-                                            {selectedShelf.name}
-                                        </h3>
+                                <div className="flex flex-col gap-2 border-b border-borderwood pb-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-bold text-amber-800 flex items-center gap-1">
+                                            <Icon name="Sliders" size={13} />
+                                            點擊可編輯書架代號與名稱：
+                                        </span>
+                                        <button 
+                                            onClick={() => setSelectedShelf(null)}
+                                            className="p-1 rounded-full hover:bg-paper text-amber-900/60"
+                                        >
+                                            <Icon name="X" size={18} />
+                                        </button>
                                     </div>
-                                    <button 
-                                        onClick={() => setSelectedShelf(null)}
-                                        className="p-1 rounded-full hover:bg-paper text-amber-900/60"
-                                    >
-                                        <Icon name="X" size={18} />
-                                    </button>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <input 
+                                            type="text" 
+                                            value={selectedShelf.code} 
+                                            onChange={(e) => handleUpdateShelf({ ...selectedShelf, code: e.target.value })}
+                                            className="p-2 rounded-xl border border-borderwood bg-paper text-xs font-bold text-amber-800 font-mono outline-none focus:border-amber-800"
+                                            placeholder="書架代號"
+                                        />
+                                        <input 
+                                            type="text" 
+                                            value={selectedShelf.name} 
+                                            onChange={(e) => handleUpdateShelf({ ...selectedShelf, name: e.target.value })}
+                                            className="col-span-2 p-2 rounded-xl border border-borderwood bg-paper text-xs font-bold text-amber-900 outline-none focus:border-amber-800 font-serif-title"
+                                            placeholder="書架名稱"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="space-y-4 glass-panel p-4 rounded-2xl border border-borderwood">
@@ -1507,26 +1555,68 @@
                                     </div>
                                 </div>
 
-                                <div className="flex-1 space-y-2">
-                                    <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                                        <Icon name="BookOpen" size={14} className="text-amber-800" />
-                                        目前放置於此書架之圖書 ({books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code).length} 本)：
-                                    </h4>
-                                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                                        {books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code).map(book => (
-                                            <div key={book.id} className="p-2 rounded-lg bg-paper border border-borderwood text-xs flex justify-between items-center">
-                                                <span className="font-bold text-amber-900 truncate pr-2">《{book.title}》</span>
-                                                <span className="text-[10px] font-bold bg-amber-800/10 text-amber-800 px-1.5 py-0.5 rounded shrink-0">
-                                                    第 {book.tier} 層
-                                                </span>
+                                <div className="flex-1 space-y-2.5">
+                                    <div className="flex justify-between items-center">
+                                        <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                                            <Icon name="BookOpen" size={14} className="text-amber-800" />
+                                            此架圖書 ({books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code).length} 本)：
+                                        </h4>
+                                        <button
+                                            onClick={() => {
+                                                setAssignBookTier(1);
+                                                setAssignBookId('');
+                                                setAssignBookSearch('');
+                                                setIsAssignBookModalOpen(true);
+                                            }}
+                                            className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-xs flex items-center gap-1 shrink-0"
+                                        >
+                                            <Icon name="Plus" size={13} />
+                                            <span>放書入此架</span>
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                                        {books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code).length === 0 ? (
+                                            <div className="p-3 text-center text-xs text-amber-800/60 font-bold bg-paper rounded-xl border border-dashed border-borderwood">
+                                                此書架目前空無一物，點擊上方『放書入此架』放置書籍！
                                             </div>
-                                        ))}
+                                        ) : (
+                                            books.filter(b => b.shelfId === selectedShelf.id || b.shelfId === selectedShelf.code).map(book => (
+                                                <div key={book.id} className="p-2.5 rounded-xl bg-paper border border-borderwood text-xs flex flex-col gap-1.5">
+                                                    <div className="flex justify-between items-start">
+                                                        <span className="font-bold text-amber-900 line-clamp-1 pr-2">《{book.title}》</span>
+                                                        <button 
+                                                            onClick={() => handleRemoveBookFromShelf(book.id)}
+                                                            className="text-red-600 hover:text-red-800 p-0.5 rounded hover:bg-red-50 shrink-0"
+                                                            title="將此書移出書架"
+                                                        >
+                                                            <Icon name="X" size={14} />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-[11px] text-amber-800/80">
+                                                        <span>作者：{book.author}</span>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="font-bold">層數：</span>
+                                                            <select
+                                                                value={book.tier || 1}
+                                                                onChange={(e) => handleChangeBookTier(book.id, e.target.value)}
+                                                                className="bg-white border border-borderwood rounded px-1 py-0.5 font-bold text-amber-900 outline-none cursor-pointer"
+                                                            >
+                                                                {Array.from({ length: selectedShelf.tiers || 5 }, (_, idx) => (
+                                                                    <option key={idx + 1} value={idx + 1}>第 {idx + 1} 層</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                 </div>
 
                                 <button 
                                     onClick={() => handleDeleteShelf(selectedShelf.id)}
-                                    className="w-full py-2.5 rounded-xl border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 transition text-xs font-bold flex justify-center items-center gap-1.5"
+                                    className="w-full py-2.5 rounded-xl border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 transition text-xs font-bold flex justify-center items-center gap-1.5 mt-auto"
                                 >
                                     <Icon name="Trash2" size={15} />
                                     刪除此書架
@@ -1534,6 +1624,98 @@
                             </aside>
                         )}
                     </div>
+
+                    {/* Modal 0: Assign Book to Selected Shelf Modal */}
+                    {isAssignBookModalOpen && selectedShelf && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <form onSubmit={handleAssignBookToShelf} className="bg-cream border-2 border-borderwood w-full max-w-lg rounded-3xl shadow-2xl p-6 flex flex-col gap-4 font-sans animate-in">
+                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
+                                    <div>
+                                        <h3 className="text-base font-bold font-serif-title text-amber-900 flex items-center gap-2">
+                                            <Icon name="PlusCircle" size={18} className="text-amber-800" />
+                                            放置圖書至【{selectedShelf.code} - {selectedShelf.name}】
+                                        </h3>
+                                        <p className="text-xs text-amber-800 font-bold mt-0.5">
+                                            目前所選倉庫：{activeWarehouse.name} ({activeWarehouse.code})
+                                        </p>
+                                    </div>
+                                    <button type="button" onClick={() => setIsAssignBookModalOpen(false)} className="p-1 rounded-full hover:bg-paper">
+                                        <Icon name="X" size={18} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3 text-xs">
+                                    <div>
+                                        <label className="block text-amber-900 font-bold mb-1">1. 搜尋圖書 (書名、作者或 ISBN 書碼)：</label>
+                                        <div className="relative">
+                                            <input 
+                                                type="text"
+                                                value={assignBookSearch}
+                                                onChange={(e) => setAssignBookSearch(e.target.value)}
+                                                placeholder="輸入關鍵字快速過濾圖書..."
+                                                className="w-full pl-8 pr-3 py-2 rounded-xl border border-borderwood bg-white font-bold text-amber-900 outline-none"
+                                            />
+                                            <Icon name="Search" size={15} className="absolute left-2.5 top-2.5 text-amber-800/60" />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-amber-900 font-bold mb-1">2. 選擇欲擺放入架之圖書：</label>
+                                        <select 
+                                            required
+                                            value={assignBookId}
+                                            onChange={(e) => setAssignBookId(e.target.value)}
+                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold text-amber-900 outline-none cursor-pointer max-h-40"
+                                        >
+                                            <option value="">-- 請挑選圖書 --</option>
+                                            {books
+                                                .filter(b => {
+                                                    const q = assignBookSearch.toLowerCase().trim();
+                                                    if (!q) return true;
+                                                    return (b.title && b.title.toLowerCase().includes(q)) ||
+                                                           (b.author && b.author.toLowerCase().includes(q)) ||
+                                                           (b.code && b.code.toLowerCase().includes(q));
+                                                })
+                                                .map(b => {
+                                                    const isUnassigned = !b.warehouseId || !b.shelfId;
+                                                    return (
+                                                        <option key={b.id} value={b.id}>
+                                                            {isUnassigned ? "【待入庫】" : "【已在上架】"} 《{b.title}》 - {b.author} (#{b.code})
+                                                        </option>
+                                                    );
+                                                })
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-amber-900 font-bold mb-1">3. 擺放於此書架之層數 (Tier)：</label>
+                                        <select 
+                                            value={assignBookTier}
+                                            onChange={(e) => setAssignBookTier(parseInt(e.target.value))}
+                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-white font-bold text-amber-900 outline-none cursor-pointer"
+                                        >
+                                            {Array.from({ length: selectedShelf.tiers || 5 }, (_, idx) => (
+                                                <option key={idx + 1} value={idx + 1}>
+                                                    第 {idx + 1} 層 (由下至上)
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2 pt-2 border-t border-borderwood">
+                                    <button type="button" onClick={() => setIsAssignBookModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-bold bg-paper text-amber-900">
+                                        取消
+                                    </button>
+                                    <button type="submit" className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm flex items-center gap-1">
+                                        <Icon name="CheckCircle2" size={15} />
+                                        確認一鍵入架擺放
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
 
                     {}
                     {/* Modal 1: Google Sheets & CSV Multi-Tab Sync Modal */}
