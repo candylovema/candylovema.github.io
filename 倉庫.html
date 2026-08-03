@@ -350,6 +350,7 @@
             const warehouseRef = useRef(warehouse);
             const onSelectShelfRef = useRef(onSelectShelf);
             const onUpdateShelfRef = useRef(onUpdateShelf);
+            const viewModeRef = useRef(viewMode);
 
             useEffect(() => {
                 warehouseRef.current = warehouse;
@@ -359,6 +360,10 @@
                 onSelectShelfRef.current = onSelectShelf;
                 onUpdateShelfRef.current = onUpdateShelf;
             }, [onSelectShelf, onUpdateShelf]);
+
+            useEffect(() => {
+                viewModeRef.current = viewMode;
+            }, [viewMode]);
 
             const isDraggingCamera = useRef(false);
             const isDraggingShelf = useRef(false);
@@ -389,17 +394,18 @@
             }, []);
 
             useEffect(() => {
+                if (!warehouse) return;
                 const dim = Math.max(warehouse.width || 24, warehouse.depth || 18);
                 const initR = Math.max(30, dim * 1.15);
                 if (viewMode === '2D') {
-                    cameraAngle.current = { theta: 0, phi: 0.001, radius: initR * 0.9 };
+                    cameraAngle.current = { theta: 0, phi: 0.01, radius: initR * 0.9 };
                     cameraTarget.current = { x: 0, y: 0, z: 0 };
                 } else {
                     cameraAngle.current = { theta: Math.PI / 4, phi: Math.PI / 3, radius: initR };
                     cameraTarget.current = { x: 0, y: 0, z: 0 };
                 }
                 updateCameraPosition();
-            }, [viewMode, warehouse, updateCameraPosition]);
+            }, [viewMode, warehouse?.id, updateCameraPosition]);
 
             useEffect(() => {
                 if (!highlightedLocation || !warehouse) return;
@@ -417,34 +423,12 @@
                 }
             }, [highlightedLocation, warehouse, updateCameraPosition]);
 
-            // ResizeObserver to handle sidebar toggling without canvas distortion
             useEffect(() => {
                 const container = mountRef.current;
                 if (!container) return;
 
-                const resizeObserver = new ResizeObserver(() => {
-                    if (!mountRef.current || !rendererRef.current || !cameraRef.current) return;
-                    const w = mountRef.current.clientWidth;
-                    const h = mountRef.current.clientHeight;
-                    if (w === 0 || h === 0) return;
-                    cameraRef.current.aspect = w / h;
-                    cameraRef.current.updateProjectionMatrix();
-                    rendererRef.current.setSize(w, h);
-                });
-
-                resizeObserver.observe(container);
-
-                return () => {
-                    resizeObserver.disconnect();
-                };
-            }, []);
-
-            useEffect(() => {
-                const container = mountRef.current;
-                if (!container) return;
-
-                const width = container.clientWidth;
-                const height = container.clientHeight;
+                const width = container.clientWidth || 800;
+                const height = container.clientHeight || 600;
 
                 const scene = new THREE.Scene();
                 scene.background = new THREE.Color(0xFDFBF7);
@@ -687,15 +671,16 @@
                 window.addEventListener('keydown', handleKeyDown);
                 domEl.addEventListener('wheel', handleWheel, { passive: false });
 
-                const handleResize = () => {
+                const resizeObserver = new ResizeObserver(() => {
                     if (!mountRef.current || !rendererRef.current || !cameraRef.current) return;
                     const w = mountRef.current.clientWidth;
                     const h = mountRef.current.clientHeight;
+                    if (w === 0 || h === 0) return;
                     cameraRef.current.aspect = w / h;
                     cameraRef.current.updateProjectionMatrix();
                     rendererRef.current.setSize(w, h);
-                };
-                window.addEventListener('resize', handleResize);
+                });
+                resizeObserver.observe(container);
 
                 let time = 0;
                 const animate = () => {
@@ -712,20 +697,23 @@
                 animate();
 
                 return () => {
+                    resizeObserver.disconnect();
                     window.removeEventListener('mousemove', handleMouseMove);
                     window.removeEventListener('mouseup', handleMouseUp);
                     window.removeEventListener('touchmove', handleTouchMove);
                     window.removeEventListener('touchend', handleTouchEnd);
                     window.removeEventListener('keydown', handleKeyDown);
-                    window.removeEventListener('resize', handleResize);
                     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
                     if (domEl) {
                         domEl.removeEventListener('mousedown', handleMouseDown);
                         domEl.removeEventListener('touchstart', handleTouchStart);
                         domEl.removeEventListener('wheel', handleWheel);
                     }
+                    if (rendererRef.current) {
+                        rendererRef.current.dispose();
+                    }
                 };
-            }, [updateCameraPosition, viewMode]);
+            }, [updateCameraPosition]);
 
             // Reconstruct / Update Shelf Meshes when warehouse data changes
             useEffect(() => {
