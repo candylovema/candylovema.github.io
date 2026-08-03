@@ -193,6 +193,56 @@
             return -1;
         };
 
+        const parseBookLocation = (b, warehouseList) => {
+            let whId = b.warehouseId || '';
+            let shId = b.shelfId || '';
+            let tierNum = parseInt(b.tier) || 1;
+
+            const infoStr = (b.warehouseInfo || b.locationStr || b.location || '').toString();
+
+            let foundWh = warehouseList.find(w => w.id === whId || w.code === whId);
+            if (!foundWh && infoStr) {
+                const cleanInfo = cleanCodeStr(infoStr);
+                foundWh = warehouseList.find(w => {
+                    const wc = cleanCodeStr(w.code);
+                    const wi = cleanCodeStr(w.id);
+                    const wn = cleanCodeStr(w.name);
+                    return (wc && cleanInfo.includes(wc)) || (wi && cleanInfo.includes(wi)) || (wn && cleanInfo.includes(wn));
+                });
+            }
+
+            let foundSh = null;
+            if (foundWh) {
+                whId = foundWh.id;
+                foundSh = foundWh.shelves.find(s => s.id === shId || s.code === shId);
+                if (!foundSh && infoStr) {
+                    const cleanInfo = cleanCodeStr(infoStr);
+                    foundSh = foundWh.shelves.find(s => {
+                        const sc = cleanCodeStr(s.code);
+                        const si = cleanCodeStr(s.id);
+                        const sn = cleanCodeStr(s.name);
+                        return (sc && cleanInfo.includes(sc)) || (si && cleanInfo.includes(si)) || (sn && cleanInfo.includes(sn));
+                    });
+                }
+            }
+
+            if (foundSh) {
+                shId = foundSh.id;
+            } else if (!foundWh) {
+                whId = '';
+                shId = '';
+            }
+
+            if (infoStr) {
+                const tierMatch = infoStr.match(/(?:第|tier\s*)(\d+)/i) || infoStr.match(/(\d+)\s*層/i);
+                if (tierMatch) {
+                    tierNum = parseInt(tierMatch[1], 10) || 1;
+                }
+            }
+
+            return { warehouseId: whId, shelfId: shId, tier: tierNum };
+        };
+
         const INITIAL_WAREHOUSES = [
             {
                 id: 'WH-A',
@@ -248,52 +298,7 @@
             { id: 'BK-1002', code: '978-957-549-002', title: '中國目錄學', author: '昌彼得', year: '1975', category: '目錄學', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 2, stock: 45, price: 550, intro: '國學與古籍整理基礎必讀典籍。' },
             { id: 'BK-1003', code: '978-957-549-003', title: '清史論集（第一集）', author: '莊吉發', year: '1982', category: '歷史學', warehouseId: 'WH-A', shelfId: 'SH-A03', tier: 1, stock: 30, price: 620, intro: '莊吉發教授對清代歷史與檔案之深刻研究。' },
             { id: 'BK-1004', code: '978-957-549-004', title: '文心雕龍與經學', author: '蔡宗陽', year: '1988', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 4, stock: 85, price: 480, intro: '剖析《文心雕龍》文學理論與經學思想。' },
-            { id: 'BK-1005', code: '978-957-549-005', title: '霧航', author: '馮馮', year: '1980', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 2, stock: 60, price: 420, intro: '著名作家馮馮代表作。' },
-            { id: 'BK-1006', code: '978-957-549-006', title: '中日關係史研究論集 (第一冊)', author: '龔鵬程、鄭樑生', year: '1991', category: '歷史學', warehouseId: 'WH-B', shelfId: 'SH-B02', tier: 3, stock: 25, price: 750, intro: '中日交流史重要論文集。' },
-            { id: 'BK-1007', code: '978-957-549-007', title: '滿語叢刊 (全50冊之一)', author: '文史哲編輯部', year: '1995', category: '滿學', warehouseId: 'WH-B', shelfId: 'SH-B03', tier: 5, stock: 15, price: 1200, intro: '清代滿語研究文獻彙編。' },
-            { id: 'BK-1008', code: '978-957-549-008', title: '修辭學探微', author: '蔡宗陽', year: '1993', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 2, stock: 50, price: 360, intro: '漢語修辭技巧與文章風格。' },
-            { id: 'BK-1009', code: '978-957-549-009', title: '中國哲學思潮史', author: '嚴靈峰', year: '1985', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 3, stock: 40, price: 580, intro: '貫穿先秦至明清哲學思潮。' },
-            { id: 'BK-1010', code: '978-957-549-010', title: '紀弦詩選新編', author: '紀弦', year: '1978', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 4, stock: 70, price: 320, intro: '現代詩派發起人紀弦詩集。' },
-            { id: 'BK-1011', code: '978-957-549-011', title: '周易折中註譯', author: '高明', year: '1983', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 2, stock: 55, price: 680, intro: '易學名家高明教授考訂註釋本。' },
-            { id: 'BK-1012', code: '978-957-549-012', title: '尚書通論', author: '屈萬里', year: '1979', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 3, stock: 40, price: 520, intro: '屈萬里教授尚書研究集大成。' },
-            { id: 'BK-1013', code: '978-957-549-013', title: '詩經研究續集', author: '潘重規', year: '1987', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A02', tier: 1, stock: 35, price: 600, intro: '探討詩經作品背景與文化意涵。' },
-            { id: 'BK-1014', code: '978-957-549-014', title: '楚辭補注點校', author: '林尹', year: '1984', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 1, stock: 50, price: 580, intro: '林尹教授精研楚辭經典校釋。' },
-            { id: 'BK-1015', code: '978-957-549-015', title: '史記會注考證補遺', author: '水澤利忠 / 編輯部', year: '1990', category: '歷史學', warehouseId: 'WH-A', shelfId: 'SH-A03', tier: 2, stock: 28, price: 850, intro: '史記研究考據著作。' },
-            { id: 'BK-1016', code: '978-957-549-016', title: '莊子集釋校正', author: '嚴靈峰', year: '1986', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 1, stock: 65, price: 720, intro: '莊子各家注釋之精密彙析。' },
-            { id: 'BK-1017', code: '978-957-549-017', title: '訓詁學概論', author: '陳新雄', year: '1992', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 4, stock: 90, price: 450, intro: '中文系聲韻訓詁學權威教材。' },
-            { id: 'BK-1018', code: '978-957-549-018', title: '清代邊政與滿洲檔案', author: '莊吉發', year: '1998', category: '歷史學', warehouseId: 'WH-B', shelfId: 'SH-B03', tier: 4, stock: 32, price: 680, intro: '故宮清代滿漢檔案第一手研究。' },
-            { id: 'BK-1019', code: '978-957-549-019', title: '中國文學批評史論', author: '黃永武', year: '1989', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A02', tier: 3, stock: 48, price: 560, intro: '系統整理歷代文學批評論著。' },
-            { id: 'BK-1020', code: '978-957-549-020', title: '古典藝術與美學新探', author: '龔鵬程', year: '1996', category: '藝術社會', warehouseId: 'WH-B', shelfId: 'SH-B04', tier: 2, stock: 38, price: 490, intro: '貫通古典文學與藝術美學。' },
-            { id: 'BK-1021', code: '978-957-549-021', title: '中晚清經說疏論', author: '曾聖益', year: '2023', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 5, stock: 42, price: 360, intro: '探討晚清經學思想變遷。' },
-            { id: 'BK-1022', code: '978-957-549-022', title: '從廟堂到田園：先唐士人的心路歷程', author: '王玫', year: '2024', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A02', tier: 2, stock: 50, price: 420, intro: '剖析先唐士人政治抱負與田園思想。' },
-            { id: 'BK-1023', code: '978-957-549-023', title: '漢語音韻學', author: '董同龢', year: '2022', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 3, stock: 65, price: 400, intro: '董同龢教授音韻學經典著述。' },
-            { id: 'BK-1024', code: '978-957-549-024', title: '禮記集解（上冊）', author: '孫希旦', year: '1990', category: '文史哲學集成', warehouseId: 'WH-C', shelfId: 'SH-C01', tier: 1, stock: 20, price: 800, intro: '清代禮記研究權威集解。' },
-            { id: 'BK-1025', code: '978-957-549-025', title: '禮記集解（下冊）', author: '孫希旦', year: '1990', category: '文史哲學集成', warehouseId: 'WH-C', shelfId: 'SH-C01', tier: 2, stock: 20, price: 800, intro: '清代禮記研究權威集解。' },
-            { id: 'BK-1026', code: '978-957-549-026', title: '易經符號詮釋學', author: '張易生', year: '2022', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 4, stock: 35, price: 460, intro: '當代華人格物致知理論與易學實踐。' },
-            { id: 'BK-1027', code: '978-957-549-027', title: '國學大師勞思光專題研究', author: '勞思光 / 編輯部', year: '2001', category: '國學大師叢書', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 3, stock: 30, price: 500, intro: '探討勞思光哲學思想體系。' },
-            { id: 'BK-1028', code: '978-957-549-028', title: '王靜芝國學論文集', author: '王靜芝', year: '1997', category: '國學大師叢書', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 4, stock: 25, price: 580, intro: '王靜芝教授國學與藝術論文集。' },
-            { id: 'BK-1029', code: '978-957-549-029', title: '中國圖書館事業史', author: '盧荷生', year: '1988', category: '目錄學', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 5, stock: 40, price: 480, intro: '梳理中國歷代藏書與圖書館發展。' },
-            { id: 'BK-1030', code: '978-957-549-030', title: '中國戲曲史演變考', author: '文史哲編輯部', year: '1994', category: '戲曲研究', warehouseId: 'WH-B', shelfId: 'SH-B04', tier: 1, stock: 35, price: 620, intro: '古典戲曲與地方劇種研究。' },
-            { id: 'BK-1031', code: '978-957-549-031', title: '再鴻門：詩集', author: '陳大為', year: '1997', category: '文史哲詩叢', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 3, stock: 45, price: 300, intro: '以古喻今敘事詩集。' },
-            { id: 'BK-1032', code: '978-957-549-032', title: '繪畫創作研究', author: '池振周', year: '1972', category: '藝術社會', warehouseId: 'WH-B', shelfId: 'SH-B04', tier: 3, stock: 20, price: 380, intro: '探討繪畫美學與創作理論。' },
-            { id: 'BK-1033', code: '978-957-549-033', title: '藝術概論', author: '池振周', year: '1971', category: '藝術社會', warehouseId: 'WH-B', shelfId: 'SH-B04', tier: 4, stock: 15, price: 350, intro: '創社初期經典藝術教科書。' },
-            { id: 'BK-1034', code: '978-957-549-034', title: '微曦四部曲 (一)', author: '馮馮', year: '1981', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A05', tier: 1, stock: 30, price: 450, intro: '馮馮自傳體長篇小說大作。' },
-            { id: 'BK-1035', code: '978-957-549-035', title: '羅門創作大系 (詩卷)', author: '羅門', year: '1995', category: '文史哲詩叢', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 5, stock: 40, price: 600, intro: '都市詩人羅門詩歌精選。' },
-            { id: 'BK-1036', code: '978-957-549-036', title: '明版善本書文獻考', author: '彭正雄編', year: '1973', category: '目錄學', warehouseId: 'WH-C', shelfId: 'SH-C01', tier: 3, stock: 10, price: 950, intro: '創辦人彭正雄先生輯錄明版善本。' },
-            { id: 'BK-1037', code: '978-957-549-037', title: '先秦諸子思想通論', author: '嚴靈峰', year: '1987', category: '哲學宗教', warehouseId: 'WH-A', shelfId: 'SH-A07', tier: 5, stock: 50, price: 550, intro: '解析先秦諸家學說核心。' },
-            { id: 'BK-1038', code: '978-957-549-038', title: '韓非子集解校正', author: '嚴靈峰', year: '1989', category: '哲學宗教', warehouseId: 'WH-C', shelfId: 'SH-C02', tier: 1, stock: 22, price: 700, intro: '《韓非子》精密彙校考訂本。' },
-            { id: 'BK-1039', code: '978-957-549-039', title: '魏晉南北朝文學論集', author: '黃永武', year: '1991', category: '文史哲學術叢刊', warehouseId: 'WH-A', shelfId: 'SH-A02', tier: 4, stock: 45, price: 520, intro: '魏晉風骨與南北朝詩賦風格。' },
-            { id: 'BK-1040', code: '978-957-549-040', title: '唐詩意象學', author: '黃永武', year: '1993', category: '文史哲學術叢刊', warehouseId: 'WH-A', shelfId: 'SH-A02', tier: 5, stock: 60, price: 480, intro: '分析唐代詩歌審美結構。' },
-            { id: 'BK-1041', code: '978-957-549-041', title: '宋代理學與文學', author: '李威熊', year: '1992', category: '文史哲學術叢刊', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 1, stock: 38, price: 540, intro: '宋代理學家文學觀研究。' },
-            { id: 'BK-1042', code: '978-957-549-042', title: '元代戲曲雜劇研究', author: '王更生', year: '1990', category: '戲曲研究', warehouseId: 'WH-B', shelfId: 'SH-B04', tier: 5, stock: 30, price: 580, intro: '元雜劇結構與語言專題論著。' },
-            { id: 'BK-1043', code: '978-957-549-043', title: '明清小說審美思潮', author: '蔡宗陽', year: '1999', category: '文學小說', warehouseId: 'WH-A', shelfId: 'SH-A05', tier: 4, stock: 55, price: 460, intro: '明清小說美學價值探討。' },
-            { id: 'BK-1044', code: '978-957-549-044', title: '聲韻學隨筆', author: '陳新雄', year: '1995', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 5, stock: 70, price: 380, intro: '談漢語音韻、反切與古音學。' },
-            { id: 'BK-1045', code: '978-957-549-045', title: '中國史學史綱', author: '莊吉發', year: '2002', category: '歷史學', warehouseId: 'WH-A', shelfId: 'SH-A03', tier: 3, stock: 40, price: 650, intro: '貫穿歷代史官制度與史學思想。' },
-            { id: 'BK-1046', code: '978-957-549-046', title: '故宮滿文檔案考釋', author: '莊吉發', year: '2005', category: '滿學', warehouseId: 'WH-B', shelfId: 'SH-B03', tier: 2, stock: 18, price: 880, intro: '故宮藏滿文書檔之翻譯與考證。' },
-            { id: 'BK-1047', code: '978-957-549-047', title: '台灣文史考輯 (待入庫備貨)', author: '文史哲編輯部', year: '2024', category: '歷史學', warehouseId: '', shelfId: '', tier: 1, stock: 100, price: 420, intro: '新近印製完成，待倉管人員指定儲位。' },
-            { id: 'BK-1048', code: '978-957-549-048', title: '國學導讀講義 (待入庫備貨)', author: '高明', year: '2025', category: '國學大師叢書', warehouseId: '', shelfId: '', tier: 1, stock: 80, price: 390, intro: '高明教授國學講義新版。' },
-            { id: 'BK-1049', code: '978-957-549-049', title: '現代西方哲學概論', author: '韓秋紅', year: '2018', category: '哲學宗教', warehouseId: 'WH-C', shelfId: 'SH-C02', tier: 2, stock: 35, price: 520, intro: '從叔本華到羅蒂之哲學流派講義。' },
-            { id: 'BK-1050', code: '978-957-549-050', title: '綜合閩南臺灣話基本字典', author: '吳守禮', year: '1987', category: '語言文字', warehouseId: 'WH-A', shelfId: 'SH-A06', tier: 1, stock: 25, price: 1100, intro: '吳守禮教授編著工具書。' }
+            { id: 'BK-1005', code: '978-957-549-005', title: '霧航', author: '馮馮', year: '1980', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 2, stock: 60, price: 420, intro: '著名作家馮馮代表作。' }
         ];
 
         const ThreeWarehouseView = ({ warehouse, selectedShelf, highlightedLocation, onSelectShelf, viewMode }) => {
@@ -308,6 +313,7 @@
             const isDragging = useRef(false);
             const previousMousePosition = useRef({ x: 0, y: 0 });
             const cameraAngle = useRef({ theta: Math.PI / 4, phi: Math.PI / 3, radius: 35 });
+            const cameraTarget = useRef({ x: 0, y: 0, z: 0 });
 
             const updateCameraPosition = useCallback(() => {
                 if (!cameraRef.current) return;
@@ -315,18 +321,21 @@
                 const r = cameraAngle.current.radius;
                 const theta = cameraAngle.current.theta;
                 const phi = cameraAngle.current.phi;
+                const target = cameraTarget.current;
 
-                cam.position.x = r * Math.sin(phi) * Math.sin(theta);
-                cam.position.y = r * Math.cos(phi);
-                cam.position.z = r * Math.sin(phi) * Math.cos(theta);
-                cam.lookAt(0, 1.5, 0);
+                cam.position.x = target.x + r * Math.sin(phi) * Math.sin(theta);
+                cam.position.y = target.y + r * Math.cos(phi);
+                cam.position.z = target.z + r * Math.sin(phi) * Math.cos(theta);
+                cam.lookAt(target.x, target.y + 1.5, target.z);
             }, []);
 
             useEffect(() => {
                 if (viewMode === '2D') {
                     cameraAngle.current = { theta: 0, phi: 0.001, radius: 28 };
+                    cameraTarget.current = { x: 0, y: 0, z: 0 };
                 } else {
                     cameraAngle.current = { theta: Math.PI / 4, phi: Math.PI / 3, radius: 32 };
+                    cameraTarget.current = { x: 0, y: 0, z: 0 };
                 }
                 updateCameraPosition();
             }, [viewMode, updateCameraPosition]);
@@ -339,6 +348,7 @@
                     const targetX = targetShelf.x;
                     const targetZ = targetShelf.z;
                     
+                    cameraTarget.current = { x: targetX, y: 0, z: targetZ };
                     const targetTheta = Math.atan2(targetX, targetZ) + Math.PI / 6;
                     cameraAngle.current.theta = targetTheta;
                     cameraAngle.current.radius = 22;
@@ -427,6 +437,38 @@
                     updateCameraPosition();
                 };
 
+                const handleKeyDown = (e) => {
+                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                        if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+                            return;
+                        }
+                        e.preventDefault();
+
+                        const step = 0.8;
+                        const theta = cameraAngle.current.theta;
+                        const forwardX = -Math.sin(theta);
+                        const forwardZ = -Math.cos(theta);
+                        const rightX = Math.cos(theta);
+                        const rightZ = -Math.sin(theta);
+
+                        if (e.key === 'ArrowUp') {
+                            cameraTarget.current.x += forwardX * step;
+                            cameraTarget.current.z += forwardZ * step;
+                        } else if (e.key === 'ArrowDown') {
+                            cameraTarget.current.x -= forwardX * step;
+                            cameraTarget.current.z -= forwardZ * step;
+                        } else if (e.key === 'ArrowLeft') {
+                            cameraTarget.current.x -= rightX * step;
+                            cameraTarget.current.z -= rightZ * step;
+                        } else if (e.key === 'ArrowRight') {
+                            cameraTarget.current.x += rightX * step;
+                            cameraTarget.current.z += rightZ * step;
+                        }
+
+                        updateCameraPosition();
+                    }
+                };
+
                 const raycaster = new THREE.Raycaster();
                 const mouse = new THREE.Vector2();
 
@@ -454,6 +496,7 @@
                 domEl.addEventListener('mousedown', handleMouseDown);
                 window.addEventListener('mousemove', handleMouseMove);
                 window.addEventListener('mouseup', handleMouseUp);
+                window.addEventListener('keydown', handleKeyDown);
                 domEl.addEventListener('wheel', handleWheel, { passive: false });
                 domEl.addEventListener('click', handleClick);
 
@@ -484,6 +527,7 @@
                 return () => {
                     window.removeEventListener('mousemove', handleMouseMove);
                     window.removeEventListener('mouseup', handleMouseUp);
+                    window.removeEventListener('keydown', handleKeyDown);
                     window.removeEventListener('resize', handleResize);
                     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
                     if (domEl) {
@@ -648,11 +692,29 @@
                             <Icon name="Compass" size={14} /> 3D 視角操作說明：
                         </div>
                         <div>• 按住滑鼠左鍵拖曳：旋轉視角</div>
+                        <div>• 鍵盤方向鍵 (↑↓←→)：平移移動畫面</div>
                         <div>• 滾輪縮放：放大 / 縮小視野</div>
                         <div>• 點擊 3D 書架：選取並調整座標位置</div>
                     </div>
                 </div>
             );
+        };
+
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwcKsTM6Pog4Tq0357zIMVldgSmtsUk_hsEneGRpfb-vfVTxH8qJhIwJvlNKKXGgxOk/exec";
+
+        const syncWithGAS = async (action, payload = null) => {
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action, payload, origin: window.location.origin })
+                });
+                const resData = await response.json();
+                return resData;
+            } catch (e) {
+                console.warn("GAS API 連線警告:", e);
+                return { status: "error", msg: e.toString() };
+            }
         };
 
         function App() {
@@ -678,13 +740,14 @@
 
             // Modals & Sync States
             const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
-            const [csvTab, setCsvCsvTab] = useState('GOOGLE_SHEETS');
+            const [csvTab, setCsvTab] = useState('GOOGLE_SHEETS');
             const [googleSheetUrl, setGoogleSheetUrl] = useState('https://docs.google.com/spreadsheets/d/1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s/edit?usp=drivesdk');
             const [isSyncingSheets, setIsSyncingSheets] = useState(false);
 
             const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
             const [isAddShelfModalOpen, setIsAddShelfModalOpen] = useState(false);
             const [isAddWarehouseModalOpen, setIsAddWarehouseModalOpen] = useState(false);
+            const [isEditWarehouseModalOpen, setIsEditWarehouseModalOpen] = useState(false);
             const [isAssignBookModalOpen, setIsAssignBookModalOpen] = useState(false);
             const [assignBookId, setAssignBookId] = useState('');
             const [assignBookTier, setAssignBookTier] = useState(1);
@@ -718,180 +781,56 @@
                 return '1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s';
             };
 
-            // Google Sheets Live Fetch (Book_ALL + 倉庫) with CORS Proxy Fallback
+            // Auto select first book in filtered list
+            const assignBookFilteredList = useMemo(() => {
+                const searchStr = assignBookSearch.toLowerCase().trim();
+                return books.filter(b => {
+                    if (!searchStr) return true;
+                    const cleanTitle = (b.title || '').replace(/\uFFFD/g, '').toLowerCase();
+                    const cleanAuthor = (b.author || '').replace(/\uFFFD/g, '').toLowerCase();
+                    const cleanCode = (b.code || '').toLowerCase();
+                    return cleanTitle.includes(searchStr) || cleanAuthor.includes(searchStr) || cleanCode.includes(searchStr);
+                });
+            }, [books, assignBookSearch]);
+
+            useEffect(() => {
+                if (isAssignBookModalOpen && assignBookFilteredList.length > 0) {
+                    if (!assignBookId || !assignBookFilteredList.some(b => b.id === assignBookId)) {
+                        setAssignBookId(assignBookFilteredList[0].id);
+                    }
+                }
+            }, [isAssignBookModalOpen, assignBookFilteredList, assignBookId]);
+
             const handleSyncFromGoogleSheets = async (showSuccessToast = true) => {
                 setIsSyncingSheets(true);
-                const sheetId = extractSheetId(googleSheetUrl);
-                let importedBooksCount = 0;
-                let importedWarehousesCount = 0;
-
-                const fetchWithProxyFallback = async (targetUrl) => {
-                    try {
-                        const directResp = await fetch(targetUrl);
-                        if (directResp.ok) {
-                            const text = await directResp.text();
-                            if (text && !text.includes('<!DOCTYPE html>')) return text;
-                        }
-                    } catch (e) {
-                        // Direct fetch failed (CORS or sandboxed iframe restriction)
-                    }
-
-                    // Fallback proxies to try sequentially
-                    const proxies = [
-                        (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-                        (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-                        (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
-                    ];
-
-                    for (const getProxyUrl of proxies) {
-                        try {
-                            const proxyUrl = getProxyUrl(targetUrl);
-                            const proxyResp = await fetch(proxyUrl);
-                            if (proxyResp.ok) {
-                                const proxyText = await proxyResp.text();
-                                if (proxyText && !proxyText.includes('<!DOCTYPE html>')) return proxyText;
-                            }
-                        } catch (err) {
-                            // Quietly catch errors without outputting full console error traces
-                        }
-                    }
-                    return null;
-                };
+                showToast("正在從 Google 試算表同步資料...");
 
                 try {
-                    // Fetch Book_ALL sheet
-                    const bookUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Book_ALL')}`;
-                    const csvData = await fetchWithProxyFallback(bookUrl);
-
-                    if (csvData) {
-                        const rows = parseCSVText(csvData);
-                        if (rows.length > 1) {
-                            const headers = rows[0];
-                            const idxCode = getColIdx(headers, ['書碼', 'isbn', '編號', 'code', 'id']);
-                            const idxTitle = getColIdx(headers, ['書名', 'title', '名稱']);
-                            const idxAuthor = getColIdx(headers, ['作者', 'author']);
-                            const idxYear = getColIdx(headers, ['出版年', '年份', 'year']);
-                            const idxCategory = getColIdx(headers, ['類別', '叢書', 'category']);
-                            const idxWh = getColIdx(headers, ['倉庫代碼', '倉庫代號', '倉庫編號', '倉庫', 'warehouse']);
-                            const idxShelf = getColIdx(headers, ['書架編號', '書架代碼', '書架代號', '書架', 'shelf']);
-                            const idxTier = getColIdx(headers, ['層數', '層', 'tier']);
-                            const idxStock = getColIdx(headers, ['庫存數量', '庫存', '數量', 'stock']);
-                            const idxPrice = getColIdx(headers, ['定價', '價格', '建議定價', 'price']);
-                            const idxIntro = getColIdx(headers, ['簡介', '說明', 'intro']);
-
-                            const newBooks = [];
-                            for (let i = 1; i < rows.length; i++) {
-                                const row = rows[i];
-                                const title = idxTitle >= 0 ? row[idxTitle] : row[1];
-                                if (!title || title.trim() === '') continue;
-
-                                const code = idxCode >= 0 ? row[idxCode] : row[0] || `BK-${i}`;
-                                const whCode = idxWh >= 0 ? row[idxWh] : '';
-                                const shCode = idxShelf >= 0 ? row[idxShelf] : '';
-
-                                const targetWhStr = cleanCodeStr(whCode);
-                                const foundWh = warehouses.find(w => {
-                                    if (!targetWhStr) return false;
-                                    const wc = cleanCodeStr(w.code);
-                                    const wi = cleanCodeStr(w.id);
-                                    const wn = cleanCodeStr(w.name);
-                                    return wc === targetWhStr || wi === targetWhStr || targetWhStr.includes(wc) || wc.includes(targetWhStr) || wn.includes(targetWhStr);
-                                });
-
-                                const targetShStr = cleanCodeStr(shCode);
-                                const foundSh = foundWh ? foundWh.shelves.find(s => {
-                                    if (!targetShStr) return false;
-                                    const sc = cleanCodeStr(s.code);
-                                    const si = cleanCodeStr(s.id);
-                                    const sn = cleanCodeStr(s.name);
-                                    return sc === targetShStr || si === targetShStr || targetShStr.includes(sc) || sc.includes(targetShStr) || sn.includes(targetShStr);
-                                }) : null;
-
-                                newBooks.push({
-                                    id: `BK-GS-${i}-${Date.now().toString().slice(-4)}`,
-                                    code: code,
-                                    title: title,
-                                    author: idxAuthor >= 0 ? row[idxAuthor] || '未知' : '未知',
-                                    year: idxYear >= 0 ? row[idxYear] || '1971' : '1971',
-                                    category: idxCategory >= 0 ? row[idxCategory] || '通用學術' : '通用學術',
-                                    warehouseId: foundWh ? foundWh.id : (whCode ? whCode : ''),
-                                    shelfId: foundSh ? foundSh.id : (shCode ? shCode : ''),
-                                    tier: idxTier >= 0 ? parseInt(row[idxTier]) || 1 : 1,
-                                    stock: idxStock >= 0 ? parseInt(row[idxStock]) || 10 : 10,
-                                    price: idxPrice >= 0 ? parseInt(row[idxPrice]) || 300 : 300,
-                                    intro: idxIntro >= 0 ? row[idxIntro] || '' : '從 Google 試算表 Book_ALL 分頁同步。'
-                                });
-                            }
-
-                            if (newBooks.length > 0) {
-                                newBooks.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
-                                setBooks(newBooks);
-                                importedBooksCount = newBooks.length;
-                            }
-                        }
+                    const whRes = await syncWithGAS('FETCH_WAREHOUSES');
+                    if (whRes && whRes.status === 'success' && Array.isArray(whRes.data) && whRes.data.length > 0) {
+                        setWarehouses(whRes.data);
                     }
 
-                    // Fetch 倉庫 sheet
-                    const whUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('倉庫')}`;
-                    const whCsvData = await fetchWithProxyFallback(whUrl);
-
-                    if (whCsvData) {
-                        const whRows = parseCSVText(whCsvData);
-                        if (whRows.length > 1) {
-                            const headers = whRows[0];
-                            const idxWhCode = getColIdx(headers, ['倉庫代碼', '代碼', 'code']);
-                            const idxWhName = getColIdx(headers, ['倉庫名稱', '名稱', 'name']);
-                            const idxWhAddress = getColIdx(headers, ['地址', '位置', 'address']);
-                            const idxWhWidth = getColIdx(headers, ['長度', '長', 'width']);
-                            const idxWhDepth = getColIdx(headers, ['深度', '寬', 'depth']);
-                            const idxWhHeight = getColIdx(headers, ['高度', '高', 'height']);
-                            const idxWhShelves = getColIdx(headers, ['書架資料', '書架擺設', 'shelves']);
-
-                            const newWarehouses = [];
-                            for (let i = 1; i < whRows.length; i++) {
-                                const row = whRows[i];
-                                const code = idxWhCode >= 0 ? row[idxWhCode] : row[0];
-                                const name = idxWhName >= 0 ? row[idxWhName] : row[1];
-                                if (!code || !name) continue;
-
-                                let parsedShelves = null;
-                                if (idxWhShelves >= 0 && row[idxWhShelves]) {
-                                    try {
-                                        parsedShelves = JSON.parse(row[idxWhShelves]);
-                                    } catch(e) {}
-                                }
-
-                                const existingWh = warehouses.find(w => w.code === code || w.id === code);
-                                newWarehouses.push({
-                                    id: existingWh ? existingWh.id : `WH-${code}`,
-                                    code: code,
-                                    name: name,
-                                    address: idxWhAddress >= 0 ? row[idxWhAddress] || '台北市' : '台北市',
-                                    width: idxWhWidth >= 0 ? parseFloat(row[idxWhWidth]) || 24 : 24,
-                                    depth: idxWhDepth >= 0 ? parseFloat(row[idxWhDepth]) || 18 : 18,
-                                    height: idxWhHeight >= 0 ? parseFloat(row[idxWhHeight]) || 4.5 : 4.5,
-                                    shelves: parsedShelves || (existingWh ? existingWh.shelves : [
-                                        { id: `SH-${code}-01`, code: `${code.slice(0, 1)}1架`, name: '主要典藏特區架', x: -5, z: -4, rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '綜合學術', color: '#8C5A2B' }
-                                    ])
-                                });
-                            }
-
-                            if (newWarehouses.length > 0) {
-                                setWarehouses(newWarehouses);
-                                importedWarehousesCount = newWarehouses.length;
-                            }
-                        }
-                    }
-
-                    if (importedBooksCount > 0) {
-                        if (showSuccessToast) showToast(`⚡ 雲端同步完成！成功載入 ${importedBooksCount} 本圖書與 ${importedWarehousesCount} 個倉庫排架！`);
-                    } else {
-                        if (showSuccessToast) showToast(`⚠️ 雲端讀取失敗或權限未開啟。請確認 Google 試算表設定為『知道連結的任何人皆可檢視』，或直接點選上傳 CSV 檔案！`);
+                    const bkRes = await syncWithGAS('FETCH_BOOKS');
+                    if (bkRes && bkRes.status === 'success' && Array.isArray(bkRes.data) && bkRes.data.length > 0) {
+                        const parsedBooks = bkRes.data.map(b => {
+                            const parsedLoc = parseBookLocation(b, warehouses);
+                            return {
+                                ...b,
+                                code: b.isbn || b.code || b.id,
+                                warehouseId: parsedLoc.warehouseId,
+                                shelfId: parsedLoc.shelfId,
+                                tier: parsedLoc.tier
+                            };
+                        });
+                        parsedBooks.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+                        setBooks(parsedBooks);
+                        if (showSuccessToast) showToast(`⚡ 成功同步！已戴入 ${parsedBooks.length} 本圖書！`);
+                    } else if (showSuccessToast) {
+                        showToast("雲端同步已完成！");
                     }
                 } catch (err) {
-                    if (showSuccessToast) {
-                        showToast(`⚠️ 連線異常，請改用「上傳 CSV 檔案」匯入完整 Book_ALL 書籍！`);
-                    }
+                    if (showSuccessToast) showToast("雲端同步出現狀況，已載入本機快取資料。");
                 } finally {
                     setIsSyncingSheets(false);
                 }
@@ -952,8 +891,6 @@
                     list.sort((a, b) => (b.code || '').localeCompare(a.code || '', undefined, { numeric: true }));
                 } else if (sortBy === 'title') {
                     list.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'zh-Hant'));
-                } else if (sortBy === 'warehouse') {
-                    list.sort((a, b) => (a.warehouseId || 'ZZ').localeCompare(b.warehouseId || 'ZZ'));
                 } else if (sortBy === 'category') {
                     list.sort((a, b) => (a.category || '').localeCompare(b.category || '', 'zh-Hant'));
                 }
@@ -1011,22 +948,58 @@
                     shelves: defaultShelves
                 };
 
-                setWarehouses(prev => [...prev, newWarehouse]);
+                const updatedWhs = [...warehouses, newWarehouse];
+                setWarehouses(updatedWhs);
                 setActiveWarehouseId(newWhId);
                 setSelectedShelf(null);
                 setIsAddWarehouseModalOpen(false);
-                showToast(`成功建立新倉庫：${newWhName} (${newWhCode})！已切換至 3D 視角。`);
+                showToast(`成功建立新倉庫：${newWhName} (${newWhCode})！已同步至雲端。`);
+
+                syncWithGAS("SYNC_WAREHOUSES", { warehouses: updatedWhs });
+            };
+
+            const handleEditWarehouse = (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const name = (formData.get('name') || '').trim();
+                const address = (formData.get('address') || '').trim();
+                const width = parseFloat(formData.get('width')) || 24;
+                const depth = parseFloat(formData.get('depth')) || 18;
+                const height = parseFloat(formData.get('height')) || 4.5;
+
+                const updatedWhs = warehouses.map(w => {
+                    if (w.id === activeWarehouseId) {
+                        return {
+                            ...w,
+                            name: name || w.name,
+                            address: address || w.address,
+                            width,
+                            depth,
+                            height
+                        };
+                    }
+                    return w;
+                });
+
+                setWarehouses(updatedWhs);
+                setIsEditWarehouseModalOpen(false);
+                showToast(`成功更新倉庫【${activeWarehouse.code}】之名稱與空間尺寸！`);
+
+                syncWithGAS("SYNC_WAREHOUSES", { warehouses: updatedWhs });
             };
 
             const handleUpdateShelf = (updatedShelf) => {
-                setWarehouses(prev => prev.map(wh => {
+                const updatedWhs = warehouses.map(wh => {
                     if (wh.id !== activeWarehouseId) return wh;
                     return {
                         ...wh,
                         shelves: wh.shelves.map(s => s.id === updatedShelf.id ? updatedShelf : s)
                     };
-                }));
+                });
+                setWarehouses(updatedWhs);
                 setSelectedShelf(updatedShelf);
+
+                syncWithGAS("SYNC_WAREHOUSES", { warehouses: updatedWhs });
             };
 
             const handleAddShelf = (e) => {
@@ -1046,30 +1019,39 @@
                     color: '#8C5A2B'
                 };
 
-                setWarehouses(prev => prev.map(wh => {
+                const updatedWhs = warehouses.map(wh => {
                     if (wh.id !== activeWarehouseId) return wh;
                     return { ...wh, shelves: [...wh.shelves, newShelf] };
-                }));
+                });
 
+                setWarehouses(updatedWhs);
                 setSelectedShelf(newShelf);
                 setIsAddShelfModalOpen(false);
                 showToast(`成功新增書架：${newShelf.code} (${newShelf.name})`);
+
+                syncWithGAS("SYNC_WAREHOUSES", { warehouses: updatedWhs });
             };
 
             const handleDeleteShelf = (shelfId) => {
                 if (!window.confirm("確定要刪除此書架嗎？放置於此書架之書籍儲位設定將變更為待上架。")) return;
-                setWarehouses(prev => prev.map(wh => {
+                const updatedWhs = warehouses.map(wh => {
                     if (wh.id !== activeWarehouseId) return wh;
                     return { ...wh, shelves: wh.shelves.filter(s => s.id !== shelfId) };
-                }));
+                });
+                setWarehouses(updatedWhs);
                 setBooks(prev => prev.map(b => b.shelfId === shelfId ? { ...b, warehouseId: '', shelfId: '' } : b));
                 setSelectedShelf(null);
                 showToast("已刪除書架，原書架書籍已移至待上架清單。");
+
+                syncWithGAS("SYNC_WAREHOUSES", { warehouses: updatedWhs });
             };
 
             const handleAssignBookToShelf = (e) => {
                 e.preventDefault();
                 if (!assignBookId || !selectedShelf) return showToast("請選擇欲放入的圖書！");
+
+                const targetBook = books.find(b => b.id === assignBookId);
+                const tierNum = parseInt(assignBookTier) || 1;
 
                 setBooks(prev => prev.map(b => {
                     if (b.id === assignBookId) {
@@ -1077,26 +1059,49 @@
                             ...b,
                             warehouseId: activeWarehouseId,
                             shelfId: selectedShelf.id,
-                            tier: parseInt(assignBookTier) || 1
+                            tier: tierNum
                         };
                     }
                     return b;
                 }));
 
-                const targetBook = books.find(b => b.id === assignBookId);
-                showToast(`已成功將《${targetBook ? targetBook.title : ''}》放入 ${selectedShelf.code} 第 ${assignBookTier} 層！`);
+                const locationStr = `${activeWarehouse.name} (${activeWarehouse.code}) [${activeWarehouse.id}] | ${selectedShelf.name} (${selectedShelf.code}) [${selectedShelf.id}] | 第 ${tierNum} 層`;
+                showToast(`已成功將《${targetBook ? targetBook.title : ''}》放入 ${selectedShelf.code} 第 ${tierNum} 層！`);
+                
+                syncWithGAS("UPDATE_BOOK_LOCATION", {
+                    bookId: assignBookId,
+                    bookTitle: targetBook ? targetBook.title : "",
+                    locationStr: locationStr
+                });
+
                 setIsAssignBookModalOpen(false);
                 setAssignBookId('');
             };
 
             const handleRemoveBookFromShelf = (bookId) => {
+                const targetBook = books.find(b => b.id === bookId);
                 setBooks(prev => prev.map(b => b.id === bookId ? { ...b, warehouseId: '', shelfId: '', tier: 1 } : b));
                 showToast("已將圖書移出此書架（變更為待入庫）。");
+
+                syncWithGAS("UPDATE_BOOK_LOCATION", {
+                    bookId: bookId,
+                    bookTitle: targetBook ? targetBook.title : "",
+                    locationStr: "未排架/待入庫"
+                });
             };
 
             const handleChangeBookTier = (bookId, newTier) => {
-                setBooks(prev => prev.map(b => b.id === bookId ? { ...b, tier: parseInt(newTier) || 1 } : b));
-                showToast(`已調整圖書儲位至第 ${newTier} 層。`);
+                const targetBook = books.find(b => b.id === bookId);
+                const tierNum = parseInt(newTier) || 1;
+                setBooks(prev => prev.map(b => b.id === bookId ? { ...b, tier: tierNum } : b));
+                showToast(`已調整圖書儲位至第 ${tierNum} 層。`);
+
+                const locationStr = `${activeWarehouse.name} (${activeWarehouse.code}) [${activeWarehouse.id}] | ${selectedShelf.name} (${selectedShelf.code}) [${selectedShelf.id}] | 第 ${tierNum} 層`;
+                syncWithGAS("UPDATE_BOOK_LOCATION", {
+                    bookId: bookId,
+                    bookTitle: targetBook ? targetBook.title : "",
+                    locationStr: locationStr
+                });
             };
 
             const handleOpenExportCsv = () => {
@@ -1212,7 +1217,7 @@
                                     文史哲出版社有限公司
                                 </h1>
                                 <p className="text-[10px] tracking-widest text-amber-800 font-bold uppercase">
-                                    3D 多倉庫暨書架擺設管理與快速索引系統 (Book_ALL & 倉庫分頁同步)
+                                    3D 多倉庫暨書架擺設管理與快速索引系統 (GAS 雲端即時雙向同步)
                                 </p>
                             </div>
                         </div>
@@ -1234,6 +1239,14 @@
                                         <option key={wh.id} value={wh.id}>{wh.name} ({wh.code})</option>
                                     ))}
                                 </select>
+                                <button
+                                    onClick={() => setIsEditWarehouseModalOpen(true)}
+                                    title="編輯當前倉庫尺寸與名稱"
+                                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-800/15 border border-amber-800/30 text-amber-900 hover:bg-amber-800 hover:text-white transition flex items-center gap-1 shrink-0"
+                                >
+                                    <Icon name="Sliders" size={13} />
+                                    <span>編輯倉庫</span>
+                                </button>
                                 <button
                                     onClick={() => setIsAddWarehouseModalOpen(true)}
                                     title="建立新倉庫"
@@ -1262,7 +1275,6 @@
                         </div>
                     </header>
 
-                    {}
                     <div className="flex-1 flex overflow-hidden relative">
                         {/* Left Sidebar */}
                         <aside className="w-84 md:w-96 border-r border-borderwood bg-white/70 backdrop-blur-md flex flex-col z-10 shrink-0 shadow-sm">
@@ -1695,6 +1707,57 @@
                         </div>
                     )}
 
+                    {/* Modal 1.5: Edit Current Warehouse Modal */}
+                    {isEditWarehouseModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
+                                <div className="flex justify-between items-center border-b border-borderwood pb-3">
+                                    <h3 className="font-serif-title font-bold text-amber-900 text-base flex items-center gap-2">
+                                        <Icon name="Sliders" size={18} className="text-amber-800" />
+                                        編輯倉庫【{activeWarehouse.code}】尺寸與名稱
+                                    </h3>
+                                    <button onClick={() => setIsEditWarehouseModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
+                                        <Icon name="X" size={18} />
+                                    </button>
+                                </div>
+                                <form onSubmit={handleEditWarehouse} className="space-y-3 text-xs">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">倉庫代碼 (不可修改)</label>
+                                            <input value={activeWarehouse.code} disabled className="w-full p-2.5 rounded-xl border border-borderwood bg-paper/60 font-bold text-amber-800 outline-none font-mono cursor-not-allowed" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">倉庫名稱</label>
+                                            <input name="name" required defaultValue={activeWarehouse.name} className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block font-bold text-amber-900 mb-1">地址位置</label>
+                                        <input name="address" defaultValue={activeWarehouse.address} className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">長度 (X軸, 公尺)</label>
+                                            <input name="width" type="number" defaultValue={activeWarehouse.width} step="1" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">深度 (Z軸, 公尺)</label>
+                                            <input name="depth" type="number" defaultValue={activeWarehouse.depth} step="1" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">挑高 (Y軸, 公尺)</label>
+                                            <input name="height" type="number" defaultValue={activeWarehouse.height} step="0.5" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                    </div>
+                                    <div className="pt-2 flex justify-end gap-2">
+                                        <button type="button" onClick={() => setIsEditWarehouseModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold">取消</button>
+                                        <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">儲存倉庫變更</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Modal 2: Add New Shelf Modal */}
                     {isAddShelfModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1764,7 +1827,7 @@
                     {/* Modal 3: Assign Book to Selected Shelf Modal */}
                     {isAssignBookModalOpen && selectedShelf && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
+                            <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4 max-h-[90vh]">
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
                                     <h3 className="font-serif-title font-bold text-amber-900 text-base flex items-center gap-2">
                                         <Icon name="BookOpen" size={18} className="text-amber-800" />
@@ -1774,31 +1837,63 @@
                                         <Icon name="X" size={18} />
                                     </button>
                                 </div>
-                                <form onSubmit={handleAssignBookToShelf} className="space-y-4 text-xs">
-                                    <div>
-                                        <label className="block font-bold text-amber-900 mb-1">1. 搜尋並選擇圖書：</label>
-                                        <input
-                                            type="text"
-                                            value={assignBookSearch}
-                                            onChange={(e) => setAssignBookSearch(e.target.value)}
-                                            placeholder="輸入書名、作者或 ISBN 快速過濾..."
-                                            className="w-full p-2 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none mb-2"
-                                        />
-                                        <select
-                                            value={assignBookId}
-                                            onChange={(e) => setAssignBookId(e.target.value)}
-                                            required
-                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none max-h-40"
-                                            size="5"
-                                        >
-                                            {books
-                                                .filter(b => !assignBookSearch || b.title.includes(assignBookSearch) || b.code.includes(assignBookSearch) || b.author.includes(assignBookSearch))
-                                                .map(b => (
-                                                    <option key={b.id} value={b.id}>
-                                                        [{b.code}] 《{b.title}》- {b.author} ({b.warehouseId ? '已在倉' : '待入庫'})
-                                                    </option>
-                                                ))}
-                                        </select>
+                                <form onSubmit={handleAssignBookToShelf} className="space-y-4 text-xs flex flex-col overflow-hidden">
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="block font-bold text-amber-900">1. 搜尋並點選圖書 ({assignBookFilteredList.length} 本)：</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                value={assignBookSearch}
+                                                onChange={(e) => setAssignBookSearch(e.target.value)}
+                                                placeholder="輸入書名、作者或 ISBN 快速過濾..."
+                                                className="w-full pl-8 pr-3 py-2 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none focus:border-amber-800"
+                                            />
+                                            <Icon name="Search" size={14} className="absolute left-2.5 top-2.5 text-amber-800/60" />
+                                        </div>
+
+                                        <div className="max-h-52 overflow-y-auto border border-borderwood rounded-2xl bg-paper p-1.5 space-y-1.5 hide-scrollbar">
+                                            {assignBookFilteredList.length === 0 ? (
+                                                <div className="p-4 text-center text-amber-800/60 font-bold italic">
+                                                    查無符合搜尋條件之圖書！
+                                                </div>
+                                            ) : (
+                                                assignBookFilteredList.map(b => {
+                                                    const isSelected = assignBookId === b.id;
+                                                    const wh = warehouses.find(w => w.id === b.warehouseId || w.code === b.warehouseId);
+                                                    const sh = wh ? wh.shelves.find(s => s.id === b.shelfId || s.code === b.shelfId) : null;
+                                                    const isAssigned = !!(wh && sh);
+                                                    const cleanTitle = (b.title || '').replace(/\uFFFD/g, '');
+                                                    const cleanAuthor = (b.author || '').replace(/\uFFFD/g, '');
+
+                                                    return (
+                                                        <div
+                                                            key={b.id}
+                                                            onClick={() => setAssignBookId(b.id)}
+                                                            className={`p-2.5 rounded-xl cursor-pointer transition flex items-center justify-between border ${
+                                                                isSelected 
+                                                                    ? 'bg-amber-800 text-white border-amber-900 shadow-sm' 
+                                                                    : 'bg-white hover:bg-amber-100/50 text-amber-900 border-borderwood'
+                                                            }`}
+                                                        >
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <div className="flex items-center gap-1.5 font-bold">
+                                                                    <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${isSelected ? 'bg-amber-900 text-amber-200' : 'bg-amber-800/10 text-amber-800'}`}>
+                                                                        #{b.code}
+                                                                    </span>
+                                                                    <span className="font-serif-title">《{cleanTitle}》</span>
+                                                                </div>
+                                                                <div className={`text-[11px] ${isSelected ? 'text-amber-100' : 'text-amber-800/70'}`}>
+                                                                    作者：{cleanAuthor} | {isAssigned ? `${wh.code} - ${sh.code} (第 ${b.tier || 1} 層)` : '待入庫 / 未排架'}
+                                                                </div>
+                                                            </div>
+                                                            {isSelected && (
+                                                                <Icon name="CheckCircle2" size={18} className="text-amber-300 shrink-0 ml-2" />
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div>
@@ -1806,7 +1901,7 @@
                                         <select
                                             value={assignBookTier}
                                             onChange={(e) => setAssignBookTier(e.target.value)}
-                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none"
+                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none cursor-pointer"
                                         >
                                             {Array.from({ length: selectedShelf.tiers || 5 }, (_, idx) => (
                                                 <option key={idx + 1} value={idx + 1}>
@@ -1818,7 +1913,10 @@
 
                                     <div className="pt-2 flex justify-end gap-2">
                                         <button type="button" onClick={() => setIsAssignBookModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold">取消</button>
-                                        <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">確定放入此書架</button>
+                                        <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition flex items-center gap-1.5 shadow-sm">
+                                            <Icon name="CheckCircle2" size={15} />
+                                            <span>確定放入此書架</span>
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -1841,19 +1939,19 @@
 
                                 <div className="flex gap-2 border-b border-borderwood pb-2 text-xs font-bold">
                                     <button
-                                        onClick={() => setCsvCsvTab('GOOGLE_SHEETS')}
+                                        onClick={() => setCsvTab('GOOGLE_SHEETS')}
                                         className={`px-4 py-2 rounded-xl transition ${csvTab === 'GOOGLE_SHEETS' ? 'bg-amber-800 text-white shadow-xs' : 'bg-paper text-amber-900 border border-borderwood'}`}
                                     >
                                         ⚡ Google 雲端即時連線 (Book_ALL & 倉庫)
                                     </button>
                                     <button
-                                        onClick={() => setCsvCsvTab('BOOK_ALL_CSV')}
+                                        onClick={() => setCsvTab('BOOK_ALL_CSV')}
                                         className={`px-4 py-2 rounded-xl transition ${csvTab === 'BOOK_ALL_CSV' ? 'bg-amber-800 text-white shadow-xs' : 'bg-paper text-amber-900 border border-borderwood'}`}
                                     >
                                         📄 Book_ALL CSV 檔案/文字匯入匯出
                                     </button>
                                     <button
-                                        onClick={() => setCsvCsvTab('WAREHOUSE_CSV')}
+                                        onClick={() => setCsvTab('WAREHOUSE_CSV')}
                                         className={`px-4 py-2 rounded-xl transition ${csvTab === 'WAREHOUSE_CSV' ? 'bg-amber-800 text-white shadow-xs' : 'bg-paper text-amber-900 border border-borderwood'}`}
                                     >
                                         🏢 倉庫擺設 CSV 匯入匯出
@@ -1867,7 +1965,7 @@
                                                 <Icon name="CheckCircle2" size={16} className="text-emerald-700" />
                                                 已綁定全社試算表 ID：<span className="font-mono underline">1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s</span>
                                             </p>
-                                            <p>系統會讀取並解析 <span className="font-bold text-amber-800">Book_ALL</span> 分頁中全部圖書，以及 <span className="font-bold text-amber-800">倉庫</span> 分頁中的 3D 排架結構。</p>
+                                            <p>系統會自動讀取並解析 <span className="font-bold text-amber-800">Book_ALL</span> 分頁中全部圖書，以及 <span className="font-bold text-amber-800">倉庫</span> 分頁中的 3D 排架結構。</p>
                                         </div>
 
                                         <div>
