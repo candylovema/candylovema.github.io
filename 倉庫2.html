@@ -671,6 +671,31 @@
             const [warehouseCsvText, setWarehouseCsvText] = useState('');
             const [toastMessage, setToastMessage] = useState(null);
 
+            const assignBookFilteredList = useMemo(() => {
+                const q = assignBookSearch.toLowerCase().trim();
+                return books.filter(b => {
+                    if (!q) return true;
+                    const title = (b.title || '').toLowerCase();
+                    const code = (b.code || '').toLowerCase();
+                    const author = (b.author || '').toLowerCase();
+                    const category = (b.category || '').toLowerCase();
+                    return title.includes(q) || code.includes(q) || author.includes(q) || category.includes(q);
+                });
+            }, [books, assignBookSearch]);
+
+            useEffect(() => {
+                if (isAssignBookModalOpen) {
+                    if (assignBookFilteredList.length > 0) {
+                        const exists = assignBookFilteredList.some(b => b.id === assignBookId);
+                        if (!exists) {
+                            setAssignBookId(assignBookFilteredList[0].id);
+                        }
+                    } else {
+                        setAssignBookId('');
+                    }
+                }
+            }, [assignBookSearch, isAssignBookModalOpen, assignBookFilteredList]);
+
             const activeWarehouse = useMemo(() => {
                 return warehouses.find(w => w.id === activeWarehouseId) || warehouses[0];
             }, [warehouses, activeWarehouseId]);
@@ -1759,7 +1784,7 @@
                     {/* Modal 3: Assign Book to Selected Shelf Modal */}
                     {isAssignBookModalOpen && selectedShelf && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
+                            <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4 max-h-[90vh]">
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
                                     <h3 className="font-serif-title font-bold text-amber-900 text-base flex items-center gap-2">
                                         <Icon name="BookOpen" size={18} className="text-amber-800" />
@@ -1769,31 +1794,63 @@
                                         <Icon name="X" size={18} />
                                     </button>
                                 </div>
-                                <form onSubmit={handleAssignBookToShelf} className="space-y-4 text-xs">
-                                    <div>
-                                        <label className="block font-bold text-amber-900 mb-1">1. 搜尋並選擇圖書：</label>
-                                        <input
-                                            type="text"
-                                            value={assignBookSearch}
-                                            onChange={(e) => setAssignBookSearch(e.target.value)}
-                                            placeholder="輸入書名、作者或 ISBN 快速過濾..."
-                                            className="w-full p-2 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none mb-2"
-                                        />
-                                        <select
-                                            value={assignBookId}
-                                            onChange={(e) => setAssignBookId(e.target.value)}
-                                            required
-                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none max-h-40"
-                                            size="5"
-                                        >
-                                            {books
-                                                .filter(b => !assignBookSearch || b.title.includes(assignBookSearch) || b.code.includes(assignBookSearch) || b.author.includes(assignBookSearch))
-                                                .map(b => (
-                                                    <option key={b.id} value={b.id}>
-                                                        [{b.code}] 《{b.title}》- {b.author} ({b.warehouseId ? '已在倉' : '待入庫'})
-                                                    </option>
-                                                ))}
-                                        </select>
+                                <form onSubmit={handleAssignBookToShelf} className="space-y-4 text-xs flex flex-col overflow-hidden">
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="block font-bold text-amber-900">1. 搜尋並點選圖書 ({assignBookFilteredList.length} 本)：</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                value={assignBookSearch}
+                                                onChange={(e) => setAssignBookSearch(e.target.value)}
+                                                placeholder="輸入書名、作者或 ISBN 快速過濾..."
+                                                className="w-full pl-8 pr-3 py-2 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none focus:border-amber-800"
+                                            />
+                                            <Icon name="Search" size={14} className="absolute left-2.5 top-2.5 text-amber-800/60" />
+                                        </div>
+
+                                        <div className="max-h-52 overflow-y-auto border border-borderwood rounded-2xl bg-paper p-1.5 space-y-1.5 hide-scrollbar">
+                                            {assignBookFilteredList.length === 0 ? (
+                                                <div className="p-4 text-center text-amber-800/60 font-bold italic">
+                                                    查無符合搜尋條件之圖書！
+                                                </div>
+                                            ) : (
+                                                assignBookFilteredList.map(b => {
+                                                    const isSelected = assignBookId === b.id;
+                                                    const wh = warehouses.find(w => w.id === b.warehouseId || w.code === b.warehouseId);
+                                                    const sh = wh ? wh.shelves.find(s => s.id === b.shelfId || s.code === b.shelfId) : null;
+                                                    const isAssigned = !!(wh && sh);
+                                                    const cleanTitle = (b.title || '').replace(/\uFFFD/g, '');
+                                                    const cleanAuthor = (b.author || '').replace(/\uFFFD/g, '');
+
+                                                    return (
+                                                        <div
+                                                            key={b.id}
+                                                            onClick={() => setAssignBookId(b.id)}
+                                                            className={`p-2.5 rounded-xl cursor-pointer transition flex items-center justify-between border ${
+                                                                isSelected 
+                                                                    ? 'bg-amber-800 text-white border-amber-900 shadow-sm' 
+                                                                    : 'bg-white hover:bg-amber-100/50 text-amber-900 border-borderwood'
+                                                            }`}
+                                                        >
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <div className="flex items-center gap-1.5 font-bold">
+                                                                    <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${isSelected ? 'bg-amber-900 text-amber-200' : 'bg-amber-800/10 text-amber-800'}`}>
+                                                                        #{b.code}
+                                                                    </span>
+                                                                    <span className="font-serif-title">《{cleanTitle}》</span>
+                                                                </div>
+                                                                <div className={`text-[11px] ${isSelected ? 'text-amber-100' : 'text-amber-800/70'}`}>
+                                                                    作者：{cleanAuthor} | {isAssigned ? `${wh.code} - ${sh.code} (第 ${b.tier || 1} 層)` : '待入庫 / 未排架'}
+                                                                </div>
+                                                            </div>
+                                                            {isSelected && (
+                                                                <Icon name="CheckCircle2" size={18} className="text-amber-300 shrink-0 ml-2" />
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div>
@@ -1801,7 +1858,7 @@
                                         <select
                                             value={assignBookTier}
                                             onChange={(e) => setAssignBookTier(e.target.value)}
-                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none"
+                                            className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold text-amber-900 outline-none cursor-pointer"
                                         >
                                             {Array.from({ length: selectedShelf.tiers || 5 }, (_, idx) => (
                                                 <option key={idx + 1} value={idx + 1}>
@@ -1813,7 +1870,10 @@
 
                                     <div className="pt-2 flex justify-end gap-2">
                                         <button type="button" onClick={() => setIsAssignBookModalOpen(false)} className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold">取消</button>
-                                        <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition">確定放入此書架</button>
+                                        <button type="submit" className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold hover:bg-amber-900 transition flex items-center gap-1.5 shadow-sm">
+                                            <Icon name="CheckCircle2" size={15} />
+                                            <span>確定放入此書架</span>
+                                        </button>
                                     </div>
                                 </form>
                             </div>
