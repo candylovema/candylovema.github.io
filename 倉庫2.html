@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>文史哲出版社 - 3D多倉庫暨書架擺設管理與快速索引系統</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -27,7 +28,7 @@
         }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
-    <!-- React & ReactDOM -->
+    <!-- React & ReactDOM UMD -->
     <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.22.20/babel.min.js"></script>
@@ -168,14 +169,29 @@
             const map = new Map();
             list.forEach(w => {
                 if (!w) return;
-                const key = cleanCodeStr(w.code) || cleanCodeStr(w.id) || w.id;
+                const key = w.id || cleanCodeStr(w.code) || w.code;
                 if (!map.has(key)) {
-                    map.set(key, { ...w, shelves: w.shelves || [] });
+                    const shelves = (w.shelves || []).map(s => ({
+                        ...s,
+                        tiers: parseInt(s.tiers, 10) || parseInt(s.tier, 10) || 4
+                    }));
+                    map.set(key, { ...w, shelves });
                 } else {
                     const existing = map.get(key);
                     const shelfMap = new Map();
-                    (existing.shelves || []).forEach(s => shelfMap.set(cleanCodeStr(s.id) || cleanCodeStr(s.code), s));
-                    (w.shelves || []).forEach(s => shelfMap.set(cleanCodeStr(s.id) || cleanCodeStr(s.code), s));
+                    (existing.shelves || []).forEach(s => {
+                        const sKey = s.id || cleanCodeStr(s.code);
+                        shelfMap.set(sKey, {
+                            ...s,
+                            tiers: parseInt(s.tiers, 10) || parseInt(s.tier, 10) || 4
+                        });
+                    });
+                    (w.shelves || []).forEach(s => {
+                        const sKey = s.id || cleanCodeStr(s.code);
+                        const prev = shelfMap.get(sKey) || {};
+                        const parsedTiers = parseInt(s.tiers, 10) || parseInt(s.tier, 10) || parseInt(prev.tiers, 10) || 4;
+                        shelfMap.set(sKey, { ...prev, ...s, tiers: parsedTiers });
+                    });
                     existing.shelves = Array.from(shelfMap.values());
                 }
             });
@@ -244,7 +260,7 @@
         const parseBookLocation = (b, warehouseList) => {
             let whId = b.warehouseId || '';
             let shId = b.shelfId || '';
-            let tierNum = parseInt(b.tier) || 1;
+            let tierNum = parseInt(b.tier, 10) || 1;
 
             const infoStr = (b.warehouseInfo || b.locationStr || b.location || '').toString();
 
@@ -329,7 +345,7 @@
         ];
 
         const INITIAL_BOOKS = [
-            { id: 'BK-1001', code: '978-957-549-001', title: '塔裡的女人', author: '無名氏（卜乃夫）', year: '1971', category: '文學小說', warehouseId: 'WH-A', shelfId: 'SH-A05', tier: 3, stock: 120, price: 380, intro: '《塔裡的女人》是一部深刻浪漫的悲劇經典。' },
+            { id: 'BK-1001', code: '978-957-549-001', title: '塔里的女人', author: '無名氏（卜乃夫）', year: '1971', category: '文學小說', warehouseId: 'WH-A', shelfId: 'SH-A05', tier: 3, stock: 120, price: 380, intro: '《塔里的女人》是一部深刻浪漫的悲劇經典。' },
             { id: 'BK-1002', code: '978-957-549-002', title: '中國目錄學', author: '昌彼得', year: '1975', category: '目錄學', warehouseId: 'WH-B', shelfId: 'SH-B01', tier: 2, stock: 45, price: 550, intro: '國學與古籍整理基礎必讀典籍。' },
             { id: 'BK-1003', code: '978-957-549-003', title: '清史論集（第一集）', author: '莊吉發', year: '1982', category: '歷史學', warehouseId: 'WH-A', shelfId: 'SH-A03', tier: 1, stock: 30, price: 620, intro: '莊吉發教授對清代歷史與檔案之深刻研究。' },
             { id: 'BK-1004', code: '978-957-549-004', title: '文心雕龍與經學', author: '蔡宗陽', year: '1988', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 4, stock: 85, price: 480, intro: '剖析《文心雕龍》文學理論與經學思想。' },
@@ -374,7 +390,6 @@
             const maxDim = Math.max(warehouse.width || 24, warehouse.depth || 18);
             const defaultRadius = Math.max(35, maxDim * 1.15);
 
-            // Fix for Issue 2: Use 0.18 instead of 0.01 for 2D mode pitch angle to avoid camera matrix gimbal lock
             const cameraAngle = useRef({ theta: Math.PI / 4, phi: Math.PI / 3, radius: defaultRadius });
             const cameraTarget = useRef({ x: 0, y: 0, z: 0 });
             const initialTouchDistance = useRef(null);
@@ -398,7 +413,6 @@
                 const dim = Math.max(warehouse.width || 24, warehouse.depth || 18);
                 const initR = Math.max(30, dim * 1.15);
                 if (viewMode === '2D') {
-                    // Safe top-down view angle (0.18 rad) prevents raycasting & camera breakdown
                     cameraAngle.current = { theta: 0, phi: 0.18, radius: initR * 0.95 };
                     cameraTarget.current = { x: 0, y: 0, z: 0 };
                 } else {
@@ -412,14 +426,13 @@
                 if (!highlightedLocation || !warehouse) return;
                 const targetShelf = warehouse.shelves.find(s => s.id === highlightedLocation.shelfId || s.code === highlightedLocation.shelfId);
                 if (targetShelf) {
-                    if (onSelectShelfRef.current) onSelectShelfRef.current(targetShelf);
                     const targetX = targetShelf.x;
                     const targetZ = targetShelf.z;
                     
                     cameraTarget.current = { x: targetX, y: 0, z: targetZ };
                     const targetTheta = Math.atan2(targetX, targetZ) + Math.PI / 6;
                     cameraAngle.current.theta = targetTheta;
-                    cameraAngle.current.radius = Math.max(18, Math.min(60, targetShelf.width * 5));
+                    cameraAngle.current.radius = Math.max(18, Math.min(60, (targetShelf.width || 3) * 5));
                     updateCameraPosition();
                 }
             }, [highlightedLocation, warehouse, updateCameraPosition]);
@@ -626,39 +639,6 @@
                     updateCameraPosition();
                 };
 
-                const handleKeyDown = (e) => {
-                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                        if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
-                            return;
-                        }
-                        e.preventDefault();
-
-                        if (!warehouseRef.current) return;
-                        const step = Math.max(1, Math.max(warehouseRef.current.width, warehouseRef.current.depth) * 0.02);
-                        const theta = cameraAngle.current.theta;
-                        const forwardX = -Math.sin(theta);
-                        const forwardZ = -Math.cos(theta);
-                        const rightX = Math.cos(theta);
-                        const rightZ = -Math.sin(theta);
-
-                        if (e.key === 'ArrowUp') {
-                            cameraTarget.current.x += forwardX * step;
-                            cameraTarget.current.z += forwardZ * step;
-                        } else if (e.key === 'ArrowDown') {
-                            cameraTarget.current.x -= forwardX * step;
-                            cameraTarget.current.z -= forwardZ * step;
-                        } else if (e.key === 'ArrowLeft') {
-                            cameraTarget.current.x -= rightX * step;
-                            cameraTarget.current.z -= rightZ * step;
-                        } else if (e.key === 'ArrowRight') {
-                            cameraTarget.current.x += rightX * step;
-                            cameraTarget.current.z += rightZ * step;
-                        }
-
-                        updateCameraPosition();
-                    }
-                };
-
                 const domEl = renderer.domElement;
                 domEl.addEventListener('mousedown', handleMouseDown);
                 window.addEventListener('mousemove', handleMouseMove);
@@ -667,8 +647,6 @@
                 domEl.addEventListener('touchstart', handleTouchStart, { passive: true });
                 window.addEventListener('touchmove', handleTouchMove, { passive: true });
                 window.addEventListener('touchend', handleTouchEnd);
-
-                window.addEventListener('keydown', handleKeyDown);
                 domEl.addEventListener('wheel', handleWheel, { passive: false });
 
                 const resizeObserver = new ResizeObserver(() => {
@@ -702,7 +680,6 @@
                     window.removeEventListener('mouseup', handleMouseUp);
                     window.removeEventListener('touchmove', handleTouchMove);
                     window.removeEventListener('touchend', handleTouchEnd);
-                    window.removeEventListener('keydown', handleKeyDown);
                     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
                     if (domEl) {
                         domEl.removeEventListener('mousedown', handleMouseDown);
@@ -767,7 +744,7 @@
                     const shelfGroup = new THREE.Group();
                     const curX = parseFloat(shelf.x) || 0;
                     const curZ = parseFloat(shelf.z) || 0;
-                    const curRot = parseInt(shelf.rot) || 0;
+                    const curRot = parseInt(shelf.rot, 10) || 0;
 
                     shelfGroup.position.set(curX, 0, curZ);
                     shelfGroup.rotation.y = (curRot * Math.PI) / 180;
@@ -791,7 +768,7 @@
                         shelfGroup.add(post);
                     });
 
-                    const tierCount = parseInt(shelf.tiers) || 4;
+                    const tierCount = parseInt(shelf.tiers, 10) || parseInt(shelf.tier, 10) || 4;
                     const tierGap = shelfHeight / tierCount;
 
                     for (let i = 0; i <= tierCount; i++) {
@@ -863,7 +840,8 @@
                     const targetShelf = warehouse.shelves.find(s => s.id === highlightedLocation.shelfId || s.code === highlightedLocation.shelfId);
                     if (targetShelf) {
                         const shelfHeight = 2.4;
-                        const tierGap = shelfHeight / (targetShelf.tiers || 4);
+                        const tTiers = parseInt(targetShelf.tiers, 10) || parseInt(targetShelf.tier, 10) || 4;
+                        const tierGap = shelfHeight / tTiers;
                         const tierY = (highlightedLocation.tier || 1) * tierGap;
 
                         pinMeshRef.current.position.set(parseFloat(targetShelf.x) || 0, tierY + 1.2, parseFloat(targetShelf.z) || 0);
@@ -921,7 +899,6 @@
                         </div>
                         <div>• 點擊並直接拖曳 3D 書架：可自由於地面擺放移位</div>
                         <div>• 單指/左鍵按住空白處拖曳：旋轉 3D 視角</div>
-                        <div>• 鍵盤方向鍵 (↑↓←→)：平移移動畫面</div>
                         <div>• 滾輪/雙指捏合：放大與縮小視野</div>
                     </div>
 
@@ -932,13 +909,13 @@
                                 <span className="w-2.5 h-2.5 rounded-full bg-amber-600 animate-ping"></span>
                                 <span>已選取【{selectedShelf.code} - {selectedShelf.name}】</span>
                                 <span className="font-mono text-amber-800 bg-paper px-1.5 py-0.5 rounded border border-borderwood">
-                                    X: {(parseFloat(selectedShelf.x) || 0).toFixed(1)}m | Z: {(parseFloat(selectedShelf.z) || 0).toFixed(1)}m | {selectedShelf.rot}°
+                                    X: {(parseFloat(selectedShelf.x) || 0).toFixed(1)}m | Z: {(parseFloat(selectedShelf.z) || 0).toFixed(1)}m | {selectedShelf.rot}° | {selectedShelf.tiers || 4}層
                                 </span>
                             </div>
                         </div>
                     )}
 
-                    {/* Mobile Touch Navigation Controls */}
+                    {/* Mobile Navigation Controls */}
                     <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 items-end pointer-events-auto">
                         <div className="glass-panel p-2 rounded-2xl shadow-xl flex flex-col gap-1.5 items-center border border-borderwood">
                             <div className="text-[10px] font-bold text-amber-900 border-b border-borderwood/60 pb-1 w-full text-center">
@@ -1004,8 +981,6 @@
             const [viewMode, setViewMode] = useState('3D');
 
             const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
-            
-            // Solution for Issue 1: Mobile Collapsible Panel state
             const [isPanelMinimized, setIsPanelMinimized] = useState(false);
 
             const [searchQuery, setSearchQuery] = useState('');
@@ -1029,13 +1004,33 @@
             const [csvText, setCsvText] = useState('');
             const [toastMessage, setToastMessage] = useState(null);
 
-            const [mobileTab, setMobileTab] = useState('POS');
+            // Custom Confirm Dialog Modal State (Replacing window.confirm)
+            const [confirmDialog, setConfirmDialog] = useState({
+                isOpen: false,
+                title: '',
+                message: '',
+                onConfirm: null
+            });
 
+            const [mobileTab, setMobileTab] = useState('POS');
             const cloudSyncTimer = useRef(null);
 
             const activeWarehouse = useMemo(() => {
-                return warehouses.find(w => w.id === activeWarehouseId) || warehouses[0];
+                if (!warehouses || warehouses.length === 0) return INITIAL_WAREHOUSES[0];
+                const cleanActiveId = cleanCodeStr(activeWarehouseId);
+                const found = warehouses.find(w => 
+                    w.id === activeWarehouseId || 
+                    w.code === activeWarehouseId || 
+                    (cleanActiveId && (cleanCodeStr(w.id) === cleanActiveId || cleanCodeStr(w.code) === cleanActiveId))
+                );
+                return found || warehouses[0];
             }, [warehouses, activeWarehouseId]);
+
+            useEffect(() => {
+                if (activeWarehouse && activeWarehouse.id && activeWarehouseId !== activeWarehouse.id) {
+                    setActiveWarehouseId(activeWarehouse.id);
+                }
+            }, [activeWarehouse, activeWarehouseId]);
 
             const showToast = (msg) => {
                 setToastMessage(msg);
@@ -1060,39 +1055,43 @@
             }, []);
 
             const handleUpdateShelf = useCallback((updatedShelf) => {
-                if (!updatedShelf) return;
+                if (!updatedShelf || !activeWarehouse) return;
+                const targetWhId = activeWarehouse.id;
+
                 const cleanShelf = {
                     ...updatedShelf,
+                    tiers: Math.max(2, Math.min(8, parseInt(updatedShelf.tiers, 10) || parseInt(updatedShelf.tier, 10) || 4)),
                     x: Math.round((parseFloat(updatedShelf.x) || 0) * 10) / 10,
                     z: Math.round((parseFloat(updatedShelf.z) || 0) * 10) / 10,
-                    rot: Math.round((parseInt(updatedShelf.rot) || 0) % 360)
+                    rot: Math.round((parseInt(updatedShelf.rot, 10) || 0) % 360)
                 };
 
                 setSelectedShelf(cleanShelf);
 
                 setWarehouses(prevWhs => {
                     const updatedWhs = prevWhs.map(wh => {
-                        if (wh.id !== activeWarehouseId) return wh;
+                        const isTarget = wh.id === targetWhId || wh.code === targetWhId;
+                        if (!isTarget) return wh;
                         return {
                             ...wh,
-                            shelves: wh.shelves.map(s => {
-                                const isMatch = (s.id && cleanShelf.id && s.id === cleanShelf.id) ||
-                                                (s.code && cleanShelf.code && s.code === cleanShelf.code);
+                            shelves: (wh.shelves || []).map(s => {
+                                const isMatch = (s.id && cleanShelf.id && s.id === cleanShelf.id);
                                 return isMatch ? { ...s, ...cleanShelf } : s;
                             })
                         };
                     });
 
-                    saveStorage('lapen_warehouses_v2', updatedWhs);
+                    const dedupped = deduplicateWarehouses(updatedWhs);
+                    saveStorage('lapen_warehouses_v2', dedupped);
 
                     if (cloudSyncTimer.current) clearTimeout(cloudSyncTimer.current);
                     cloudSyncTimer.current = setTimeout(() => {
-                        syncWithGAS("SYNC_WAREHOUSES", { warehouses: updatedWhs });
+                        syncWithGAS("SYNC_WAREHOUSES", { warehouses: dedupped });
                     }, 2000);
 
-                    return updatedWhs;
+                    return dedupped;
                 });
-            }, [activeWarehouseId]);
+            }, [activeWarehouse]);
 
             const shiftShelfPos = (dx, dz) => {
                 if (!selectedShelf) return;
@@ -1105,7 +1104,7 @@
 
             const updateRot = (deg) => {
                 if (!selectedShelf) return;
-                const cleanDeg = (parseInt(deg) || 0) % 360;
+                const cleanDeg = (parseInt(deg, 10) || 0) % 360;
                 handleUpdateShelf({ ...selectedShelf, rot: cleanDeg < 0 ? cleanDeg + 360 : cleanDeg });
             };
 
@@ -1197,7 +1196,7 @@
                 let list = books.filter(b => {
                     let matchWh = true;
                     if (selectedWarehouseFilter === 'CURRENT') {
-                        matchWh = b.warehouseId === activeWarehouseId;
+                        matchWh = b.warehouseId === activeWarehouse.id;
                     } else if (selectedWarehouseFilter === 'UNASSIGNED') {
                         matchWh = !b.warehouseId || b.warehouseId === '';
                     } else if (selectedWarehouseFilter !== 'ALL') {
@@ -1226,7 +1225,7 @@
                 }
 
                 return list;
-            }, [books, activeWarehouseId, selectedWarehouseFilter, selectedCategory, searchQuery, sortBy]);
+            }, [books, activeWarehouse.id, selectedWarehouseFilter, selectedCategory, searchQuery, sortBy]);
 
             const assignBookFilteredList = useMemo(() => {
                 const searchStr = assignBookSearch.toLowerCase().trim();
@@ -1254,7 +1253,7 @@
                     return showToast(`《${book.title}》目前為【待入庫/未排架】，請選取倉庫與書架為其分配！`);
                 }
 
-                if (wh && wh.id !== activeWarehouseId) {
+                if (wh && wh.id !== activeWarehouse.id) {
                     setActiveWarehouseId(wh.id);
                     showToast(`已自動切換視角至【${wh.name}】！`);
                 }
@@ -1281,8 +1280,8 @@
                 const height = parseFloat(formData.get('height')) || 4.5;
 
                 const defaultShelves = [
-                    { id: `SH-${newWhCode}-01`, code: `${newWhCode.slice(0, 1)}1架`, name: '主要典藏特區架', x: -Math.floor(width/4), z: -Math.floor(depth/4), rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '綜合學術', color: '#8C5A2B' },
-                    { id: `SH-${newWhCode}-02`, code: `${newWhCode.slice(0, 1)}2架`, name: '新品與熱銷待揀貨架', x: Math.floor(width/4), z: Math.floor(depth/4), rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '暢銷綜合', color: '#6A432D' },
+                    { id: `SH-${newWhId}-01`, code: `${newWhCode.slice(0, 1)}1架`, name: '主要典藏特區架', x: -Math.floor(width/4), z: -Math.floor(depth/4), rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '綜合學術', color: '#8C5A2B' },
+                    { id: `SH-${newWhId}-02`, code: `${newWhCode.slice(0, 1)}2架`, name: '新品與熱銷待揀貨架', x: Math.floor(width/4), z: Math.floor(depth/4), rot: 0, width: 3.2, depth: 0.9, tiers: 5, category: '暢銷綜合', color: '#6A432D' },
                 ];
 
                 const newWarehouse = {
@@ -1301,6 +1300,7 @@
 
                 setActiveWarehouseId(newWhId);
                 setSelectedShelf(null);
+                setHighlightedLocation(null);
                 setIsAddWarehouseModalOpen(false);
                 showToast(`成功建立新倉庫：${newWhName} (${newWhCode})！`);
             };
@@ -1316,7 +1316,7 @@
                 const height = parseFloat(formData.get('height')) || 4.5;
 
                 const updatedWhs = warehouses.map(w => {
-                    if (w.id === activeWarehouseId) {
+                    if (w.id === activeWarehouse.id || w.code === activeWarehouse.code) {
                         return {
                             ...w,
                             code: newCode || w.code,
@@ -1335,28 +1335,36 @@
                 showToast(`成功更新倉庫【${newCode || activeWarehouse.code}】尺寸與代號！`);
             };
 
-            const handleDeleteWarehouse = (whId) => {
+            const confirmDeleteWarehouse = (whId) => {
                 if (warehouses.length <= 1) {
                     return showToast("⚠️ 系統至少需保留一個倉庫，無法刪除唯一倉庫！");
                 }
                 const targetWh = warehouses.find(w => w.id === whId);
-                if (!window.confirm(`確定要刪除倉庫【${targetWh?.name || whId}】嗎？刪除後該倉庫對應的書架與排架資訊將被移除！`)) return;
+                
+                setConfirmDialog({
+                    isOpen: true,
+                    title: `確定刪除倉庫【${targetWh?.name || whId}】？`,
+                    message: "刪除後該倉庫對應的書架與排架資訊將全數移除！此動作無法復原。",
+                    onConfirm: () => {
+                        const updatedWhs = warehouses.filter(w => w.id !== whId);
+                        persistWarehouses(updatedWhs, true);
 
-                const updatedWhs = warehouses.filter(w => w.id !== whId);
-                persistWarehouses(updatedWhs, true);
-
-                const nextWh = updatedWhs[0];
-                setActiveWarehouseId(nextWh.id);
-                setSelectedShelf(null);
-                setHighlightedLocation(null);
-                setIsEditWarehouseModalOpen(false);
-                showToast(`🗑️ 已成功刪除倉庫！已自動切換至【${nextWh.name}】`);
+                        const nextWh = updatedWhs[0];
+                        setActiveWarehouseId(nextWh.id);
+                        setSelectedShelf(null);
+                        setHighlightedLocation(null);
+                        setIsEditWarehouseModalOpen(false);
+                        setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: null });
+                        showToast(`🗑️ 已成功刪除倉庫！已自動切換至【${nextWh.name}】`);
+                    }
+                });
             };
 
             const handleCloseShelfPanel = () => {
                 persistWarehouses(warehouses, true);
-                showToast("✅ 已儲存當前排架擺設！");
                 setSelectedShelf(null);
+                setHighlightedLocation(null); // Key fix: Clear focus highlight so it won't loop re-select!
+                showToast("✅ 已關閉並儲存當前排架擺設！");
             };
 
             const handleAddShelf = (e) => {
@@ -1366,7 +1374,6 @@
                 const width = parseFloat(formData.get('width')) || 3.0;
                 const depth = parseFloat(formData.get('depth')) || 0.9;
                 
-                // Auto-calculate non-overlapping floor placement if default 0,0 is busy
                 let inputX = parseFloat(formData.get('x'));
                 let inputZ = parseFloat(formData.get('z'));
                 if (isNaN(inputX)) inputX = 0;
@@ -1376,26 +1383,26 @@
                 const maxWhW = (activeWarehouse.width / 2) - 1;
                 const maxWhD = (activeWarehouse.depth / 2) - 1;
 
-                // Clamp to warehouse bounds
                 inputX = Math.max(-maxWhW, Math.min(maxWhW, inputX));
                 inputZ = Math.max(-maxWhD, Math.min(maxWhD, inputZ));
 
+                const uniqueShelfId = `SH-${Date.now().toString().slice(-6)}`;
                 const newShelf = {
-                    id: `SH-${Date.now().toString().slice(-4)}`,
+                    id: uniqueShelfId,
                     code: formData.get('code') || `A${existingShelves.length + 1}架`,
                     name: formData.get('name') || '新增書架',
                     x: Math.round(inputX * 10) / 10,
                     z: Math.round(inputZ * 10) / 10,
-                    rot: parseInt(formData.get('rot')) || 0,
+                    rot: parseInt(formData.get('rot'), 10) || 0,
                     width,
                     depth,
-                    tiers: parseInt(formData.get('tiers')) || 5,
+                    tiers: Math.max(2, Math.min(8, parseInt(formData.get('tiers'), 10) || 5)),
                     category: formData.get('category') || '通用',
                     color: '#8C5A2B'
                 };
 
                 const updatedWhs = warehouses.map(wh => {
-                    if (wh.id !== activeWarehouseId) return wh;
+                    if (wh.id !== activeWarehouse.id && wh.code !== activeWarehouse.code) return wh;
                     return { ...wh, shelves: [...(wh.shelves || []), newShelf] };
                 });
 
@@ -1403,28 +1410,30 @@
                 persistWarehouses(updatedWhs, true);
                 setIsAddShelfModalOpen(false);
                 setIsPanelMinimized(false);
-                
-                // Automatically highlight and position focus on newly created shelf in both 2D & 3D modes
-                setHighlightedLocation({
-                    warehouseId: activeWarehouseId,
-                    shelfId: newShelf.id,
-                    tier: 1
-                });
+                setHighlightedLocation(null); // Do not force sticky highlight
 
-                showToast(`成功新增書架：${newShelf.code} (${newShelf.name})！已鎖定新架焦點`);
+                showToast(`成功新增書架：${newShelf.code} (${newShelf.name})！已可於右側編輯`);
             };
 
-            const handleDeleteShelf = (shelfId) => {
-                if (!window.confirm("確定要刪除此書架嗎？放置於此書架之書籍儲位將變更為待上架。")) return;
-                const updatedWhs = warehouses.map(wh => {
-                    if (wh.id !== activeWarehouseId) return wh;
-                    return { ...wh, shelves: wh.shelves.filter(s => s.id !== shelfId) };
-                });
+            const confirmDeleteShelf = (shelfId) => {
+                setConfirmDialog({
+                    isOpen: true,
+                    title: "確定刪除此 3D 書架？",
+                    message: "放置於此書架之書籍儲位將變更為待上架/未排架。",
+                    onConfirm: () => {
+                        const updatedWhs = warehouses.map(wh => {
+                            if (wh.id !== activeWarehouse.id && wh.code !== activeWarehouse.code) return wh;
+                            return { ...wh, shelves: wh.shelves.filter(s => s.id !== shelfId) };
+                        });
 
-                persistWarehouses(updatedWhs, true);
-                setBooks(prev => prev.map(b => b.shelfId === shelfId ? { ...b, warehouseId: '', shelfId: '' } : b));
-                setSelectedShelf(null);
-                showToast("已刪除書架，原書架書籍已移至待上架清單。");
+                        persistWarehouses(updatedWhs, true);
+                        setBooks(prev => prev.map(b => b.shelfId === shelfId ? { ...b, warehouseId: '', shelfId: '' } : b));
+                        setSelectedShelf(null);
+                        setHighlightedLocation(null);
+                        setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: null });
+                        showToast("已刪除書架，原書架書籍已移至待上架清單。");
+                    }
+                });
             };
 
             const handleAssignBookToShelf = (e) => {
@@ -1432,13 +1441,13 @@
                 if (!assignBookId || !selectedShelf) return showToast("請選擇欲放入的圖書！");
 
                 const targetBook = books.find(b => b.id === assignBookId);
-                const tierNum = parseInt(assignBookTier) || 1;
+                const tierNum = parseInt(assignBookTier, 10) || 1;
 
                 setBooks(prev => prev.map(b => {
                     if (b.id === assignBookId) {
                         return {
                             ...b,
-                            warehouseId: activeWarehouseId,
+                            warehouseId: activeWarehouse.id,
                             shelfId: selectedShelf.id,
                             tier: tierNum
                         };
@@ -1448,7 +1457,7 @@
 
                 const newOverrides = {
                     ...bookOverrides,
-                    [assignBookId]: { warehouseId: activeWarehouseId, shelfId: selectedShelf.id, tier: tierNum }
+                    [assignBookId]: { warehouseId: activeWarehouse.id, shelfId: selectedShelf.id, tier: tierNum }
                 };
                 setBookOverrides(newOverrides);
                 saveStorage('lapen_book_overrides_v2', newOverrides);
@@ -1486,7 +1495,7 @@
 
             const handleChangeBookTier = (bookId, newTier) => {
                 const targetBook = books.find(b => b.id === bookId);
-                const tierNum = parseInt(newTier) || 1;
+                const tierNum = parseInt(newTier, 10) || 1;
 
                 setBooks(prev => prev.map(b => b.id === bookId ? { ...b, tier: tierNum } : b));
 
@@ -1537,7 +1546,7 @@
                             <div className="flex items-center bg-paper p-1 rounded-xl border border-borderwood gap-1">
                                 <Icon name="Warehouse" size={16} className="text-amber-800 ml-1 md:ml-2 hidden sm:block" />
                                 <select 
-                                    value={activeWarehouseId}
+                                    value={activeWarehouse.id}
                                     onChange={(e) => {
                                         setActiveWarehouseId(e.target.value);
                                         setSelectedShelf(null);
@@ -1789,6 +1798,7 @@
                             />
                         </main>
 
+                        {}
                         {selectedShelf && (
                             <aside 
                                 onTouchStart={(e) => e.stopPropagation()}
@@ -1796,10 +1806,10 @@
                                 className={`w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-borderwood bg-white/95 backdrop-blur-md flex flex-col gap-3 z-30 shrink-0 shadow-2xl md:shadow-lg transition-all duration-300 fixed md:relative bottom-0 left-0 right-0 md:left-auto md:top-0 md:bottom-0 rounded-t-3xl md:rounded-none ${
                                     isPanelMinimized 
                                         ? 'h-14 md:h-full p-2.5 md:p-4 overflow-hidden' 
-                                        : 'max-h-[45vh] md:max-h-none p-3 md:p-4 overflow-y-auto'
+                                        : 'max-h-[50vh] md:max-h-none p-3 md:p-4 overflow-y-auto'
                                 }`}
                             >
-                                {/* Mobile Touch Drag Handle & Collapse/Expand Header */}
+                                {/* Mobile Header */}
                                 <div className="md:hidden flex justify-between items-center border-b border-borderwood/60 pb-1.5 -mt-0.5">
                                     <div className="flex items-center gap-2">
                                         <div className="w-8 h-1 bg-amber-800/40 rounded-full"></div>
@@ -1818,6 +1828,7 @@
                                         <button 
                                             onClick={handleCloseShelfPanel}
                                             className="p-1 rounded-full hover:bg-paper text-amber-900/60"
+                                            title="關閉並儲存"
                                         >
                                             <Icon name="X" size={16} />
                                         </button>
@@ -1833,8 +1844,8 @@
                                         </span>
                                         <button 
                                             onClick={handleCloseShelfPanel}
-                                            className="p-1.5 rounded-full hover:bg-paper text-amber-900/60"
-                                            title="關閉並儲存"
+                                            className="p-1.5 rounded-full hover:bg-amber-800/10 text-amber-900 hover:text-amber-800 transition"
+                                            title="儲存關閉側欄"
                                         >
                                             <Icon name="X" size={18} />
                                         </button>
@@ -1842,14 +1853,14 @@
                                     <div className="grid grid-cols-3 gap-2">
                                         <input 
                                             type="text" 
-                                            value={selectedShelf.code} 
+                                            value={selectedShelf.code || ''} 
                                             onChange={(e) => handleUpdateShelf({ ...selectedShelf, code: e.target.value })}
                                             className="p-1.5 rounded-lg border border-borderwood bg-paper text-xs font-bold text-amber-800 font-mono outline-none focus:border-amber-800"
                                             placeholder="架號"
                                         />
                                         <input 
                                             type="text" 
-                                            value={selectedShelf.name} 
+                                            value={selectedShelf.name || ''} 
                                             onChange={(e) => handleUpdateShelf({ ...selectedShelf, name: e.target.value })}
                                             className="col-span-2 p-1.5 rounded-lg border border-borderwood bg-paper text-xs font-bold text-amber-900 outline-none focus:border-amber-800 font-serif-title"
                                             placeholder="書架名稱"
@@ -1911,7 +1922,7 @@
                                         </div>
                                     </div>
 
-                                    {/* X Axis Range Slider & Number Input */}
+                                    {/* X Axis Range Slider */}
                                     <div>
                                         <div className="flex justify-between items-center font-bold text-amber-900 mb-1">
                                             <span>左右位置 (X 軸)</span>
@@ -1921,7 +1932,7 @@
                                                     step="0.1"
                                                     min={minX}
                                                     max={maxX}
-                                                    value={selectedShelf.x}
+                                                    value={selectedShelf.x || 0}
                                                     onChange={(e) => {
                                                         const val = parseFloat(e.target.value);
                                                         if (!isNaN(val)) handleUpdateShelf({ ...selectedShelf, x: val });
@@ -1936,13 +1947,13 @@
                                             min={minX}
                                             max={maxX}
                                             step="0.1"
-                                            value={selectedShelf.x}
+                                            value={selectedShelf.x || 0}
                                             onChange={(e) => handleUpdateShelf({ ...selectedShelf, x: parseFloat(e.target.value) || 0 })}
                                             className="w-full accent-amber-800 cursor-pointer h-5"
                                         />
                                     </div>
 
-                                    {/* Z Axis Range Slider & Number Input */}
+                                    {/* Z Axis Range Slider */}
                                     <div>
                                         <div className="flex justify-between items-center font-bold text-amber-900 mb-1">
                                             <span>前後位置 (Z 軸)</span>
@@ -1952,7 +1963,7 @@
                                                     step="0.1"
                                                     min={minZ}
                                                     max={maxZ}
-                                                    value={selectedShelf.z}
+                                                    value={selectedShelf.z || 0}
                                                     onChange={(e) => {
                                                         const val = parseFloat(e.target.value);
                                                         if (!isNaN(val)) handleUpdateShelf({ ...selectedShelf, z: val });
@@ -1967,7 +1978,7 @@
                                             min={minZ}
                                             max={maxZ}
                                             step="0.1"
-                                            value={selectedShelf.z}
+                                            value={selectedShelf.z || 0}
                                             onChange={(e) => handleUpdateShelf({ ...selectedShelf, z: parseFloat(e.target.value) || 0 })}
                                             className="w-full accent-amber-800 cursor-pointer h-5"
                                         />
@@ -1983,9 +1994,9 @@
                                                     step="5"
                                                     min="0"
                                                     max="360"
-                                                    value={selectedShelf.rot}
+                                                    value={selectedShelf.rot || 0}
                                                     onChange={(e) => {
-                                                        const val = parseInt(e.target.value);
+                                                        const val = parseInt(e.target.value, 10);
                                                         if (!isNaN(val)) updateRot(val);
                                                     }}
                                                     className="w-16 p-1 text-right rounded border border-borderwood bg-paper font-mono font-bold text-amber-800 text-xs outline-none focus:border-amber-800"
@@ -1998,8 +2009,8 @@
                                             min="0"
                                             max="360"
                                             step="5"
-                                            value={selectedShelf.rot}
-                                            onChange={(e) => handleUpdateShelf({ ...selectedShelf, rot: parseInt(e.target.value) || 0 })}
+                                            value={selectedShelf.rot || 0}
+                                            onChange={(e) => handleUpdateShelf({ ...selectedShelf, rot: parseInt(e.target.value, 10) || 0 })}
                                             className="w-full accent-amber-800 cursor-pointer mb-1.5 h-5"
                                         />
                                         <div className="grid grid-cols-4 gap-1.5">
@@ -2009,7 +2020,7 @@
                                                     type="button"
                                                     onClick={() => updateRot(deg)}
                                                     className={`py-1.5 rounded-lg text-xs font-bold transition active:scale-95 ${
-                                                        selectedShelf.rot === deg 
+                                                        (selectedShelf.rot || 0) === deg 
                                                             ? 'bg-amber-800 text-white shadow-xs' 
                                                             : 'bg-paper border border-borderwood text-amber-900 hover:bg-amber-100'
                                                     }`}
@@ -2020,16 +2031,19 @@
                                         </div>
                                     </div>
 
-                                    {/* Shelf Dimensions */}
+                                    {/* Shelf Dimensions and Tiers Input */}
                                     <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-borderwood/60">
                                         <div>
-                                            <label className="block text-amber-900/70 font-bold mb-1">層數 (Tiers)</label>
+                                            <label className="block text-amber-900 font-bold mb-1">層數 (Tiers)</label>
                                             <input 
                                                 type="number"
                                                 min="2" max="8"
-                                                value={selectedShelf.tiers}
-                                                onChange={(e) => handleUpdateShelf({ ...selectedShelf, tiers: parseInt(e.target.value) || 4 })}
-                                                className="w-full p-1.5 rounded-lg border border-borderwood bg-paper font-bold text-amber-900 outline-none"
+                                                value={selectedShelf.tiers || 4}
+                                                onChange={(e) => {
+                                                    const val = Math.max(2, Math.min(8, parseInt(e.target.value, 10) || 4));
+                                                    handleUpdateShelf({ ...selectedShelf, tiers: val });
+                                                }}
+                                                className="w-full p-1.5 rounded-lg border border-amber-800/40 bg-white font-bold text-amber-900 outline-none focus:border-amber-800 shadow-xs"
                                             />
                                         </div>
                                         <div>
@@ -2037,7 +2051,7 @@
                                             <input 
                                                 type="number"
                                                 step="0.2"
-                                                value={selectedShelf.width}
+                                                value={selectedShelf.width || 3.0}
                                                 onChange={(e) => handleUpdateShelf({ ...selectedShelf, width: parseFloat(e.target.value) || 3.0 })}
                                                 className="w-full p-1.5 rounded-lg border border-borderwood bg-paper font-bold text-amber-900 outline-none"
                                             />
@@ -2107,21 +2121,25 @@
 
                                 <div className="pt-2 border-t border-borderwood flex flex-col gap-1.5">
                                     <button
-                                        onClick={() => handleDeleteShelf(selectedShelf.id)}
+                                        onClick={() => confirmDeleteShelf(selectedShelf.id)}
                                         className="w-full py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 font-bold text-xs flex items-center justify-center gap-1.5 transition"
                                     >
                                         <Icon name="Trash2" size={14} />
                                         <span>刪除此 3D 書架</span>
                                     </button>
-                                    <p className="text-[10px] text-amber-800/70 font-bold text-center">
-                                        💡 擺設座標變更已即時自動儲存至本機快取與試算表
-                                    </p>
+                                    <button
+                                        onClick={handleCloseShelfPanel}
+                                        className="w-full py-2.5 rounded-xl bg-amber-800 text-white font-bold text-xs hover:bg-amber-900 transition flex items-center justify-center gap-1.5 shadow-sm"
+                                    >
+                                        <Icon name="CheckCircle2" size={15} />
+                                        <span>完成並儲存此書架擺設</span>
+                                    </button>
                                 </div>
                             </aside>
                         )}
                     </div>
 
-                    {/* Modal 1: Add New Warehouse Modal */}
+                    {}
                     {isAddWarehouseModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
@@ -2172,7 +2190,6 @@
                         </div>
                     )}
 
-                    {/* Modal 1.5: Edit Current Warehouse Modal */}
                     {isEditWarehouseModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
@@ -2217,7 +2234,7 @@
                                     <div className="pt-2 flex justify-between items-center gap-2">
                                         <button 
                                             type="button" 
-                                            onClick={() => handleDeleteWarehouse(activeWarehouse.id)} 
+                                            onClick={() => confirmDeleteWarehouse(activeWarehouse.id)} 
                                             className="px-4 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 font-bold hover:bg-red-100 transition flex items-center gap-1"
                                         >
                                             <Icon name="Trash2" size={14} />
@@ -2233,7 +2250,6 @@
                         </div>
                     )}
 
-                    {/* Modal 2: Add New Shelf Modal */}
                     {isAddShelfModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
@@ -2250,7 +2266,7 @@
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block font-bold text-amber-900 mb-1">書架代碼 (例如: A9架)</label>
-                                            <input name="code" required defaultValue={`A${activeWarehouse.shelves.length + 1}架`} className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                            <input name="code" required defaultValue={`A${(activeWarehouse.shelves || []).length + 1}架`} className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                         <div>
                                             <label className="block font-bold text-amber-900 mb-1">書架名稱</label>
@@ -2299,7 +2315,6 @@
                         </div>
                     )}
 
-                    {/* Modal 3: Assign Book to Selected Shelf Modal */}
                     {isAssignBookModalOpen && selectedShelf && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4 max-h-[90vh]">
@@ -2394,7 +2409,6 @@
                         </div>
                     )}
 
-                    {/* Modal 4: Google Sheets Modal */}
                     {isCsvModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="glass-panel w-full max-w-3xl rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
@@ -2430,7 +2444,7 @@
                                                 <Icon name="CheckCircle2" size={16} className="text-emerald-700" />
                                                 已綁定全社試算表 ID：<span className="font-mono underline">1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s</span>
                                             </p>
-                                            <p>您可隨時從雲端下載最新圖書資料，或將當前 3D 書架擺設座標點寫入試算表。</p>
+                                            <p>您可隨時從雲端下載最新圖書資料，或將當前 3D 書架擺設座標與層數點寫入試算表。</p>
                                         </div>
 
                                         <div>
@@ -2482,7 +2496,6 @@
                         </div>
                     )}
 
-                    {/* Modal 5: Print Blueprint Modal */}
                     {isPrintModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="glass-panel w-full max-w-4xl rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
@@ -2518,7 +2531,7 @@
                                                 <div key={shelf.id} className="p-3.5 rounded-xl border border-borderwood bg-paper flex flex-col gap-2">
                                                     <div className="flex justify-between items-center font-bold border-b border-borderwood pb-1.5">
                                                         <span className="text-sm font-serif-title text-amber-900">{shelf.code} - {shelf.name}</span>
-                                                        <span className="text-[10px] font-mono text-amber-800">座標: ({(parseFloat(shelf.x) || 0).toFixed(1)}, {(parseFloat(shelf.z) || 0).toFixed(1)}) | {shelf.tiers}層</span>
+                                                        <span className="text-[10px] font-mono text-amber-800">座標: ({(parseFloat(shelf.x) || 0).toFixed(1)}, {(parseFloat(shelf.z) || 0).toFixed(1)}) | {shelf.tiers || 4}層</span>
                                                     </div>
                                                     <div className="space-y-1">
                                                         {shelfBooks.length === 0 ? (
@@ -2543,6 +2556,42 @@
                                     <button onClick={() => window.print()} className="px-5 py-2 rounded-xl bg-amber-800 text-white font-bold text-xs hover:bg-amber-900 transition flex items-center gap-1.5">
                                         <Icon name="Printer" size={15} />
                                         <span>列印此報表 (Print)</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {}
+                    {confirmDialog.isOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="glass-panel w-full max-w-md rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4 animate-scale-in">
+                                <div className="flex items-center gap-3 border-b border-borderwood/60 pb-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-red-100 border border-red-200 text-red-700 flex items-center justify-center shrink-0">
+                                        <Icon name="AlertCircle" size={22} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-serif-title font-bold text-amber-900 text-base">
+                                            {confirmDialog.title}
+                                        </h3>
+                                        <p className="text-xs text-amber-800/80 font-bold mt-0.5">系統操作確認</p>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-amber-900 font-bold leading-relaxed bg-paper p-3 rounded-2xl border border-borderwood">
+                                    {confirmDialog.message}
+                                </p>
+                                <div className="flex justify-end gap-2 pt-1">
+                                    <button 
+                                        onClick={() => setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: null })} 
+                                        className="px-4 py-2 rounded-xl bg-paper border border-borderwood text-amber-900 font-bold text-xs hover:bg-amber-100 transition"
+                                    >
+                                        取消
+                                    </button>
+                                    <button 
+                                        onClick={confirmDialog.onConfirm} 
+                                        className="px-5 py-2 rounded-xl bg-red-700 text-white font-bold text-xs hover:bg-red-800 transition shadow-sm"
+                                    >
+                                        確定執行
                                     </button>
                                 </div>
                             </div>
