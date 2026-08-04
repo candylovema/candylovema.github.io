@@ -163,7 +163,6 @@
 
         const cleanCodeStr = (s) => (s || '').toString().trim().toLowerCase().replace(/[\s\-_架倉]/g, '');
 
-        // Enhanced deduplication function preserving numeric shelf properties like tiers
         const deduplicateWarehouses = (list) => {
             if (!Array.isArray(list)) return [];
             const map = new Map();
@@ -805,7 +804,6 @@
                         shelfGroup.add(post);
                     });
 
-                    // Ensure tierCount is properly parsed as an integer
                     const tierCount = parseInt(shelf.tiers, 10) || parseInt(shelf.tier, 10) || 4;
                     const tierGap = shelfHeight / tierCount;
 
@@ -1047,9 +1045,24 @@
 
             const cloudSyncTimer = useRef(null);
 
+            // Fix for Issue: Robust resolution of current active warehouse instance regardless of ID/Code mismatch
             const activeWarehouse = useMemo(() => {
-                return warehouses.find(w => w.id === activeWarehouseId) || warehouses[0];
+                if (!warehouses || warehouses.length === 0) return INITIAL_WAREHOUSES[0];
+                const cleanActiveId = cleanCodeStr(activeWarehouseId);
+                const found = warehouses.find(w => 
+                    w.id === activeWarehouseId || 
+                    w.code === activeWarehouseId || 
+                    (cleanActiveId && (cleanCodeStr(w.id) === cleanActiveId || cleanCodeStr(w.code) === cleanActiveId))
+                );
+                return found || warehouses[0];
             }, [warehouses, activeWarehouseId]);
+
+            // Keep activeWarehouseId synced with activeWarehouse.id automatically
+            useEffect(() => {
+                if (activeWarehouse && activeWarehouse.id && activeWarehouseId !== activeWarehouse.id) {
+                    setActiveWarehouseId(activeWarehouse.id);
+                }
+            }, [activeWarehouse, activeWarehouseId]);
 
             const showToast = (msg) => {
                 setToastMessage(msg);
@@ -1074,7 +1087,9 @@
             }, []);
 
             const handleUpdateShelf = useCallback((updatedShelf) => {
-                if (!updatedShelf) return;
+                if (!updatedShelf || !activeWarehouse) return;
+                const targetWhId = activeWarehouse.id;
+
                 const cleanShelf = {
                     ...updatedShelf,
                     tiers: Math.max(2, Math.min(8, parseInt(updatedShelf.tiers, 10) || parseInt(updatedShelf.tier, 10) || 4)),
@@ -1087,10 +1102,13 @@
 
                 setWarehouses(prevWhs => {
                     const updatedWhs = prevWhs.map(wh => {
-                        if (wh.id !== activeWarehouseId && wh.code !== activeWarehouseId) return wh;
+                        const isTarget = wh.id === targetWhId || wh.code === targetWhId || 
+                                         cleanCodeStr(wh.id) === cleanCodeStr(targetWhId) || 
+                                         cleanCodeStr(wh.code) === cleanCodeStr(targetWhId);
+                        if (!isTarget) return wh;
                         return {
                             ...wh,
-                            shelves: wh.shelves.map(s => {
+                            shelves: (wh.shelves || []).map(s => {
                                 const isMatch = (s.id && cleanShelf.id && s.id === cleanShelf.id) ||
                                                 (s.code && cleanShelf.code && s.code === cleanShelf.code) ||
                                                 (cleanCodeStr(s.id) === cleanCodeStr(cleanShelf.id)) ||
@@ -1110,7 +1128,7 @@
 
                     return dedupped;
                 });
-            }, [activeWarehouseId]);
+            }, [activeWarehouse]);
 
             const shiftShelfPos = (dx, dz) => {
                 if (!selectedShelf) return;
@@ -1215,7 +1233,7 @@
                 let list = books.filter(b => {
                     let matchWh = true;
                     if (selectedWarehouseFilter === 'CURRENT') {
-                        matchWh = b.warehouseId === activeWarehouseId;
+                        matchWh = b.warehouseId === activeWarehouse.id;
                     } else if (selectedWarehouseFilter === 'UNASSIGNED') {
                         matchWh = !b.warehouseId || b.warehouseId === '';
                     } else if (selectedWarehouseFilter !== 'ALL') {
@@ -1244,7 +1262,7 @@
                 }
 
                 return list;
-            }, [books, activeWarehouseId, selectedWarehouseFilter, selectedCategory, searchQuery, sortBy]);
+            }, [books, activeWarehouse.id, selectedWarehouseFilter, selectedCategory, searchQuery, sortBy]);
 
             const assignBookFilteredList = useMemo(() => {
                 const searchStr = assignBookSearch.toLowerCase().trim();
@@ -1272,7 +1290,7 @@
                     return showToast(`《${book.title}》目前為【待入庫/未排架】，請選取倉庫與書架為其分配！`);
                 }
 
-                if (wh && wh.id !== activeWarehouseId) {
+                if (wh && wh.id !== activeWarehouse.id) {
                     setActiveWarehouseId(wh.id);
                     showToast(`已自動切換視角至【${wh.name}】！`);
                 }
@@ -1334,7 +1352,7 @@
                 const height = parseFloat(formData.get('height')) || 4.5;
 
                 const updatedWhs = warehouses.map(w => {
-                    if (w.id === activeWarehouseId) {
+                    if (w.id === activeWarehouse.id || w.code === activeWarehouse.code) {
                         return {
                             ...w,
                             code: newCode || w.code,
@@ -1411,7 +1429,7 @@
                 };
 
                 const updatedWhs = warehouses.map(wh => {
-                    if (wh.id !== activeWarehouseId) return wh;
+                    if (wh.id !== activeWarehouse.id && wh.code !== activeWarehouse.code) return wh;
                     return { ...wh, shelves: [...(wh.shelves || []), newShelf] };
                 });
 
@@ -1421,7 +1439,7 @@
                 setIsPanelMinimized(false);
                 
                 setHighlightedLocation({
-                    warehouseId: activeWarehouseId,
+                    warehouseId: activeWarehouse.id,
                     shelfId: newShelf.id,
                     tier: 1
                 });
@@ -1432,7 +1450,7 @@
             const handleDeleteShelf = (shelfId) => {
                 if (!window.confirm("確定要刪除此書架嗎？放置於此書架之書籍儲位將變更為待上架。")) return;
                 const updatedWhs = warehouses.map(wh => {
-                    if (wh.id !== activeWarehouseId) return wh;
+                    if (wh.id !== activeWarehouse.id && wh.code !== activeWarehouse.code) return wh;
                     return { ...wh, shelves: wh.shelves.filter(s => s.id !== shelfId) };
                 });
 
@@ -1453,7 +1471,7 @@
                     if (b.id === assignBookId) {
                         return {
                             ...b,
-                            warehouseId: activeWarehouseId,
+                            warehouseId: activeWarehouse.id,
                             shelfId: selectedShelf.id,
                             tier: tierNum
                         };
@@ -1463,7 +1481,7 @@
 
                 const newOverrides = {
                     ...bookOverrides,
-                    [assignBookId]: { warehouseId: activeWarehouseId, shelfId: selectedShelf.id, tier: tierNum }
+                    [assignBookId]: { warehouseId: activeWarehouse.id, shelfId: selectedShelf.id, tier: tierNum }
                 };
                 setBookOverrides(newOverrides);
                 saveStorage('lapen_book_overrides_v2', newOverrides);
@@ -1552,7 +1570,7 @@
                             <div className="flex items-center bg-paper p-1 rounded-xl border border-borderwood gap-1">
                                 <Icon name="Warehouse" size={16} className="text-amber-800 ml-1 md:ml-2 hidden sm:block" />
                                 <select 
-                                    value={activeWarehouseId}
+                                    value={activeWarehouse.id}
                                     onChange={(e) => {
                                         setActiveWarehouseId(e.target.value);
                                         setSelectedShelf(null);
@@ -2140,7 +2158,7 @@
                         )}
                     </div>
 
-                    {/* Modal Modals & Dialogs... */}
+                    {}
                     {isAddWarehouseModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
