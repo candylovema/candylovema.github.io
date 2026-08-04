@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- 防 Edge / 瀏覽器暫存快取 Meta 標籤 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>文史哲出版社 - 3D多倉庫暨書架擺設管理與快速索引系統</title>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -28,11 +33,13 @@
         }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    
     <!-- React & ReactDOM UMD -->
     <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.22.20/babel.min.js"></script>
-    <!-- Three.js for 3D Warehouse Visualization -->
+    
+    <!-- Three.js for 3D Visuals -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <style>
@@ -101,6 +108,20 @@
             scrollbar-width: none;
         }
     </style>
+
+    <script>
+        // 頁面發生錯誤時的友善提示
+        window.addEventListener('error', function(e) {
+            var root = document.getElementById('root');
+            if (root && (!root.children || root.children.length === 0)) {
+                root.innerHTML = '<div style="padding:24px; color:#721c24; background-color:#f8d7da; border:1px solid #f5c6cb; border-radius:12px; margin:20px; font-family:sans-serif;">' +
+                    '<h3 style="font-weight:bold; font-size:18px; margin-bottom:8px;">⚠️ 頁面載入異常 (Script Load Error)</h3>' +
+                    '<p style="font-size:14px; margin-bottom:12px;">訊息：' + (e.message || '未知錯誤') + '</p>' +
+                    '<p style="font-size:13px; color:#555;">請確認您的網路能連線至 CDN 服務（unpkg/cdnjs），或嘗試按 Ctrl+F5 強制重新整理。</p>' +
+                    '</div>';
+            }
+        });
+    </script>
 </head>
 <body class="min-h-screen flex flex-col select-none">
     <div id="root"></div>
@@ -351,6 +372,25 @@
             { id: 'BK-1004', code: '978-957-549-004', title: '文心雕龍與經學', author: '蔡宗陽', year: '1988', category: '文史哲學集成', warehouseId: 'WH-A', shelfId: 'SH-A01', tier: 4, stock: 85, price: 480, intro: '剖析《文心雕龍》文學理論與經學思想。' },
             { id: 'BK-1005', code: '978-957-549-005', title: '霧航', author: '馮馮', year: '1980', category: '文學叢刊', warehouseId: 'WH-A', shelfId: 'SH-A04', tier: 2, stock: 60, price: 420, intro: '著名作家馮馮代表作。' }
         ];
+
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwcKsTM6Pog4Tq0357zIMVldgSmtsUk_hsEneGRpfb-vfVTxH8qJhIwJvlNKKXGgxOk/exec";
+
+        const syncWithGAS = async (action, payload = null) => {
+            try {
+                const cacheBustUrl = `${GAS_URL}?_t=${Date.now()}`;
+                const response = await fetch(cacheBustUrl, {
+                    method: "POST",
+                    cache: "no-store",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action, payload, origin: window.location.origin })
+                });
+                const resData = await response.json();
+                return resData;
+            } catch (e) {
+                console.warn("GAS API 連線警告:", e);
+                return { status: "error", msg: e.toString() };
+            }
+        };
 
         const ThreeWarehouseView = ({ warehouse, selectedShelf, highlightedLocation, onSelectShelf, onUpdateShelf, viewMode }) => {
             const mountRef = useRef(null);
@@ -946,23 +986,6 @@
             );
         };
 
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwcKsTM6Pog4Tq0357zIMVldgSmtsUk_hsEneGRpfb-vfVTxH8qJhIwJvlNKKXGgxOk/exec";
-
-        const syncWithGAS = async (action, payload = null) => {
-            try {
-                const response = await fetch(GAS_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({ action, payload, origin: window.location.origin })
-                });
-                const resData = await response.json();
-                return resData;
-            } catch (e) {
-                console.warn("GAS API 連線警告:", e);
-                return { status: "error", msg: e.toString() };
-            }
-        };
-
         function App() {
             const [warehouses, setWarehouses] = useState(() => {
                 const saved = loadStorage('lapen_warehouses_v2', null);
@@ -1004,7 +1027,6 @@
             const [csvText, setCsvText] = useState('');
             const [toastMessage, setToastMessage] = useState(null);
 
-            // Custom Confirm Dialog Modal State (Replacing window.confirm)
             const [confirmDialog, setConfirmDialog] = useState({
                 isOpen: false,
                 title: '',
@@ -1185,6 +1207,17 @@
 
             useEffect(() => {
                 handleSyncFromGoogleSheets(false, false);
+
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === 'visible') {
+                        handleSyncFromGoogleSheets(false, false);
+                    }
+                };
+
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                return () => {
+                    document.removeEventListener('visibilitychange', handleVisibilityChange);
+                };
             }, []);
 
             const categories = useMemo(() => {
@@ -1363,7 +1396,7 @@
             const handleCloseShelfPanel = () => {
                 persistWarehouses(warehouses, true);
                 setSelectedShelf(null);
-                setHighlightedLocation(null); // Key fix: Clear focus highlight so it won't loop re-select!
+                setHighlightedLocation(null);
                 showToast("✅ 已關閉並儲存當前排架擺設！");
             };
 
@@ -1410,7 +1443,7 @@
                 persistWarehouses(updatedWhs, true);
                 setIsAddShelfModalOpen(false);
                 setIsPanelMinimized(false);
-                setHighlightedLocation(null); // Do not force sticky highlight
+                setHighlightedLocation(null);
 
                 showToast(`成功新增書架：${newShelf.code} (${newShelf.name})！已可於右側編輯`);
             };
@@ -2562,7 +2595,7 @@
                         </div>
                     )}
 
-                    {}
+                    {/* Custom Confirm Modal */}
                     {confirmDialog.isOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="glass-panel w-full max-w-md rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4 animate-scale-in">
