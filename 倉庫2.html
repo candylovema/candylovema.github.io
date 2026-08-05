@@ -128,7 +128,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // Expanded Icon Map with Decor, Furniture, and Wall icons
         const ICON_SVGS = {
             Warehouse: () => <g><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"/><path d="M6 18h12M6 14h12M6 10h12"/></g>,
             FileSpreadsheet: () => <g><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h8M12 10v8"/></g>,
@@ -162,14 +161,9 @@
             ArrowLeft: () => <g><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></g>,
             ArrowRight: () => <g><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></g>,
             RotateCcw: () => <g><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></g>,
-            // Furniture & Decor Icons
             Armchair: () => <g><path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 11v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/><path d="M6 18v3M18 18v3"/></g>,
-            Table: () => <g><rect x="2" y="7" width="20" height="3" rx="1"/><path d="M5 10v11M19 10v11M9 10v6M15 10v6"/></g>,
-            Plant: () => <g><path d="M12 10V20"/><path d="M12 14C8 14 5 10 5 6c4 0 7 3 7 8z"/><path d="M12 12c4 0 7-3 7-7-4 0-7 3-7 7z"/><path d="M8 20h8v-3H8v3z"/></g>,
-            Window: () => <g><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></g>,
-            ShoppingCart: () => <g><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></g>,
-            Door: () => <g><path d="M18 20V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16"/><path d="M6 20h12"/><circle cx="14" cy="12" r="1"/></g>,
-            Palette: () => <g><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.92 0 1.7-.75 1.7-1.67 0-.42-.16-.8-.43-1.09-.27-.28-.42-.67-.42-1.09 0-.92.75-1.65 1.67-1.65H17c2.76 0 5-2.24 5-5 0-5.52-4.48-9.9-10-9.9z"/></g>
+            Palette: () => <g><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.92 0 1.7-.75 1.7-1.67 0-.42-.16-.8-.43-1.09-.27-.28-.42-.67-.42-1.09 0-.92.75-1.65 1.67-1.65H17c2.76 0 5-2.24 5-5 0-5.52-4.48-9.9-10-9.9z"/></g>,
+            Square: () => <g><rect x="3" y="3" width="18" height="18" rx="2"/></g>
         };
 
         const Icon = ({ name, size = 18, className = "" }) => {
@@ -242,6 +236,35 @@
                 }
             });
             return Array.from(map.values());
+        };
+
+        const mergeWarehousesWithLocal = (cloudWhs, localWhs) => {
+            if (!Array.isArray(cloudWhs)) return localWhs || [];
+            if (!Array.isArray(localWhs)) return cloudWhs || [];
+            
+            const localMap = new Map();
+            localWhs.forEach(w => {
+                if (!w) return;
+                const k = w.id || cleanCodeStr(w.code) || w.code;
+                localMap.set(k, w);
+            });
+
+            return cloudWhs.map(cWh => {
+                if (!cWh) return cWh;
+                const key = cWh.id || cleanCodeStr(cWh.code) || cWh.code;
+                const lWh = localMap.get(key);
+                if (!lWh) return cWh;
+
+                const decors = (Array.isArray(cWh.decors) && cWh.decors.length > 0) ? cWh.decors : (lWh.decors || []);
+                const wallColor = cWh.wallColor || lWh.wallColor || '#E6D5C3';
+
+                return {
+                    ...lWh,
+                    ...cWh,
+                    decors,
+                    wallColor
+                };
+            });
         };
 
         const saveStorage = (key, val) => {
@@ -377,9 +400,10 @@
                     { id: 'DEC-A01', type: 'desk', name: '揀貨管理工作桌', x: -9, z: 7, rot: 0, width: 2.4, depth: 1.2, height: 0.9, color: '#8C5A2B' },
                     { id: 'DEC-A02', type: 'sofa', name: '貴賓閱讀沙發', x: 9, z: 7, rot: 90, width: 2.0, depth: 0.9, height: 0.8, color: '#5B3A29' },
                     { id: 'DEC-A03', type: 'plant', name: '景觀大型綠植', x: -11, z: -8, rot: 0, width: 0.9, depth: 0.9, height: 1.8, color: '#2E7D32' },
-                    { id: 'DEC-A04', type: 'window', name: '北側采光景觀窗', x: 0, z: -9, rot: 0, width: 4.5, depth: 0.2, height: 2.0, color: '#A0C4DF' },
+                    { id: 'DEC-A04', type: 'window', name: '北側采光景觀窗', x: 0, z: -8.9, rot: 0, width: 4.5, depth: 0.2, height: 2.0, color: '#A0C4DF' },
                     { id: 'DEC-A05', type: 'trolley', name: '物流理書手推車', x: -3, z: 7, rot: 30, width: 1.2, depth: 0.8, height: 1.0, color: '#7F8C8D' },
-                    { id: 'DEC-A06', type: 'door', name: '倉庫正門出入口', x: 0, z: 9, rot: 0, width: 2.5, depth: 0.2, height: 2.8, color: '#4A3728' }
+                    { id: 'DEC-A06', type: 'door', name: '倉庫正門雙開大門', x: 0, z: 8.9, rot: 0, width: 3.0, depth: 0.25, height: 2.8, color: '#4A3728' },
+                    { id: 'DEC-A07', type: 'wall', name: '中央室內隔間牆', x: 0, z: -1, rot: 0, width: 6.0, depth: 0.25, height: 3.5, color: '#D5C4A1' }
                 ]
             },
             {
@@ -434,13 +458,30 @@
         const createDecorMesh = (decor, isSelected) => {
             const group = new THREE.Group();
             const w = parseFloat(decor.width) || 2.0;
-            const d = parseFloat(decor.depth) || 1.0;
-            const h = parseFloat(decor.height) || 1.0;
+            const d = parseFloat(decor.depth) || 0.2;
+            const h = parseFloat(decor.height) || 2.5;
             const colorHex = decor.color ? parseInt(decor.color.replace('#', '0x')) : 0x8C5A2B;
             const highlightColor = isSelected ? 0xF39C12 : colorHex;
 
-            if (decor.type === 'desk') {
-                // Desk Top
+            if (decor.type === 'wall') {
+                // Standalone Partition Wall
+                const wallGeo = new THREE.BoxGeometry(w, h, d);
+                const wallMat = new THREE.MeshStandardMaterial({ color: highlightColor, roughness: 0.7 });
+                const wallMesh = new THREE.Mesh(wallGeo, wallMat);
+                wallMesh.position.y = h / 2;
+                wallMesh.castShadow = true;
+                wallMesh.receiveShadow = true;
+                group.add(wallMesh);
+
+                // Baseboard Trim
+                const trimGeo = new THREE.BoxGeometry(w + 0.02, 0.15, d + 0.02);
+                const trimMat = new THREE.MeshStandardMaterial({ color: 0x4A3728, roughness: 0.5 });
+                const trim = new THREE.Mesh(trimGeo, trimMat);
+                trim.position.y = 0.075;
+                group.add(trim);
+
+            } else if (decor.type === 'desk') {
+                // Work Desk Top
                 const topGeo = new THREE.BoxGeometry(w, 0.08, d);
                 const topMat = new THREE.MeshStandardMaterial({ color: highlightColor, roughness: 0.5 });
                 const top = new THREE.Mesh(topGeo, topMat);
@@ -466,7 +507,7 @@
                 group.add(laptop);
 
             } else if (decor.type === 'sofa') {
-                // Base & Cushion
+                // Sofa Seat & Backrest
                 const baseGeo = new THREE.BoxGeometry(w, 0.3, d);
                 const baseMat = new THREE.MeshStandardMaterial({ color: highlightColor, roughness: 0.8 });
                 const base = new THREE.Mesh(baseGeo, baseMat);
@@ -474,14 +515,12 @@
                 base.castShadow = true;
                 group.add(base);
 
-                // Backrest
                 const backGeo = new THREE.BoxGeometry(w, h * 0.6, 0.25);
                 const back = new THREE.Mesh(backGeo, baseMat);
                 back.position.set(0, 0.25 + (h * 0.3), -d/2 + 0.125);
                 back.castShadow = true;
                 group.add(back);
 
-                // Armrests
                 const armGeo = new THREE.BoxGeometry(0.2, h * 0.45, d);
                 [-w/2 + 0.1, w/2 - 0.1].forEach(ax => {
                     const arm = new THREE.Mesh(armGeo, baseMat);
@@ -490,7 +529,7 @@
                 });
 
             } else if (decor.type === 'plant') {
-                // Pot
+                // Pot & Plant Foliage
                 const potGeo = new THREE.CylinderGeometry(w*0.35, w*0.25, h*0.35, 16);
                 const potMat = new THREE.MeshStandardMaterial({ color: 0xB85B35, roughness: 0.7 });
                 const pot = new THREE.Mesh(potGeo, potMat);
@@ -498,7 +537,6 @@
                 pot.castShadow = true;
                 group.add(pot);
 
-                // Foliage Spheres
                 const leafMat = new THREE.MeshStandardMaterial({ color: isSelected ? 0xF39C12 : 0x27AE60, roughness: 0.6 });
                 const leafGeo1 = new THREE.IcosahedronGeometry(w*0.45, 1);
                 const leaf1 = new THREE.Mesh(leafGeo1, leafMat);
@@ -513,14 +551,14 @@
                 group.add(leaf2);
 
             } else if (decor.type === 'window') {
-                // Glass Frame
+                // Window Frame
                 const frameGeo = new THREE.BoxGeometry(w, h, 0.1);
                 const frameMat = new THREE.MeshStandardMaterial({ color: 0x2C241B, roughness: 0.3 });
                 const frame = new THREE.Mesh(frameGeo, frameMat);
-                frame.position.y = h/2 + 1.0;
+                frame.position.y = h/2 + 0.5;
                 group.add(frame);
 
-                // Translucent Glass
+                // Glass Pane
                 const glassGeo = new THREE.BoxGeometry(w - 0.2, h - 0.2, 0.04);
                 const glassMat = new THREE.MeshPhysicalMaterial({
                     color: 0xA0C4DF,
@@ -530,11 +568,11 @@
                     transmission: 0.9
                 });
                 const glass = new THREE.Mesh(glassGeo, glassMat);
-                glass.position.y = h/2 + 1.0;
+                glass.position.y = h/2 + 0.5;
                 group.add(glass);
 
             } else if (decor.type === 'trolley') {
-                // Flat Cart Base
+                // Trolley Cart
                 const plateGeo = new THREE.BoxGeometry(w, 0.08, d);
                 const plateMat = new THREE.MeshStandardMaterial({ color: highlightColor, roughness: 0.4, metalness: 0.6 });
                 const plate = new THREE.Mesh(plateGeo, plateMat);
@@ -542,7 +580,6 @@
                 plate.castShadow = true;
                 group.add(plate);
 
-                // Handle
                 const handleGeo = new THREE.CylinderGeometry(0.03, 0.03, h, 8);
                 const handleMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
                 const handle = new THREE.Mesh(handleGeo, handleMat);
@@ -550,7 +587,6 @@
                 handle.position.set(-w/2 + 0.1, h/2, 0);
                 group.add(handle);
 
-                // Cargo Box on trolley
                 const boxGeo = new THREE.BoxGeometry(w*0.5, 0.35, d*0.7);
                 const boxMat = new THREE.MeshStandardMaterial({ color: 0xD35400, roughness: 0.8 });
                 const box = new THREE.Mesh(boxGeo, boxMat);
@@ -559,29 +595,77 @@
                 group.add(box);
 
             } else if (decor.type === 'door') {
-                // Outer Frame
-                const frameGeo = new THREE.BoxGeometry(w + 0.2, h + 0.1, 0.15);
+                const frameThick = 0.12;
+                const frameDepth = 0.2;
                 const frameMat = new THREE.MeshStandardMaterial({ color: 0x2C241B, roughness: 0.4 });
-                const frame = new THREE.Mesh(frameGeo, frameMat);
-                frame.position.y = (h + 0.1) / 2;
-                group.add(frame);
 
-                // Door Panel
-                const doorGeo = new THREE.BoxGeometry(w, h, 0.08);
+                // Left Post
+                const leftPostGeo = new THREE.BoxGeometry(frameThick, h, frameDepth);
+                const leftPost = new THREE.Mesh(leftPostGeo, frameMat);
+                leftPost.position.set(-w/2 + frameThick/2, h/2, 0);
+                group.add(leftPost);
+
+                // Right Post
+                const rightPostGeo = new THREE.BoxGeometry(frameThick, h, frameDepth);
+                const rightPost = new THREE.Mesh(rightPostGeo, frameMat);
+                rightPost.position.set(w/2 - frameThick/2, h/2, 0);
+                group.add(rightPost);
+
+                // Top Lintel
+                const topLintelGeo = new THREE.BoxGeometry(w, frameThick, frameDepth);
+                const topLintel = new THREE.Mesh(topLintelGeo, frameMat);
+                topLintel.position.set(0, h - frameThick/2, 0);
+                group.add(topLintel);
+
+                // Double Door Leaves (Left & Right Panels)
+                const doorW = (w - frameThick * 2) / 2;
+                const doorH = h - frameThick;
+                const doorThick = 0.08;
                 const doorMat = new THREE.MeshStandardMaterial({ color: highlightColor, roughness: 0.5 });
-                const door = new THREE.Mesh(doorGeo, doorMat);
-                door.position.y = h/2;
-                door.castShadow = true;
-                group.add(door);
 
-                // Metallic Knob
-                const knobGeo = new THREE.SphereGeometry(0.06, 12, 12);
-                const knobMat = new THREE.MeshStandardMaterial({ color: 0xF1C40F, metalness: 0.9, roughness: 0.2 });
-                const knob = new THREE.Mesh(knobGeo, knobMat);
-                knob.position.set(w/2 - 0.2, h/2, 0.08);
-                group.add(knob);
+                const leftDoorGeo = new THREE.BoxGeometry(doorW - 0.02, doorH, doorThick);
+                const leftDoor = new THREE.Mesh(leftDoorGeo, doorMat);
+                leftDoor.position.set(-doorW/2 - 0.01, doorH/2, 0);
+                leftDoor.castShadow = true;
+                group.add(leftDoor);
+
+                const rightDoorGeo = new THREE.BoxGeometry(doorW - 0.02, doorH, doorThick);
+                const rightDoor = new THREE.Mesh(rightDoorGeo, doorMat);
+                rightDoor.position.set(doorW/2 + 0.01, doorH/2, 0);
+                rightDoor.castShadow = true;
+                group.add(rightDoor);
+
+                // Translucent Glass Vision Windows
+                const winGeo = new THREE.BoxGeometry(doorW * 0.4, doorH * 0.35, doorThick + 0.02);
+                const winMat = new THREE.MeshPhysicalMaterial({ color: 0xA0C4DF, transparent: true, opacity: 0.7, transmission: 0.8 });
+                
+                const winLeft = new THREE.Mesh(winGeo, winMat);
+                winLeft.position.set(-doorW/2 - 0.01, doorH * 0.65, 0);
+                group.add(winLeft);
+
+                const winRight = new THREE.Mesh(winGeo, winMat);
+                winRight.position.set(doorW/2 + 0.01, doorH * 0.65, 0);
+                group.add(winRight);
+
+                // Metallic Push Bars / Handles
+                const handleGeo = new THREE.BoxGeometry(0.04, doorH * 0.25, 0.06);
+                const handleMat = new THREE.MeshStandardMaterial({ color: 0xF1C40F, metalness: 0.8, roughness: 0.2 });
+
+                const handleLeft = new THREE.Mesh(handleGeo, handleMat);
+                handleLeft.position.set(-0.06, doorH * 0.45, doorThick/2 + 0.03);
+                group.add(handleLeft);
+
+                const handleRight = new THREE.Mesh(handleGeo, handleMat);
+                handleRight.position.set(0.06, doorH * 0.45, doorThick/2 + 0.03);
+                group.add(handleRight);
+
+                // Entrance Header Sign
+                const signGeo = new THREE.BoxGeometry(w * 0.6, 0.2, 0.02);
+                const signMat = new THREE.MeshStandardMaterial({ color: 0x2C241B, roughness: 0.3 });
+                const sign = new THREE.Mesh(signGeo, signMat);
+                sign.position.set(0, h + 0.1, frameDepth/2);
+                group.add(sign);
             } else {
-                // Fallback Cube
                 const boxGeo = new THREE.BoxGeometry(w, h, d);
                 const boxMat = new THREE.MeshStandardMaterial({ color: highlightColor, roughness: 0.5 });
                 const box = new THREE.Mesh(boxGeo, boxMat);
@@ -590,7 +674,7 @@
                 group.add(box);
             }
 
-            // Selection Outline Bounding Box
+            // Selection Bounding Box Highlight
             if (isSelected) {
                 const bboxGeo = new THREE.BoxGeometry(w + 0.15, h + 0.15, d + 0.15);
                 const bboxWire = new THREE.LineSegments(
@@ -639,10 +723,11 @@
 
             const isDraggingCamera = useRef(false);
             const isDraggingObject = useRef(false);
-            const activeObjectType = useRef(null); // 'shelf' or 'decor'
+            const activeObjectType = useRef(null);
             const activeObjectId = useRef(null);
             const dragPlaneIntersectionOffset = useRef({ x: 0, z: 0 });
 
+            const startPointerPos = useRef({ x: 0, y: 0 });
             const previousMousePosition = useRef({ x: 0, y: 0 });
             
             const maxDim = Math.max(warehouse.width || 24, warehouse.depth || 18);
@@ -768,15 +853,14 @@
                     return intersects.length > 0 ? intersects[0].point : null;
                 };
 
-                const handlePointerDown = (clientX, clientY) => {
-                    if (!shelvesGroupRef.current || !decorsGroupRef.current || !rendererRef.current || !cameraRef.current) return;
+                const detectObjectAtPointer = (clientX, clientY) => {
+                    if (!shelvesGroupRef.current || !decorsGroupRef.current || !rendererRef.current || !cameraRef.current) return null;
                     const rect = rendererRef.current.domElement.getBoundingClientRect();
                     mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
                     mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
                     raycaster.setFromCamera(mouse, cameraRef.current);
-                    
-                    // Raycast check Shelves first, then Decors
+
                     const shelfIntersects = raycaster.intersectObjects(shelvesGroupRef.current.children, true);
                     const decorIntersects = raycaster.intersectObjects(decorsGroupRef.current.children, true);
 
@@ -785,26 +869,8 @@
                         while (obj.parent && (!obj.userData || !obj.userData.shelfData)) {
                             obj = obj.parent;
                         }
-
                         if (obj.userData && obj.userData.shelfData) {
-                            const shelfData = obj.userData.shelfData;
-                            if (onSelectShelfRef.current) onSelectShelfRef.current(shelfData);
-                            if (onSelectDecorRef.current) onSelectDecorRef.current(null);
-                            
-                            activeObjectType.current = 'shelf';
-                            activeObjectId.current = shelfData.id || shelfData.code;
-
-                            const floorPt = getFloorIntersection(clientX, clientY);
-                            if (floorPt) {
-                                dragPlaneIntersectionOffset.current = {
-                                    x: floorPt.x - (parseFloat(shelfData.x) || 0),
-                                    z: floorPt.z - (parseFloat(shelfData.z) || 0)
-                                };
-                            }
-                            isDraggingObject.current = true;
-                            isDraggingCamera.current = false;
-                            previousMousePosition.current = { x: clientX, y: clientY };
-                            return;
+                            return { type: 'shelf', data: obj.userData.shelfData };
                         }
                     }
 
@@ -813,32 +879,49 @@
                         while (obj.parent && (!obj.userData || !obj.userData.decorData)) {
                             obj = obj.parent;
                         }
-
                         if (obj.userData && obj.userData.decorData) {
-                            const decorData = obj.userData.decorData;
-                            if (onSelectDecorRef.current) onSelectDecorRef.current(decorData);
-                            if (onSelectShelfRef.current) onSelectShelfRef.current(null);
+                            return { type: 'decor', data: obj.userData.decorData };
+                        }
+                    }
 
-                            activeObjectType.current = 'decor';
-                            activeObjectId.current = decorData.id || decorData.name;
+                    return null;
+                };
 
+                const handlePointerDown = (clientX, clientY) => {
+                    startPointerPos.current = { x: clientX, y: clientY };
+                    previousMousePosition.current = { x: clientX, y: clientY };
+
+                    const targetObj = detectObjectAtPointer(clientX, clientY);
+
+                    if (targetObj) {
+                        if (targetObj.type === 'shelf') {
+                            activeObjectType.current = 'shelf';
+                            activeObjectId.current = targetObj.data.id || targetObj.data.code;
                             const floorPt = getFloorIntersection(clientX, clientY);
                             if (floorPt) {
                                 dragPlaneIntersectionOffset.current = {
-                                    x: floorPt.x - (parseFloat(decorData.x) || 0),
-                                    z: floorPt.z - (parseFloat(decorData.z) || 0)
+                                    x: floorPt.x - (parseFloat(targetObj.data.x) || 0),
+                                    z: floorPt.z - (parseFloat(targetObj.data.z) || 0)
                                 };
                             }
-                            isDraggingObject.current = true;
-                            isDraggingCamera.current = false;
-                            previousMousePosition.current = { x: clientX, y: clientY };
-                            return;
+                        } else if (targetObj.type === 'decor') {
+                            activeObjectType.current = 'decor';
+                            activeObjectId.current = targetObj.data.id || targetObj.data.name;
+                            const floorPt = getFloorIntersection(clientX, clientY);
+                            if (floorPt) {
+                                dragPlaneIntersectionOffset.current = {
+                                    x: floorPt.x - (parseFloat(targetObj.data.x) || 0),
+                                    z: floorPt.z - (parseFloat(targetObj.data.z) || 0)
+                                };
+                            }
                         }
+                        isDraggingObject.current = true;
+                        isDraggingCamera.current = false;
+                        return;
                     }
 
                     isDraggingCamera.current = true;
                     isDraggingObject.current = false;
-                    previousMousePosition.current = { x: clientX, y: clientY };
                 };
 
                 const handlePointerMove = (clientX, clientY) => {
@@ -885,7 +968,25 @@
                     updateCameraPosition();
                 };
 
-                const handlePointerUp = () => {
+                const handlePointerUp = (clientX, clientY) => {
+                    const distMoved = Math.hypot(clientX - startPointerPos.current.x, clientY - startPointerPos.current.y);
+
+                    if (distMoved < 6) {
+                        const hitObj = detectObjectAtPointer(clientX, clientY);
+                        if (hitObj) {
+                            if (hitObj.type === 'shelf') {
+                                if (onSelectShelfRef.current) onSelectShelfRef.current(hitObj.data);
+                                if (onSelectDecorRef.current) onSelectDecorRef.current(null);
+                            } else if (hitObj.type === 'decor') {
+                                if (onSelectDecorRef.current) onSelectDecorRef.current(hitObj.data);
+                                if (onSelectShelfRef.current) onSelectShelfRef.current(null);
+                            }
+                        } else {
+                            if (onSelectShelfRef.current) onSelectShelfRef.current(null);
+                            if (onSelectDecorRef.current) onSelectDecorRef.current(null);
+                        }
+                    }
+
                     isDraggingCamera.current = false;
                     isDraggingObject.current = false;
                     activeObjectId.current = null;
@@ -893,7 +994,7 @@
 
                 const handleMouseDown = (e) => handlePointerDown(e.clientX, e.clientY);
                 const handleMouseMove = (e) => handlePointerMove(e.clientX, e.clientY);
-                const handleMouseUp = () => handlePointerUp();
+                const handleMouseUp = (e) => handlePointerUp(e.clientX, e.clientY);
 
                 const handleTouchStart = (e) => {
                     if (e.touches.length === 1) {
@@ -925,8 +1026,13 @@
                     }
                 };
 
-                const handleTouchEnd = () => {
-                    handlePointerUp();
+                const handleTouchEnd = (e) => {
+                    const lastTouch = e.changedTouches[0];
+                    if (lastTouch) {
+                        handlePointerUp(lastTouch.clientX, lastTouch.clientY);
+                    } else {
+                        handlePointerUp(0, 0);
+                    }
                     initialTouchDistance.current = null;
                 };
 
@@ -1015,7 +1121,7 @@
                 const whHeight = Math.max(2, warehouse.height || 4.5);
                 const wallColorHex = warehouse.wallColor ? parseInt(warehouse.wallColor.replace('#', '0x')) : 0xE6D5C3;
 
-                // 1. Floor
+                // Floor Plane
                 const floorGeo = new THREE.PlaneGeometry(whWidth, whDepth);
                 const floorMat = new THREE.MeshStandardMaterial({
                     color: 0xE6D5C3,
@@ -1029,7 +1135,7 @@
                 floorMesh.name = "warehouseFloor";
                 scene.add(floorMesh);
 
-                // 2. Grid Helper
+                // Grid Helper
                 const maxDim = Math.max(whWidth, whDepth);
                 const divisions = Math.min(100, Math.max(12, Math.floor(maxDim / 2)));
                 const gridHelper = new THREE.GridHelper(maxDim, divisions, 0x8C5A2B, 0xC4B29E);
@@ -1037,34 +1143,30 @@
                 gridHelper.name = "warehouseGrid";
                 scene.add(gridHelper);
 
-                // 3. Render 3D Walls (Back, Left, Right Walls)
+                // Perimeter Walls (Back, Left, Right)
                 const wallGroup = new THREE.Group();
                 wallGroup.name = "warehouseWalls";
                 const wallMat = new THREE.MeshStandardMaterial({ color: wallColorHex, roughness: 0.7 });
                 const wallThickness = 0.3;
 
-                // Back Wall
                 const backWallGeo = new THREE.BoxGeometry(whWidth + wallThickness*2, whHeight, wallThickness);
                 const backWall = new THREE.Mesh(backWallGeo, wallMat);
                 backWall.position.set(0, whHeight/2, -whDepth/2 - wallThickness/2);
                 backWall.receiveShadow = true;
                 wallGroup.add(backWall);
 
-                // Left Wall
                 const leftWallGeo = new THREE.BoxGeometry(wallThickness, whHeight, whDepth);
                 const leftWall = new THREE.Mesh(leftWallGeo, wallMat);
                 leftWall.position.set(-whWidth/2 - wallThickness/2, whHeight/2, 0);
                 leftWall.receiveShadow = true;
                 wallGroup.add(leftWall);
 
-                // Right Wall
                 const rightWallGeo = new THREE.BoxGeometry(wallThickness, whHeight, whDepth);
                 const rightWall = new THREE.Mesh(rightWallGeo, wallMat);
                 rightWall.position.set(whWidth/2 + wallThickness/2, whHeight/2, 0);
                 rightWall.receiveShadow = true;
                 wallGroup.add(rightWall);
 
-                // Wooden Baseboard Trim
                 const trimMat = new THREE.MeshStandardMaterial({ color: 0x4A3728, roughness: 0.5 });
                 const bBoardGeo = new THREE.BoxGeometry(whWidth, 0.2, 0.05);
                 const baseboard = new THREE.Mesh(bBoardGeo, trimMat);
@@ -1073,7 +1175,7 @@
 
                 scene.add(wallGroup);
 
-                // 4. Render Shelves
+                // Render 3D Shelves
                 (warehouse.shelves || []).forEach(shelf => {
                     const shelfGroup = new THREE.Group();
                     const curX = parseFloat(shelf.x) || 0;
@@ -1163,7 +1265,7 @@
                     shelvesGroup.add(shelfGroup);
                 });
 
-                // 5. Render Furniture & Decors
+                // Render 3D Furniture, Decor, and Standalone Walls
                 (warehouse.decors || []).forEach(decor => {
                     const isSelected = selectedDecor && (selectedDecor.id === decor.id || selectedDecor.name === decor.name);
                     const decorMesh = createDecorMesh(decor, isSelected);
@@ -1234,9 +1336,9 @@
                         <div className="font-bold text-amber-300 flex items-center gap-1.5 mb-0.5">
                             <Icon name="Compass" size={14} /> 3D 視角與擺設操作說明：
                         </div>
-                        <div>• 點擊並拖曳 3D 書架 / 家具：可自由於地面擺放移位</div>
-                        <div>• 單指/左鍵按住空白處拖曳：旋轉 3D 視角</div>
-                        <div>• 滾輪/雙指捏合：放大與縮小視野</div>
+                        <div>• 點擊 3D 書架/家具/雙開大門/牆面：立即選取並展開右側編輯盤</div>
+                        <div>• 按住 3D 物件拖曳：可於地面任意擺放移位</div>
+                        <div>• 按住空白處拖曳：旋轉 3D 視角 | 滾輪：縮放視野</div>
                     </div>
 
                     {/* Selected Badge Overlay */}
@@ -1247,7 +1349,7 @@
                                 {selectedShelf ? (
                                     <span>已選取書架【{selectedShelf.code} - {selectedShelf.name}】</span>
                                 ) : (
-                                    <span>已選取軟裝飾【{selectedDecor.name}】</span>
+                                    <span>已選取{selectedDecor.type === 'wall' ? '獨立牆面' : '軟裝飾'}【{selectedDecor.name}】</span>
                                 )}
                             </div>
                         </div>
@@ -1415,6 +1517,9 @@
 
                 const cleanDecor = {
                     ...updatedDecor,
+                    width: Math.max(0.2, parseFloat(updatedDecor.width) || 2.0),
+                    depth: Math.max(0.1, parseFloat(updatedDecor.depth) || 0.2),
+                    height: Math.max(0.2, parseFloat(updatedDecor.height) || 2.5),
                     x: Math.round((parseFloat(updatedDecor.x) || 0) * 10) / 10,
                     z: Math.round((parseFloat(updatedDecor.z) || 0) * 10) / 10,
                     rot: Math.round((parseInt(updatedDecor.rot, 10) || 0) % 360)
@@ -1470,8 +1575,8 @@
                 const name = formData.get('name') || '新擺設軟裝';
                 const color = formData.get('color') || '#8C5A2B';
                 const width = parseFloat(formData.get('width')) || 2.0;
-                const depth = parseFloat(formData.get('depth')) || 1.0;
-                const height = parseFloat(formData.get('height')) || 1.0;
+                const depth = parseFloat(formData.get('depth')) || 0.2;
+                const height = parseFloat(formData.get('height')) || 2.5;
 
                 const newDecor = {
                     id: `DEC-${Date.now().toString().slice(-6)}`,
@@ -1495,14 +1600,14 @@
                 setSelectedShelf(null);
                 persistWarehouses(updatedWhs, true);
                 setIsAddDecorModalOpen(false);
-                showToast(`已成功新增軟裝/家具【${name}】！可在右側微調`);
+                showToast(`已新增【${name}】！可於 3D 畫面點擊或於右側調整尺寸與座標`);
             };
 
             const confirmDeleteDecor = (decorId) => {
                 setConfirmDialog({
                     isOpen: true,
-                    title: "確定刪除此軟裝擺設？",
-                    message: "刪除後此家具物件將從 3D 倉庫空間中移除。",
+                    title: "確定刪除此擺設物件？",
+                    message: "刪除後此家具/大門/牆面物件將從 3D 倉庫空間中移除。",
                     onConfirm: () => {
                         const updatedWhs = warehouses.map(wh => {
                             if (wh.id !== activeWarehouse.id && wh.code !== activeWarehouse.code) return wh;
@@ -1512,7 +1617,7 @@
                         persistWarehouses(updatedWhs, true);
                         setSelectedDecor(null);
                         setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: null });
-                        showToast("🗑️ 已成功移除該家具軟裝物件！");
+                        showToast("🗑️ 已成功移除該物件！");
                     }
                 });
             };
@@ -1525,14 +1630,14 @@
                     const whRes = await syncWithGAS('FETCH_WAREHOUSES');
                     let currentWhs = warehouses;
 
+                    const savedLocal = loadStorage('lapen_warehouses_v3', null);
+
                     if (whRes && whRes.status === 'success' && Array.isArray(whRes.data) && whRes.data.length > 0) {
-                        currentWhs = deduplicateWarehouses(whRes.data);
+                        const cloudWhs = deduplicateWarehouses(whRes.data);
+                        currentWhs = mergeWarehousesWithLocal(cloudWhs, savedLocal || warehouses);
                         persistWarehouses(currentWhs, false);
-                    } else {
-                        const savedWhs = loadStorage('lapen_warehouses_v3', null);
-                        if (Array.isArray(savedWhs) && savedWhs.length > 0) {
-                            currentWhs = deduplicateWarehouses(savedWhs);
-                        }
+                    } else if (Array.isArray(savedLocal) && savedLocal.length > 0) {
+                        currentWhs = deduplicateWarehouses(savedLocal);
                     }
 
                     const bkRes = await syncWithGAS('FETCH_BOOKS');
@@ -1594,19 +1699,6 @@
                 } finally {
                     setIsSyncingSheets(false);
                 }
-            };
-
-            const handleFileUpload = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const text = event.target.result;
-                    setCsvText(text);
-                    showToast("已載入 CSV 檔案！");
-                };
-                reader.readAsText(file);
             };
 
             useEffect(() => {
@@ -1724,7 +1816,8 @@
                 ];
 
                 const defaultDecors = [
-                    { id: `DEC-${newWhId}-01`, type: 'desk', name: '理書管理桌', x: -Math.floor(width/3), z: Math.floor(depth/3), rot: 0, width: 2.2, depth: 1.0, height: 0.9, color: '#8C5A2B' }
+                    { id: `DEC-${newWhId}-01`, type: 'desk', name: '理書管理桌', x: -Math.floor(width/3), z: Math.floor(depth/3), rot: 0, width: 2.2, depth: 1.0, height: 0.9, color: '#8C5A2B' },
+                    { id: `DEC-${newWhId}-02`, type: 'door', name: '倉庫出入口雙開大門', x: 0, z: Math.floor(depth/2) - 0.2, rot: 0, width: 3.0, depth: 0.25, height: 2.8, color: '#4A3728' }
                 ];
 
                 const newWarehouse = {
@@ -1780,7 +1873,7 @@
 
                 persistWarehouses(updatedWhs, true);
                 setIsEditWarehouseModalOpen(false);
-                showToast(`成功更新倉庫【${newCode || activeWarehouse.code}】尺寸與牆面裝飾色彩！`);
+                showToast(`成功更新倉庫【${newCode || activeWarehouse.code}】尺寸與外牆色！`);
             };
 
             const confirmDeleteWarehouse = (whId) => {
@@ -1944,29 +2037,6 @@
                 });
             };
 
-            const handleChangeBookTier = (bookId, newTier) => {
-                const targetBook = books.find(b => b.id === bookId);
-                const tierNum = parseInt(newTier, 10) || 1;
-
-                setBooks(prev => prev.map(b => b.id === bookId ? { ...b, tier: tierNum } : b));
-
-                const newOverrides = {
-                    ...bookOverrides,
-                    [bookId]: { warehouseId: targetBook.warehouseId, shelfId: targetBook.shelfId, tier: tierNum }
-                };
-                setBookOverrides(newOverrides);
-                saveStorage('lapen_book_overrides_v3', newOverrides);
-
-                showToast(`已調整圖書儲位至第 ${tierNum} 層。`);
-
-                const locationStr = `${activeWarehouse.name} (${activeWarehouse.code}) [${activeWarehouse.id}] | ${selectedShelf.name} (${selectedShelf.code}) [${selectedShelf.id}] | 第 ${tierNum} 層`;
-                syncWithGAS("UPDATE_BOOK_LOCATION", {
-                    bookId: bookId,
-                    bookTitle: targetBook ? targetBook.title : "",
-                    locationStr: locationStr
-                });
-            };
-
             return (
                 <div className="flex flex-col h-screen w-screen overflow-hidden bg-cream font-sans">
                     {/* Header */}
@@ -1987,7 +2057,7 @@
                                     文史哲出版社有限公司
                                 </h1>
                                 <p className="hidden sm:block text-[10px] tracking-widest text-amber-800 font-bold uppercase">
-                                    3D 多倉庫暨書架擺設與軟裝飾管理系統 (GAS 雲端雙向同步)
+                                    3D 多倉庫暨書架擺設與獨立牆面軟裝管理系統 (GAS 雲端雙向同步)
                                 </p>
                             </div>
                         </div>
@@ -2012,7 +2082,7 @@
                                 </select>
                                 <button
                                     onClick={() => setIsEditWarehouseModalOpen(true)}
-                                    title="編輯當前倉庫尺寸與牆色"
+                                    title="編輯當前倉庫尺寸與外牆色"
                                     className="px-2 py-1 rounded-lg text-xs font-bold bg-amber-800/15 border border-amber-800/30 text-amber-900 hover:bg-amber-800 hover:text-white transition flex items-center gap-1 shrink-0"
                                 >
                                     <Icon name="Palette" size={13} />
@@ -2207,7 +2277,7 @@
                                     className="flex-1 py-2.5 rounded-xl bg-amber-800/20 border border-amber-800/40 text-amber-900 hover:bg-amber-800 hover:text-white transition flex items-center justify-center gap-1 shadow-sm"
                                 >
                                     <Icon name="Armchair" size={14} />
-                                    <span>擺放家具軟裝</span>
+                                    <span>擺放大門/牆面/軟裝</span>
                                 </button>
                             </div>
                         </aside>
@@ -2269,7 +2339,7 @@
                             />
                         </main>
 
-                        {/* Right Panel for Editing Selected Object (Shelf or Decor) */}
+                        {}
                         {(selectedShelf || selectedDecor) && (
                             <aside 
                                 onTouchStart={(e) => e.stopPropagation()}
@@ -2284,7 +2354,13 @@
                                 <div className="flex justify-between items-center border-b border-borderwood pb-2">
                                     <span className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
                                         <Icon name="Sliders" size={14} />
-                                        {selectedShelf ? '編輯選取之 3D 書架' : `編輯選取之軟裝擺設 (${selectedDecor.name})`}
+                                        {selectedShelf 
+                                            ? '編輯選取之 3D 書架' 
+                                            : selectedDecor.type === 'wall'
+                                                ? `獨立牆面邊界與尺寸 (${selectedDecor.name})`
+                                                : selectedDecor.type === 'door'
+                                                    ? `雙開大門門框與尺寸 (${selectedDecor.name})`
+                                                    : `編輯選取之軟裝擺設 (${selectedDecor.name})`}
                                     </span>
                                     <button 
                                         onClick={handleClosePanel}
@@ -2313,21 +2389,67 @@
                                         />
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <input 
-                                            type="text" 
-                                            value={selectedDecor.name || ''} 
-                                            onChange={(e) => handleUpdateDecor({ ...selectedDecor, name: e.target.value })}
-                                            className="col-span-2 p-1.5 rounded-lg border border-borderwood bg-paper text-xs font-bold text-amber-900 outline-none focus:border-amber-800 font-serif-title"
-                                            placeholder="物件名稱"
-                                        />
-                                        <input 
-                                            type="color" 
-                                            value={selectedDecor.color || '#8C5A2B'} 
-                                            onChange={(e) => handleUpdateDecor({ ...selectedDecor, color: e.target.value })}
-                                            className="p-1 h-8 w-full rounded-lg border border-borderwood bg-paper cursor-pointer"
-                                            title="修改家具顏色"
-                                        />
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <input 
+                                                type="text" 
+                                                value={selectedDecor.name || ''} 
+                                                onChange={(e) => handleUpdateDecor({ ...selectedDecor, name: e.target.value })}
+                                                className="col-span-2 p-1.5 rounded-lg border border-borderwood bg-paper text-xs font-bold text-amber-900 outline-none focus:border-amber-800 font-serif-title"
+                                                placeholder="物件/牆面/大門名稱"
+                                            />
+                                            <input 
+                                                type="color" 
+                                                value={selectedDecor.color || '#8C5A2B'} 
+                                                onChange={(e) => handleUpdateDecor({ ...selectedDecor, color: e.target.value })}
+                                                className="p-1 h-8 w-full rounded-lg border border-borderwood bg-paper cursor-pointer"
+                                                title="修改材質顏色"
+                                            />
+                                        </div>
+
+                                        <div className="glass-panel p-2 rounded-xl border border-borderwood text-xs space-y-1.5">
+                                            <div className="font-bold text-amber-900 text-[11px] flex items-center justify-between border-b border-borderwood/60 pb-1">
+                                                <span>自訂物件尺寸 (獨立可控)</span>
+                                                <span className="font-mono text-[10px] text-amber-800">
+                                                    {selectedDecor.width}m × {selectedDecor.height}m × {selectedDecor.depth}m
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-amber-800 mb-0.5">長/寬 (X,米)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        step="0.2"
+                                                        min="0.2"
+                                                        value={selectedDecor.width || 2.0} 
+                                                        onChange={(e) => handleUpdateDecor({ ...selectedDecor, width: parseFloat(e.target.value) || 0.2 })}
+                                                        className="w-full p-1 rounded-lg border border-borderwood bg-paper font-bold text-amber-900 outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-amber-800 mb-0.5">高度 (Y,米)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        step="0.2"
+                                                        min="0.2"
+                                                        value={selectedDecor.height || 2.5} 
+                                                        onChange={(e) => handleUpdateDecor({ ...selectedDecor, height: parseFloat(e.target.value) || 0.2 })}
+                                                        className="w-full p-1 rounded-lg border border-borderwood bg-paper font-bold text-amber-900 outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-amber-800 mb-0.5">厚/深 (Z,米)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        step="0.05"
+                                                        min="0.05"
+                                                        value={selectedDecor.depth || 0.2} 
+                                                        onChange={(e) => handleUpdateDecor({ ...selectedDecor, depth: parseFloat(e.target.value) || 0.1 })}
+                                                        className="w-full p-1 rounded-lg border border-borderwood bg-paper font-bold text-amber-900 outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -2335,7 +2457,7 @@
                                 <div className="space-y-3 glass-panel p-3 rounded-xl border border-borderwood text-xs">
                                     <div className="bg-amber-800/10 p-2 rounded-lg border border-amber-800/20 text-[11px] font-bold text-amber-900 flex items-center gap-1.5">
                                         <Icon name="Compass" size={14} className="text-amber-800 shrink-0" />
-                                        <span>💡 提示：按住畫面中的物件亦可直接拖曳移位！</span>
+                                        <span>💡 提示：點擊畫面中任一單元即可選取，或按住拖曳移位！</span>
                                     </div>
 
                                     <div>
@@ -2394,7 +2516,7 @@
                                     </div>
                                 </div>
 
-                                {/* Extra Shelf Books Listing if Shelf Selected */}
+                                {/* Shelf Books Listing */}
                                 {selectedShelf && (
                                     <div className="space-y-2 flex-1">
                                         <div className="flex justify-between items-center text-xs font-bold text-amber-900">
@@ -2446,7 +2568,7 @@
                                         className="w-full py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 font-bold text-xs flex items-center justify-center gap-1.5 transition"
                                     >
                                         <Icon name="Trash2" size={14} />
-                                        <span>刪除此 3D {selectedShelf ? '書架' : '軟裝擺設'}</span>
+                                        <span>刪除此 3D {selectedShelf ? '書架' : selectedDecor.type === 'wall' ? '獨立牆面' : selectedDecor.type === 'door' ? '雙開大門' : '軟裝擺設'}</span>
                                     </button>
                                     <button
                                         onClick={handleClosePanel}
@@ -2460,14 +2582,15 @@
                         )}
                     </div>
 
-                    {/* Modal: Add Furniture / Decor */}
+                    {}
+                    {/* Modal: Add Furniture / Decor / Door / Wall */}
                     {isAddDecorModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="glass-panel w-full max-w-md rounded-3xl p-6 border border-borderwood shadow-2xl flex flex-col gap-4">
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
                                     <h3 className="font-serif-title font-bold text-amber-900 text-base flex items-center gap-2">
                                         <Icon name="Armchair" size={18} className="text-amber-800" />
-                                        擺放軟裝飾 / 家具至 {activeWarehouse.name}
+                                        擺放雙開大門 / 牆面 / 軟裝飾至 {activeWarehouse.name}
                                     </h3>
                                     <button onClick={() => setIsAddDecorModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
                                         <Icon name="X" size={18} />
@@ -2475,28 +2598,39 @@
                                 </div>
                                 <form onSubmit={handleAddDecor} className="space-y-3 text-xs">
                                     <div>
-                                        <label className="block font-bold text-amber-900 mb-1">軟裝家具種類：</label>
-                                        <select name="type" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none">
+                                        <label className="block font-bold text-amber-900 mb-1">物件種類：</label>
+                                        <select name="type" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none cursor-pointer">
+                                            <option value="door">🚪 倉庫出入口雙開大門 (Double Entrance Door)</option>
+                                            <option value="wall">🧱 獨立牆面 / 室內隔間牆 (Wall)</option>
                                             <option value="desk">揀貨工作桌 / 辦公桌</option>
                                             <option value="sofa">貴賓沙發 / 休息座椅</option>
                                             <option value="plant">景觀綠植盆栽</option>
                                             <option value="window">牆面採光窗戶</option>
                                             <option value="trolley">物流揀貨推車</option>
-                                            <option value="door">倉庫進出大門</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label className="block font-bold text-amber-900 mb-1">物件自訂名稱：</label>
-                                        <input name="name" required defaultValue="理書工作台" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        <input name="name" required defaultValue="正門雙開大門" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block font-bold text-amber-900 mb-1">材質顏色：</label>
-                                            <input name="color" type="color" defaultValue="#8C5A2B" className="w-full h-10 p-1 rounded-xl border border-borderwood bg-paper cursor-pointer" />
+                                            <label className="block font-bold text-amber-900 mb-1">材質色彩：</label>
+                                            <input name="color" type="color" defaultValue="#4A3728" className="w-full h-10 p-1 rounded-xl border border-borderwood bg-paper cursor-pointer" />
                                         </div>
                                         <div>
-                                            <label className="block font-bold text-amber-900 mb-1">寬度 (米)</label>
-                                            <input name="width" type="number" defaultValue="2.2" step="0.2" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                            <label className="block font-bold text-amber-900 mb-1">長度/寬度 (X, 米)</label>
+                                            <input name="width" type="number" defaultValue="3.0" step="0.2" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">高度 (Y, 米)</label>
+                                            <input name="height" type="number" defaultValue="2.8" step="0.2" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-amber-900 mb-1">厚度/深度 (Z, 米)</label>
+                                            <input name="depth" type="number" defaultValue="0.25" step="0.05" className="w-full p-2.5 rounded-xl border border-borderwood bg-paper font-bold outline-none" />
                                         </div>
                                     </div>
                                     <div className="pt-2 flex justify-end gap-2">
@@ -2515,7 +2649,7 @@
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
                                     <h3 className="font-serif-title font-bold text-amber-900 text-base flex items-center gap-2">
                                         <Icon name="Palette" size={18} className="text-amber-800" />
-                                        編輯倉庫【{activeWarehouse.code}】尺寸與牆面顏色裝飾
+                                        編輯倉庫【{activeWarehouse.code}】尺寸與外牆色彩裝飾
                                     </h3>
                                     <button onClick={() => setIsEditWarehouseModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
                                         <Icon name="X" size={18} />
@@ -2533,10 +2667,10 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block font-bold text-amber-900 mb-1">牆面色彩風格 (Wall Color)：</label>
+                                        <label className="block font-bold text-amber-900 mb-1">外圍牆面色彩風格 (Wall Color)：</label>
                                         <div className="flex items-center gap-3">
                                             <input name="wallColor" type="color" defaultValue={activeWarehouse.wallColor || '#E6D5C3'} className="h-10 w-20 p-1 rounded-xl border border-borderwood cursor-pointer" />
-                                            <span className="text-amber-800 font-bold">點擊左側色塊選擇自訂牆壁色彩與風格</span>
+                                            <span className="text-amber-800 font-bold">點擊選擇整座倉庫的外圍牆壁色彩</span>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-3 gap-3">
@@ -2734,7 +2868,7 @@
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
                                     <h3 className="font-serif-title font-bold text-amber-900 text-lg flex items-center gap-2">
                                         <Icon name="FileSpreadsheet" size={20} className="text-amber-800" />
-                                        Google 試算表 (Book_ALL & 倉庫與軟裝) 雙向連線同步
+                                        Google 試算表 (Book_ALL & 牆面與軟裝) 雙向連線同步
                                     </h3>
                                     <button onClick={() => setIsCsvModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
                                         <Icon name="X" size={18} />
@@ -2747,7 +2881,7 @@
                                             <Icon name="CheckCircle2" size={16} className="text-emerald-700" />
                                             已綁定全社試算表 ID：<span className="font-mono underline">1WB8sWMkP-6RH23lUvP-JUl7JnzxSQKzkszGUzh4XS6s</span>
                                         </p>
-                                        <p>您可隨時從雲端下載最新圖書資料，或將當前 3D 書架與家具軟裝座標儲存至試算表。</p>
+                                        <p>您可隨時從雲端下載最新圖書資料，或將當前 3D 書架與獨立牆面座標儲存至試算表。</p>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
@@ -2765,7 +2899,7 @@
                                             className="w-full py-3.5 rounded-xl bg-emerald-800 text-white font-bold text-xs hover:bg-emerald-900 transition flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
                                         >
                                             <Icon name="RefreshCw" size={16} className={isSyncingSheets ? "animate-spin" : ""} />
-                                            <span>⬆️ 將當前 3D 書架與家具擺設上傳至試算表</span>
+                                            <span>⬆️ 將當前 3D 書架與牆面家具擺設上傳</span>
                                         </button>
                                     </div>
                                 </div>
@@ -2780,7 +2914,7 @@
                                 <div className="flex justify-between items-center border-b border-borderwood pb-3">
                                     <h3 className="font-serif-title font-bold text-amber-900 text-lg flex items-center gap-2">
                                         <Icon name="Printer" size={20} className="text-amber-800" />
-                                        【{activeWarehouse.name}】揀貨藍圖與家具擺設總表
+                                        【{activeWarehouse.name}】揀貨藍圖與獨立牆面擺設總表
                                     </h3>
                                     <button onClick={() => setIsPrintModalOpen(false)} className="p-1 rounded-full hover:bg-paper text-amber-900/60">
                                         <Icon name="X" size={18} />
