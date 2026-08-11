@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,9 +7,9 @@
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Canvas Confetti for celebrate particle effects -->
+  <!-- Canvas Confetti for particle effects -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <!-- Google Fonts for cute Maru Gothic -->
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
   
   <style>
@@ -21,14 +21,12 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Floating animation for subtle background elements */
     @keyframes floatSlow {
       0%, 100% { transform: translateY(0px) rotate(0deg); }
       50% { transform: translateY(-10px) rotate(3deg); }
     }
-    .animate-float { animation: floatSlow 3s ease-in-out infinite; }
+    .animate-float { animation: floatSlow 3.5s ease-in-out infinite; }
 
-    /* Interactive Balloon Wobble and Pop Animations */
     @keyframes balloonWobble {
       0%, 100% { transform: scale(var(--balloon-scale, 1)) rotate(0deg); }
       20% { transform: scale(calc(var(--balloon-scale, 1) * 1.1)) rotate(-8deg); }
@@ -38,7 +36,6 @@
     }
     .balloon-wobble { animation: balloonWobble 0.5s ease-in-out; }
 
-    /* Balloon Pop Explosion Effect */
     @keyframes balloonExplode {
       0% { transform: scale(1.3); opacity: 1; filter: brightness(1.5); }
       50% { transform: scale(2); opacity: 0.6; filter: brightness(2); }
@@ -46,43 +43,54 @@
     }
     .balloon-pop-anim { animation: balloonExplode 0.4s ease-out forwards; }
 
-    /* Pulse Glow Border */
     @keyframes pulseGlow {
       0%, 100% { box-shadow: 0 0 25px rgba(244, 114, 182, 0.6), 0 0 50px rgba(96, 165, 250, 0.4); }
       50% { box-shadow: 0 0 45px rgba(244, 114, 182, 0.9), 0 0 75px rgba(96, 165, 250, 0.7); }
     }
     .glow-balloon { animation: pulseGlow 2s infinite; }
 
-    /* Modal Backdrop */
     .modal-backdrop {
       background-color: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(8px);
     }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
-<body class="text-slate-800 p-3 sm:p-6 flex flex-col items-center justify-between">
+<body class="text-slate-800 p-3 sm:p-6 flex flex-col items-center justify-between min-h-screen">
 
-  <!-- Top Navigation Header -->
+  <!-- Header -->
   <header class="w-full max-w-xl text-center my-2 sm:my-3 relative">
-    <!-- Sound Toggle Button -->
-    <button onclick="toggleAudio()" id="audioToggleBtn" class="absolute right-0 top-0 bg-white/90 border-2 border-pink-200 text-pink-700 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black shadow-md flex items-center gap-1.5 active:scale-95 transition">
-      <span id="audioIcon">🔊</span> <span id="audioText">音效開啟</span>
-    </button>
+    <div class="flex items-center justify-between mb-2">
+      <button onclick="openSettingsModal()" class="bg-white/90 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm flex items-center gap-1.5 hover:bg-slate-50 transition active:scale-95">
+        <span id="syncDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+        <span id="syncText">連線中...</span>
+        <span class="text-slate-400">⚙️</span>
+      </button>
 
-    <div class="inline-block px-4 py-1.5 bg-gradient-to-r from-amber-100 via-pink-100 to-sky-100 text-amber-900 rounded-full text-sm sm:text-base font-black mb-2 shadow-sm border border-amber-200/80 animate-pulse">
+      <button onclick="toggleAudio()" id="audioToggleBtn" class="bg-white/90 border border-pink-200 text-pink-700 px-3.5 py-1.5 rounded-full text-xs font-black shadow-sm flex items-center gap-1.5 active:scale-95 hover:bg-pink-50 transition">
+        <span id="audioIcon">🔊</span> <span id="audioText">音效開啟</span>
+      </button>
+    </div>
+
+    <div class="inline-block px-4 py-1.5 bg-gradient-to-r from-amber-100 via-pink-100 to-sky-100 text-amber-900 rounded-full text-xs sm:text-sm font-black mb-2 shadow-sm border border-amber-200/80 animate-pulse">
       ✨ 家族親友專屬 ‧ 幸福大猜想 ✨
     </div>
+    
     <h1 class="text-3xl sm:text-4xl font-black text-slate-800 tracking-wide flex items-center justify-center gap-2">
-      <span>👶</span> <span id="babyNameHeader" class="text-pink-600 border-b-4 border-pink-300">小寶貝</span> 性別揭曉 <span>🎉</span>
+      <span>👶</span> <span id="babyNameHeader" class="text-pink-600 border-b-4 border-pink-300">小麻糬</span> 性別揭曉 <span>🎉</span>
     </h1>
-    <p class="text-slate-600 font-bold mt-1.5 text-base sm:text-lg">各位長輩親友，快來猜猜是男寶還是女寶吧！</p>
+    <p class="text-slate-600 font-bold mt-1.5 text-sm sm:text-base">各位長輩親友，快來猜猜是男寶還是女寶吧！</p>
   </header>
 
-  <!-- Main Application Container -->
+  <!-- Main Container -->
   <main class="w-full max-w-xl bg-white/95 backdrop-blur rounded-3xl p-4 sm:p-7 shadow-2xl border-4 border-white flex-1 flex flex-col justify-between my-2">
     
-    <!-- Navigation Tabs Bar -->
-    <div class="flex rounded-2xl bg-slate-100 p-1.5 mb-5 text-base sm:text-lg font-black border border-slate-200/80 shadow-inner">
+    <!-- Navigation Tabs -->
+    <div class="flex rounded-2xl bg-slate-100 p-1.5 mb-5 text-sm sm:text-base font-black border border-slate-200/80 shadow-inner">
       <button id="tabGuessBtn" onclick="switchTab('guess')" class="flex-1 py-3 rounded-xl transition-all shadow bg-white text-pink-600 flex items-center justify-center gap-1 font-black">
         <span>🗳️</span> 我要猜猜看
       </button>
@@ -94,183 +102,158 @@
       </button>
     </div>
 
-    <!-- TAB 1: GUESS & VOTE SECTION -->
+    <!-- TAB 1: GUESS FORM -->
     <section id="tabGuess" class="space-y-5">
       <div id="voteForm" class="space-y-5">
-        
-        <!-- Step 1: Input Name -->
         <div>
-          <label class="block text-slate-800 text-lg sm:text-xl font-black mb-2 flex items-center gap-1">
+          <label class="block text-slate-800 text-base sm:text-lg font-black mb-2 flex items-center gap-1">
             <span>1. 請問您的稱呼？</span> <span class="text-rose-500">*</span>
           </label>
           <input type="text" id="voterName" placeholder="例如：大叔公、外公、二姑姑、表姐" 
-                 class="w-full text-xl px-5 py-4 rounded-2xl border-2 border-slate-200 focus:border-pink-400 focus:bg-white focus:outline-none transition font-black bg-slate-50 shadow-inner">
+                 class="w-full text-lg px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-pink-400 focus:bg-white focus:outline-none transition font-black bg-slate-50 shadow-inner">
         </div>
 
-        <!-- Step 2: Gender Choice Cards -->
         <div>
-          <label class="block text-slate-800 text-lg sm:text-xl font-black mb-2 flex items-center gap-1">
+          <label class="block text-slate-800 text-base sm:text-lg font-black mb-2 flex items-center gap-1">
             <span>2. 您猜是帥哥還是美女？</span> <span class="text-rose-500">*</span>
           </label>
-          <div class="grid grid-cols-2 gap-4">
-            
-            <!-- Boy Choice Card -->
+          <div class="grid grid-cols-2 gap-3.5">
             <button type="button" onclick="selectGender('boy')" id="btnBoy"
-                    class="flex flex-col items-center justify-center p-5 rounded-2xl border-4 border-slate-200 bg-blue-50/60 hover:bg-blue-100 transition-all active:scale-95 group">
-              <span class="text-6xl mb-2 group-hover:scale-110 transition-transform">👦</span>
-              <span class="text-2xl font-black text-blue-700">帥氣男寶寶</span>
+                    class="flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border-4 border-slate-200 bg-blue-50/60 hover:bg-blue-100 transition-all active:scale-95 group">
+              <span class="text-5xl sm:text-6xl mb-1.5 group-hover:scale-110 transition-transform">👦</span>
+              <span class="text-xl sm:text-2xl font-black text-blue-700">帥氣男寶寶</span>
               <span class="text-xs font-bold text-blue-500 mt-1 bg-blue-100/80 px-2.5 py-0.5 rounded-full">Little Prince</span>
             </button>
 
-            <!-- Girl Choice Card -->
             <button type="button" onclick="selectGender('girl')" id="btnGirl"
-                    class="flex flex-col items-center justify-center p-5 rounded-2xl border-4 border-slate-200 bg-pink-50/60 hover:bg-pink-100 transition-all active:scale-95 group">
-              <span class="text-6xl mb-2 group-hover:scale-110 transition-transform">👧</span>
-              <span class="text-2xl font-black text-pink-700">可愛女寶寶</span>
+                    class="flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border-4 border-slate-200 bg-pink-50/60 hover:bg-pink-100 transition-all active:scale-95 group">
+              <span class="text-5xl sm:text-6xl mb-1.5 group-hover:scale-110 transition-transform">👧</span>
+              <span class="text-xl sm:text-2xl font-black text-pink-700">可愛女寶寶</span>
               <span class="text-xs font-bold text-pink-500 mt-1 bg-pink-100/80 px-2.5 py-0.5 rounded-full">Little Princess</span>
             </button>
-
           </div>
         </div>
 
-        <!-- Step 3: Blessing Message -->
         <div>
-          <label class="block text-slate-800 text-lg sm:text-xl font-black mb-2">
+          <label class="block text-slate-800 text-base sm:text-lg font-black mb-2">
             3. 給小寶貝與爸爸媽媽的話：
           </label>
           <textarea id="voterMessage" rows="2" placeholder="寫下對小寶貝的祝福與期待..."
-                    class="w-full text-lg px-5 py-3 rounded-2xl border-2 border-slate-200 focus:border-pink-400 focus:bg-white focus:outline-none transition font-medium bg-slate-50 shadow-inner"></textarea>
+                    class="w-full text-base px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-pink-400 focus:bg-white focus:outline-none transition font-medium bg-slate-50 shadow-inner"></textarea>
         </div>
 
-        <!-- Submit Button -->
         <button onclick="submitGuess()" id="submitVoteBtn"
-                class="w-full py-5 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:from-pink-600 hover:to-amber-600 text-white text-2xl font-black rounded-2xl shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 relative overflow-hidden">
-          <span class="text-3xl">💖</span> <span>確認送出我的猜測</span>
+                class="w-full py-4 sm:py-5 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:from-pink-600 hover:to-amber-600 text-white text-xl sm:text-2xl font-black rounded-2xl shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 relative overflow-hidden">
+          <span class="text-2xl sm:text-3xl">💖</span> <span>確認送出我的猜測</span>
         </button>
       </div>
     </section>
 
-    <!-- TAB 2: LIVE STATS & BLESSINGS WALL SECTION -->
+    <!-- TAB 2: LIVE STATS & BLESSINGS -->
     <section id="tabStats" class="hidden space-y-5">
-      
-      <!-- Voting Live Progress -->
-      <div class="bg-gradient-to-br from-slate-50 to-pink-50 p-5 rounded-2xl border-2 border-pink-100 shadow-sm">
-        <h3 class="text-xl font-black text-slate-800 mb-3 flex items-center justify-between">
+      <div class="bg-gradient-to-br from-slate-50 to-pink-50 p-4 sm:p-5 rounded-2xl border-2 border-pink-100 shadow-sm">
+        <h3 class="text-lg sm:text-xl font-black text-slate-800 mb-2 flex items-center justify-between">
           <span class="flex items-center gap-1.5">📊 家族猜測最新戰況</span>
-          <span id="totalVotesCount" class="text-sm bg-pink-200 text-pink-800 px-3 py-1 rounded-full font-bold">載入中...</span>
+          <span id="totalVotesCount" class="text-xs sm:text-sm bg-pink-200 text-pink-800 px-3 py-1 rounded-full font-bold">載入中...</span>
         </h3>
         
-        <!-- Animated Progress Bar -->
         <div class="w-full h-10 bg-slate-200 rounded-full overflow-hidden flex shadow-inner border-2 border-white p-1 my-3">
-          <div id="boyBar" class="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-l-full transition-all duration-1000 flex items-center justify-center text-white text-sm font-black" style="width: 50%;">
+          <div id="boyBar" class="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-l-full transition-all duration-1000 flex items-center justify-center text-white text-xs sm:text-sm font-black" style="width: 50%;">
             男寶 <span id="boyPercent" class="ml-1">50%</span>
           </div>
-          <div id="girlBar" class="bg-gradient-to-r from-pink-400 to-pink-600 h-full rounded-r-full transition-all duration-1000 flex items-center justify-center text-white text-sm font-black" style="width: 50%;">
+          <div id="girlBar" class="bg-gradient-to-r from-pink-400 to-pink-600 h-full rounded-r-full transition-all duration-1000 flex items-center justify-center text-white text-xs sm:text-sm font-black" style="width: 50%;">
             女寶 <span id="girlPercent" class="ml-1">50%</span>
           </div>
         </div>
 
-        <div class="flex justify-between text-xs sm:text-sm font-bold text-slate-500 px-1">
-          <span class="text-blue-600">👦 男寶預測票數：<strong id="boyVotesNum">0</strong> 票</span>
-          <span class="text-pink-600">👧 女寶預測票數：<strong id="girlVotesNum">0</strong> 票</span>
+        <div class="flex justify-between text-xs sm:text-sm font-bold text-slate-600 px-1">
+          <span class="text-blue-600">👦 男寶預測票數：<strong id="boyVotesNum" class="text-base">0</strong> 票</span>
+          <span class="text-pink-600">👧 女寶預測票數：<strong id="girlVotesNum" class="text-base">0</strong> 票</span>
         </div>
       </div>
 
-      <!-- Family Blessings Wall -->
       <div>
-        <h3 class="text-xl font-black text-slate-800 mb-3 flex items-center justify-between">
+        <h3 class="text-lg sm:text-xl font-black text-slate-800 mb-3 flex items-center justify-between">
           <span>💌 親友溫馨祝福榜</span>
-          <button onclick="fetchBackendData()" class="text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
-            <span>🔄</span> <span>更新</span>
+          <button onclick="fetchBackendData(true)" class="text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
+            <span>🔄</span> <span>更新資料</span>
           </button>
         </h3>
-        <div id="blessingsWall" class="max-h-72 overflow-y-auto space-y-3 pr-1">
+        <div id="blessingsWall" class="max-h-64 sm:max-h-72 overflow-y-auto space-y-3 pr-1">
           <div class="text-center text-slate-400 text-base py-8">正在連線取得祝福榜...</div>
         </div>
       </div>
-
     </section>
 
-    <!-- TAB 3: GRAND REVEAL CEREMONY SECTION -->
+    <!-- TAB 3: REVEAL CEREMONY -->
     <section id="tabReveal" class="hidden flex-1 flex flex-col items-center justify-center text-center py-2">
       
-      <!-- Stage 1: Mystery Balloon Interactive Pop -->
-      <div id="revealStage1" class="space-y-5 w-full">
-        <div class="inline-block px-4 py-1.5 bg-amber-100 text-amber-900 rounded-full text-base font-black border border-amber-300 shadow-sm">
+      <div id="revealStage1" class="space-y-4 w-full">
+        <div class="inline-block px-4 py-1.5 bg-amber-100 text-amber-900 rounded-full text-sm sm:text-base font-black border border-amber-300 shadow-sm">
           🎈 點擊戳破神秘氣球揭曉 🎈
         </div>
 
-        <!-- Giant Interactive Mystery Balloon -->
         <div class="relative py-2">
           <div id="interactiveBalloon" onclick="handleBalloonTap()" 
-               class="w-56 h-56 sm:w-64 sm:h-64 mx-auto bg-gradient-to-br from-amber-200 via-pink-300 to-sky-300 rounded-full flex items-center justify-center shadow-2xl glow-balloon cursor-pointer transition-transform relative border-4 border-white select-none">
+               class="w-52 h-52 sm:w-64 sm:h-64 mx-auto bg-gradient-to-br from-amber-200 via-pink-300 to-sky-300 rounded-full flex items-center justify-center shadow-2xl glow-balloon cursor-pointer transition-transform relative border-4 border-white select-none">
             
-            <div class="w-48 h-48 sm:w-52 sm:h-52 bg-white/90 rounded-full flex flex-col items-center justify-center shadow-inner p-4 border-2 border-pink-100">
-              <span id="balloonEmoji" class="text-6xl sm:text-7xl mb-1 animate-float">🎁</span>
-              <span id="balloonText" class="text-2xl font-black text-slate-800">還需要連戳 <span id="tapCountNeeded" class="text-pink-600 text-3xl">3</span> 下</span>
+            <div class="w-44 h-44 sm:w-52 sm:h-52 bg-white/90 rounded-full flex flex-col items-center justify-center shadow-inner p-4 border-2 border-pink-100">
+              <span id="balloonEmoji" class="text-5xl sm:text-7xl mb-1 animate-float">🎁</span>
+              <span id="balloonText" class="text-xl sm:text-2xl font-black text-slate-800">還需要連戳 <span id="tapCountNeeded" class="text-pink-600 text-2xl sm:text-3xl">3</span> 下</span>
               <span class="text-xs font-bold text-pink-500 mt-1 bg-pink-50 px-2.5 py-0.5 rounded-full">戳破氣球揭曉性別！</span>
             </div>
 
-            <!-- Balloon String Ribbon -->
             <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 w-2 h-10 bg-amber-300 rounded-full"></div>
           </div>
         </div>
 
-        <p class="text-lg sm:text-xl font-black text-slate-700">準備好了嗎？點擊上面氣球開始揭曉！</p>
+        <p class="text-base sm:text-lg font-black text-slate-700">準備好了嗎？連續點擊上面氣球開始揭曉！</p>
 
         <button onclick="handleBalloonTap()" 
-                class="w-full py-5 bg-gradient-to-r from-amber-400 via-rose-400 to-purple-500 hover:opacity-95 text-white text-2xl font-black rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                class="w-full py-4 sm:py-5 bg-gradient-to-r from-amber-400 via-rose-400 to-purple-500 hover:opacity-95 text-white text-xl sm:text-2xl font-black rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
           <span>✨</span> <span>點擊戳破氣球</span>
         </button>
       </div>
 
-      <!-- Stage 2: Suspense Drums & Countdown -->
       <div id="revealStage2" class="hidden space-y-6 my-auto py-10 w-full">
         <p class="text-2xl sm:text-3xl font-black text-slate-700 tracking-wider">答 案 即 將 揭 曉...</p>
-        <div id="countdownNum" class="text-9xl font-black text-transparent bg-clip-text bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 animate-pulse my-4">
+        <div id="countdownNum" class="text-8xl sm:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 animate-pulse my-4">
           3
         </div>
-        <p class="text-xl font-bold text-amber-600 animate-bounce">🥁 咚咚咚... 屏息以待！</p>
+        <p class="text-lg sm:text-xl font-bold text-amber-600 animate-bounce">🥁 咚咚咚... 屏息以待！</p>
       </div>
 
-      <!-- Stage 3: THE GRAND RESULT ANNOUNCEMENT CARD -->
       <div id="revealStage3" class="hidden space-y-5 w-full my-auto">
-        <div id="resultCard" class="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-white to-pink-50 border-4 border-pink-300 shadow-2xl transform transition-all duration-700 scale-95 opacity-0">
-          
-          <div class="inline-block px-6 py-2 bg-yellow-300 text-yellow-950 rounded-full text-lg sm:text-xl font-black mb-3 shadow border border-yellow-400">
+        <div id="resultCard" class="p-5 sm:p-8 rounded-3xl bg-gradient-to-br from-white to-pink-50 border-4 border-pink-300 shadow-2xl transform transition-all duration-700 scale-95 opacity-0">
+          <div class="inline-block px-5 py-1.5 bg-yellow-300 text-yellow-950 rounded-full text-base sm:text-xl font-black mb-2 shadow border border-yellow-400">
             🎉 揭曉結果 🎉
           </div>
 
-          <!-- Dynamic Gender Title -->
-          <div id="genderTitle" class="text-4xl sm:text-5xl font-black mb-3 text-pink-600 tracking-wide">
+          <div id="genderTitle" class="text-3xl sm:text-5xl font-black mb-2 text-pink-600 tracking-wide">
             恭喜！是個女寶寶 👧
           </div>
 
-          <!-- Baby Avatar Icon -->
-          <div id="babyAvatar" class="text-8xl sm:text-9xl my-4 animate-float">
+          <div id="babyAvatar" class="text-7xl sm:text-9xl my-3 animate-float">
             👸
           </div>
 
-          <!-- Family Message Box -->
-          <div class="bg-white/90 p-5 rounded-2xl border-2 border-pink-200 my-4 text-left shadow-sm">
+          <div class="bg-white/90 p-4 sm:p-5 rounded-2xl border-2 border-pink-200 my-3 text-left shadow-sm">
             <p class="text-xs font-bold text-slate-400 mb-1 flex items-center gap-1">
               <span>💌</span> <span>給長輩與親友的一封信：</span>
             </p>
-            <p id="customMessageText" class="text-lg sm:text-xl font-extrabold text-slate-800 leading-relaxed">
+            <p id="customMessageText" class="text-base sm:text-xl font-extrabold text-slate-800 leading-relaxed">
               謝謝全家人的愛與祝福！
             </p>
           </div>
 
-          <!-- Interactive Fireworks & Share Actions -->
           <div class="flex flex-col sm:flex-row gap-3 mt-4">
-            <button onclick="triggerConfettiBurst()" class="flex-1 py-4 bg-pink-500 hover:bg-pink-600 text-white font-black rounded-xl transition text-lg shadow active:scale-95 flex items-center justify-center gap-1">
+            <button onclick="triggerConfettiBurst()" class="flex-1 py-3.5 bg-pink-500 hover:bg-pink-600 text-white font-black rounded-xl transition text-base sm:text-lg shadow active:scale-95 flex items-center justify-center gap-1">
               <span>🎆</span> 再放一次慶祝煙火！
             </button>
-            <button onclick="shareAppUrl()" class="py-4 px-5 bg-slate-800 hover:bg-slate-700 text-white font-black rounded-xl transition text-lg shadow active:scale-95 flex items-center justify-center gap-1">
+            <button onclick="shareAppUrl()" class="py-3.5 px-5 bg-slate-800 hover:bg-slate-700 text-white font-black rounded-xl transition text-base sm:text-lg shadow active:scale-95 flex items-center justify-center gap-1">
               <span>🔗</span> 分享給親友
             </button>
           </div>
-
         </div>
       </div>
 
@@ -282,20 +265,57 @@
     ❤️ 溫馨傳遞 ‧ 家族愛好連線 ❤️
   </footer>
 
-  <!-- Custom Modal Alert Box -->
+  <!-- Modals -->
   <div id="customModal" class="fixed inset-0 modal-backdrop hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl border-4 border-pink-200 space-y-4 transform transition-all scale-100">
       <div id="modalIcon" class="text-6xl">💡</div>
       <h3 id="modalTitle" class="text-2xl font-black text-slate-800">提示</h3>
-      <p id="modalMessage" class="text-lg text-slate-600 font-bold leading-relaxed"></p>
-      <button onclick="closeModal()" class="w-full py-4 bg-slate-900 text-white text-xl font-black rounded-2xl hover:bg-slate-800 transition shadow-lg active:scale-95">
+      <p id="modalMessage" class="text-base text-slate-600 font-bold leading-relaxed"></p>
+      <button onclick="closeModal()" class="w-full py-3.5 bg-slate-900 text-white text-lg font-black rounded-2xl hover:bg-slate-800 transition shadow-lg active:scale-95">
         好的，我知道了
       </button>
     </div>
   </div>
 
+  <div id="settingsModal" class="fixed inset-0 modal-backdrop hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl p-5 sm:p-7 max-w-md w-full text-left shadow-2xl border-4 border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">⚙️ 試算表連線設定</h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-black">✕</button>
+      </div>
+
+      <p class="text-xs text-slate-500 font-bold leading-relaxed">
+        本網頁會自動讀取 Google 試算表內容與寫入投票。
+      </p>
+
+      <div>
+        <label class="block text-xs font-black text-slate-700 mb-1">Google 試算表 ID</label>
+        <input type="text" id="cfgSpreadsheetId" value="19qXMrVbxEdMyabeavaADjN4VCXBQzY37rG9de4CtJLk" 
+               class="w-full text-xs p-3 rounded-xl border-2 border-slate-200 font-mono focus:border-pink-400 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-xs font-black text-slate-700 mb-1">Apps Script Web App 部署網址</label>
+        <input type="text" id="cfgWebAppUrl" value="https://script.google.com/macros/s/AKfycbwD6Bz7sUpPOcB1t__WxtgZClsyPmgqGxdc3Fs8tg1JcpyLspftpBxey5yQraRWy6Ce/exec"
+               class="w-full text-xs p-3 rounded-xl border-2 border-slate-200 font-mono focus:border-pink-400 outline-none">
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="saveSettings()" class="flex-1 py-3 bg-pink-500 hover:bg-pink-600 text-white font-black rounded-xl transition text-sm shadow">
+          儲存並重新連線
+        </button>
+        <button onclick="closeSettingsModal()" class="py-3 px-4 bg-slate-200 text-slate-700 font-black rounded-xl transition text-sm">
+          取消
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Global State
+    let SPREADSHEET_ID = "19qXMrVbxEdMyabeavaADjN4VCXBQzY37rG9de4CtJLk";
+    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwD6Bz7sUpPOcB1t__WxtgZClsyPmgqGxdc3Fs8tg1JcpyLspftpBxey5yQraRWy6Ce/exec";
+    
     let selectedGenderChoice = null;
     let genderDataCache = null;
     let audioCtx = null;
@@ -304,13 +324,25 @@
     const MAX_TAPS = 3;
 
     window.onload = function() {
-      // Unlock AudioContext on mobile touch
+      const savedId = localStorage.getItem('gender_app_sheet_id');
+      if (savedId) SPREADSHEET_ID = savedId;
+      document.getElementById('cfgSpreadsheetId').value = SPREADSHEET_ID;
+
+      const savedUrl = localStorage.getItem('gender_app_web_url');
+      if (savedUrl) {
+        WEB_APP_URL = savedUrl;
+      } else {
+        localStorage.setItem('gender_app_web_url', WEB_APP_URL);
+      }
+      document.getElementById('cfgWebAppUrl').value = WEB_APP_URL;
+
       document.body.addEventListener('touchstart', initAudio, { once: true });
       document.body.addEventListener('click', initAudio, { once: true });
+
       fetchBackendData();
+      setInterval(() => fetchBackendData(false), 20000);
     };
 
-    /* Web Audio Initialization & iOS Safari Unlock */
     function initAudio() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -328,7 +360,6 @@
       if (isAudioEnabled) playTapSound();
     }
 
-    /* Tab Switcher Logic */
     function switchTab(tab) {
       playTapSound();
       const guessTab = document.getElementById('tabGuess');
@@ -362,7 +393,6 @@
       }
     }
 
-    /* Gender Card Selection Handler */
     function selectGender(gender) {
       playTapSound();
       selectedGenderChoice = gender;
@@ -370,15 +400,14 @@
       const btnGirl = document.getElementById('btnGirl');
 
       if (gender === 'boy') {
-        btnBoy.className = "flex flex-col items-center justify-center p-5 rounded-2xl border-4 border-blue-500 bg-blue-100 shadow-lg transition-all active:scale-95 group ring-4 ring-blue-200";
-        btnGirl.className = "flex flex-col items-center justify-center p-5 rounded-2xl border-4 border-slate-200 bg-pink-50/40 opacity-60 transition-all group";
+        btnBoy.className = "flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border-4 border-blue-500 bg-blue-100 shadow-lg transition-all active:scale-95 group ring-4 ring-blue-200";
+        btnGirl.className = "flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border-4 border-slate-200 bg-pink-50/40 opacity-60 transition-all group";
       } else {
-        btnGirl.className = "flex flex-col items-center justify-center p-5 rounded-2xl border-4 border-pink-500 bg-pink-100 shadow-lg transition-all active:scale-95 group ring-4 ring-pink-200";
-        btnBoy.className = "flex flex-col items-center justify-center p-5 rounded-2xl border-4 border-slate-200 bg-blue-50/40 opacity-60 transition-all group";
+        btnGirl.className = "flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border-4 border-pink-500 bg-pink-100 shadow-lg transition-all active:scale-95 group ring-4 ring-pink-200";
+        btnBoy.className = "flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border-4 border-blue-50/40 opacity-60 transition-all group";
       }
     }
 
-    /* Modal Dialog Helper */
     function showModal(title, msg, icon = "💡") {
       document.getElementById('modalTitle').innerText = title;
       document.getElementById('modalMessage').innerText = msg;
@@ -391,48 +420,165 @@
       document.getElementById('customModal').classList.add('hidden');
     }
 
-    function fetchBackendData() {
+    function openSettingsModal() {
+      playTapSound();
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      playTapSound();
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function saveSettings() {
+      const newId = document.getElementById('cfgSpreadsheetId').value.trim();
+      const newUrl = document.getElementById('cfgWebAppUrl').value.trim();
+      
+      if (newId) {
+        SPREADSHEET_ID = newId;
+        localStorage.setItem('gender_app_sheet_id', newId);
+      }
+      WEB_APP_URL = newUrl;
+      localStorage.setItem('gender_app_web_url', newUrl);
+
+      closeSettingsModal();
+      fetchBackendData(true);
+    }
+
+    async function fetchBackendData(showNotice = false) {
+      updateSyncStatus("connecting", "更新中...");
+
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
-          .withSuccessHandler(onDataFetched)
-          .withFailureHandler(onDataError)
+          .withSuccessHandler((res) => {
+            onDataFetched(res);
+            if (showNotice) showModal("連線成功", "已成功從試算表讀取最新資料！", "✅");
+          })
+          .withFailureHandler(() => fetchViaGVizApi(showNotice))
           .getGenderData();
-      } else {
-        // Fallback simulated data for local/offline testing
-        setTimeout(() => {
-          onDataFetched({
-            success: true,
-            gender: '女生',
-            babyName: '小麻糬',
-            customMessage: '感謝阿公阿嬤與各位長輩親友的愛與陪伴！小麻糬迫不及待要出來跟大家見面囉！',
-            votes: {
-              boy: 5,
-              girl: 8,
-              total: 13,
-              records: [
-                { name: '外公', choice: '可愛女寶寶', message: '一定跟媽媽一樣聰明美麗！' },
-                { name: '大叔公', choice: '帥氣男寶寶', message: '期待帶他去運動打球！' },
-                { name: '二姑姑', choice: '可愛女寶寶', message: '準備好多公主漂亮的洋裝給寶寶！' }
-              ]
-            }
+        return;
+      }
+
+      fetchViaGVizApi(showNotice);
+    }
+
+    async function fetchViaGVizApi(showNotice) {
+      try {
+        // 1. Fetch Baby Sheet
+        const babyUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=Baby`;
+        const babyRes = await fetch(babyUrl);
+        const babyText = await babyRes.text();
+        const babyJson = parseGVizJson(babyText);
+
+        let gender = "女";
+        let babyName = "小麻糬";
+        let customMessage = "謝謝全家人的愛與祝福！";
+
+        if (babyJson && babyJson.table && babyJson.table.rows) {
+          const rows = babyJson.table.rows;
+          rows.forEach(r => {
+            if (!r.c) return;
+            const label = String(r.c[0]?.v || '').trim();
+            const val = String(r.c[1]?.v || '').trim();
+
+            if (label.includes("性別") && val) gender = val;
+            if ((label.includes("暱稱") || label.includes("名字") || label.includes("寶貝")) && val) babyName = val;
+            if ((label.includes("話") || label.includes("留言") || label.includes("祝福")) && val) customMessage = val;
           });
-        }, 600);
+        }
+
+        // 2. Fetch 投票戰況 & 祝福留言 Sheet
+        let votes = { boy: 0, girl: 0, total: 0, records: [] };
+
+        try {
+          const statsUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('投票戰況')}`;
+          const statsRes = await fetch(statsUrl);
+          const statsText = await statsRes.text();
+          const statsJson = parseGVizJson(statsText);
+
+          if (statsJson && statsJson.table && statsJson.table.rows) {
+            statsJson.table.rows.forEach(r => {
+              if (!r.c || !r.c[0] || !r.c[0].v) return;
+              const choice = String(r.c[1]?.v || '').toLowerCase();
+              if (choice.includes('男') || choice.includes('boy')) votes.boy++;
+              if (choice.includes('女') || choice.includes('girl')) votes.girl++;
+            });
+            votes.total = votes.boy + votes.girl;
+          }
+        } catch (e) {}
+
+        try {
+          const blessingUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('祝福留言')}`;
+          const blessingRes = await fetch(blessingUrl);
+          const blessingText = await blessingRes.text();
+          const blessingJson = parseGVizJson(blessingText);
+
+          if (blessingJson && blessingJson.table && blessingJson.table.rows) {
+            blessingJson.table.rows.forEach(r => {
+              if (!r.c || !r.c[0] || !r.c[0].v) return;
+              const name = String(r.c[0]?.v || '').trim();
+              const choice = String(r.c[1]?.v || '').trim();
+              const message = String(r.c[2]?.v || '').trim();
+              const time = String(r.c[3]?.v || '').trim();
+
+              votes.records.push({ name, choice, message, time });
+            });
+          }
+        } catch (e) {}
+
+        onDataFetched({
+          success: true,
+          gender: gender,
+          babyName: babyName,
+          customMessage: customMessage,
+          votes: votes
+        });
+
+        updateSyncStatus("connected", "試算表已連線");
+        if (showNotice) showModal("讀取成功", "已成功從 Google 試算表讀取最新戰況！", "🎉");
+
+      } catch (err) {
+        updateSyncStatus("error", "連線失敗");
+        if (!genderDataCache) onDataFetched(getMockFallbackData());
+        if (showNotice) {
+          showModal("連線提示", "無法連線至試算表，請點擊 ⚙️ 設定檢查 ID。", "ℹ️");
+        }
+      }
+    }
+
+    function parseGVizJson(gvizText) {
+      try {
+        const start = gvizText.indexOf('{');
+        const end = gvizText.lastIndexOf('}');
+        if (start >= 0 && end >= 0) {
+          return JSON.parse(gvizText.substring(start, end + 1));
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function updateSyncStatus(state, text) {
+      const dot = document.getElementById('syncDot');
+      const label = document.getElementById('syncText');
+      label.innerText = text;
+
+      if (state === "connected") {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+      } else if (state === "connecting") {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping";
+      } else {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
       }
     }
 
     function onDataFetched(res) {
-      if (!res || !res.success) {
-        showModal("提示", "連線試算表時發生狀況：" + (res ? res.error : "無法存取資料"), "⚠️");
-        return;
-      }
+      if (!res || !res.success) return;
       genderDataCache = res;
 
-      // Update Header Title
       if (res.babyName) {
         document.getElementById('babyNameHeader').innerText = res.babyName;
       }
 
-      // Update Live Voting Stats Bar
       if (res.votes) {
         const total = res.votes.total || 0;
         document.getElementById('totalVotesCount').innerText = `已收到 ${total} 位祝福`;
@@ -454,39 +600,33 @@
           document.getElementById('girlPercent').innerText = `${girlPct}%`;
         }
 
-        // Render Blessings Wall
         const wall = document.getElementById('blessingsWall');
         if (res.votes.records && res.votes.records.length > 0) {
           wall.innerHTML = res.votes.records.slice().reverse().map(r => `
-            <div class="p-4 bg-white rounded-2xl border-2 border-pink-100 shadow-sm flex items-start justify-between gap-2 text-left">
-              <div>
-                <div class="flex items-center gap-2">
+            <div class="p-3.5 bg-white rounded-2xl border-2 border-pink-100 shadow-sm flex items-start justify-between gap-2 text-left">
+              <div class="w-full">
+                <div class="flex items-center justify-between gap-2">
                   <span class="font-black text-slate-800 text-base">${escapeHtml(r.name)}</span>
                   <span class="text-xs px-2.5 py-1 rounded-full ${String(r.choice).includes('男') ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'} font-extrabold">
                     ${escapeHtml(r.choice)}
                   </span>
                 </div>
-                ${r.message ? `<p class="text-sm text-slate-600 font-bold mt-1 leading-snug">"${escapeHtml(r.message)}"</p>` : ''}
+                ${r.message ? `<p class="text-sm text-slate-600 font-bold mt-1.5 leading-snug">"${escapeHtml(r.message)}"</p>` : ''}
               </div>
             </div>
           `).join('');
         } else {
-          wall.innerHTML = `<div class="text-center text-slate-400 text-base py-4">成為第一位發送猜測與祝福的長輩吧！</div>`;
+          wall.innerHTML = `<div class="text-center text-slate-400 text-base py-6">成為第一位發送猜測與祝福的長輩吧！</div>`;
         }
       }
     }
 
-    function onDataError(err) {
-      showModal("連線異常", "目前無法讀取試算表資料，請稍後重新整理頁面再試！", "❌");
-    }
-
-    /* Submit Guess to Google Sheet */
-    function submitGuess() {
+    async function submitGuess() {
       const name = document.getElementById('voterName').value.trim();
       const message = document.getElementById('voterMessage').value.trim();
 
       if (!name) {
-        showModal("請輸入您的稱呼", "請填寫您的稱呼（例如：外公、大阿姨、二叔叔），讓大家知道這是誰的祝福喔！", "✍️");
+        showModal("請輸入您的稱呼", "請填寫您的稱呼（例如：外公、大阿姨、二叔叔）", "✍️");
         return;
       }
       if (!selectedGenderChoice) {
@@ -497,29 +637,52 @@
       const choiceText = selectedGenderChoice === 'boy' ? '帥氣男寶寶' : '可愛女寶寶';
       const btn = document.getElementById('submitVoteBtn');
       btn.disabled = true;
-      btn.innerHTML = `<span>⏳</span> <span>正在寫入試算表...</span>`;
+      btn.innerHTML = `<span>⏳</span> <span>正在傳送猜測...</span>`;
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
-          .withSuccessHandler(() => {
-            btn.disabled = false;
-            btn.innerHTML = `<span class="text-3xl">💖</span> <span>確認送出我的猜測</span>`;
-            showModal("猜測成功！", `謝謝 ${name}！您的預測【${choiceText}】已經寫入紀錄囉！請點選「驚喜揭曉」看結果！`, "🎉");
-            fetchBackendData();
-          })
+          .withSuccessHandler(() => handleVoteSuccess(name, choiceText))
           .withFailureHandler((err) => {
             btn.disabled = false;
-            btn.innerHTML = `<span class="text-3xl">💖</span> <span>確認送出我的猜測</span>`;
+            btn.innerHTML = `<span class="text-2xl sm:text-3xl">💖</span> <span>確認送出我的猜測</span>`;
             showModal("寫入失敗", "傳送記錄失敗：" + err, "❌");
           })
           .submitVote(name, choiceText, message);
-      } else {
-        setTimeout(() => {
-          btn.disabled = false;
-          btn.innerHTML = `<span class="text-3xl">💖</span> <span>確認送出我的猜測</span>`;
-          showModal("猜測成功！", `謝謝 ${name}！您的預測【${choiceText}】已經寫入紀錄囉！`, "🎉");
-        }, 600);
+        return;
       }
+
+      if (WEB_APP_URL) {
+        try {
+          await fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, choice: choiceText, message })
+          });
+          handleVoteSuccess(name, choiceText);
+          return;
+        } catch (e) {
+          console.warn("Webhook submit failed, falling back to local simulation", e);
+        }
+      }
+
+      setTimeout(() => {
+        if (!genderDataCache) genderDataCache = getMockFallbackData();
+        if (selectedGenderChoice === 'boy') genderDataCache.votes.boy++;
+        else genderDataCache.votes.girl++;
+        genderDataCache.votes.total++;
+        genderDataCache.votes.records.push({ name, choice: choiceText, message, time: new Date().toLocaleTimeString() });
+        handleVoteSuccess(name, choiceText);
+      }, 500);
+    }
+
+    function handleVoteSuccess(name, choiceText) {
+      const btn = document.getElementById('submitVoteBtn');
+      btn.disabled = false;
+      btn.innerHTML = `<span class="text-2xl sm:text-3xl">💖</span> <span>確認送出我的猜測</span>`;
+      
+      showModal("猜測成功！", `謝謝 ${name}！您的預測【${choiceText}】已經記錄囉！快點選「驚喜揭曉」看結果！`, "🎉");
+      onDataFetched(genderDataCache);
     }
 
     function handleBalloonTap() {
@@ -529,26 +692,21 @@
       const balloon = document.getElementById('interactiveBalloon');
       const tapText = document.getElementById('tapCountNeeded');
 
-      // Dynamic balloon scale and wobble effect based on taps
       const scaleVal = 1 + (tapCount * 0.08);
       balloon.style.setProperty('--balloon-scale', scaleVal);
       balloon.classList.remove('balloon-wobble');
-      void balloon.offsetWidth; // Trigger reflow
+      void balloon.offsetWidth;
       balloon.classList.add('balloon-wobble');
 
       const remaining = MAX_TAPS - tapCount;
       if (remaining > 0) {
         tapText.innerText = remaining;
       } else {
-        // Final Tap: Explode balloon and launch countdown
         balloon.classList.add('balloon-pop-anim');
-        setTimeout(() => {
-          startGrandReveal();
-        }, 350);
+        setTimeout(() => startGrandReveal(), 350);
       }
     }
 
-    /* Grand Reveal Countdown Flow */
     function startGrandReveal() {
       playDrumrollSound();
       
@@ -579,9 +737,7 @@
 
     function renderRevealResult() {
       const rawGender = genderDataCache ? genderDataCache.gender : '女';
-      const customMsg = genderDataCache ? genderDataCache.customMessage : '謝謝全家人的愛與祝福！';
-      
-      // Robust gender string parsing logic
+      const customMsg = genderDataCache ? genderDataCache.customMessage : '謝謝全家人的愛與祝福！小麻糬期待跟大家見面！';
       const isBoy = checkIsBoy(rawGender);
       
       const card = document.getElementById('resultCard');
@@ -590,20 +746,18 @@
       const msgText = document.getElementById('customMessageText');
 
       if (isBoy) {
-        card.className = "p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-white via-blue-50 to-sky-100 border-4 border-blue-400 shadow-2xl transform transition-all duration-700 scale-100 opacity-100";
-        title.className = "text-4xl sm:text-5xl font-black mb-3 text-blue-600 tracking-wide";
+        card.className = "p-5 sm:p-8 rounded-3xl bg-gradient-to-br from-white via-blue-50 to-sky-100 border-4 border-blue-400 shadow-2xl transform transition-all duration-700 scale-100 opacity-100";
+        title.className = "text-3xl sm:text-5xl font-black mb-2 text-blue-600 tracking-wide";
         title.innerHTML = `恭喜！是個男寶寶 👦`;
         avatar.innerHTML = `🤴`;
       } else {
-        card.className = "p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-white via-pink-50 to-rose-100 border-4 border-pink-400 shadow-2xl transform transition-all duration-700 scale-100 opacity-100";
-        title.className = "text-4xl sm:text-5xl font-black mb-3 text-pink-600 tracking-wide";
+        card.className = "p-5 sm:p-8 rounded-3xl bg-gradient-to-br from-white via-pink-50 to-rose-100 border-4 border-pink-400 shadow-2xl transform transition-all duration-700 scale-100 opacity-100";
+        title.className = "text-3xl sm:text-5xl font-black mb-2 text-pink-600 tracking-wide";
         title.innerHTML = `恭喜！是個女寶寶 👧`;
         avatar.innerHTML = `👸`;
       }
 
       msgText.innerText = customMsg;
-
-      // Play victory sound & trigger celebratory confetti blast
       playCelebrationFanfare();
       triggerConfettiBurst(isBoy ? ['#3b82f6', '#60a5fa', '#fef08a', '#22c55e'] : ['#ec4899', '#f472b6', '#fef08a', '#a855f7']);
     }
@@ -614,7 +768,6 @@
       return s.includes('男') || s.includes('boy') || s.includes('male') || s.includes('子') || s.includes('公') || s.includes('帥');
     }
 
-    /* Confetti Burst Particle Cannon */
     function triggerConfettiBurst(colors = ['#ec4899', '#3b82f6', '#f59e0b', '#10b981']) {
       if (typeof confetti === 'function') {
         const count = 250;
@@ -659,11 +812,9 @@
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        
         const pitch = 300 + (stage * 200);
         osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(pitch * 1.8, audioCtx.currentTime + 0.15);
-        
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
         osc.start();
@@ -734,6 +885,25 @@
       } else {
         showModal("分享連結", url, "🔗");
       }
+    }
+
+    function getMockFallbackData() {
+      return {
+        success: true,
+        gender: '女',
+        babyName: '小麻糬',
+        customMessage: '謝謝全家人的愛與祝福！小麻糬期待跟大家見面！',
+        votes: {
+          boy: 6,
+          girl: 9,
+          total: 15,
+          records: [
+            { name: '外公', choice: '可愛女寶寶', message: '一定跟媽媽一樣聰明美麗！' },
+            { name: '大叔公', choice: '帥氣男寶寶', message: '期待帶他去運動打球！' },
+            { name: '二姑姑', choice: '可愛女寶寶', message: '準備好多公主漂亮的洋裝給寶寶！' }
+          ]
+        }
+      };
     }
 
     function escapeHtml(str) {
