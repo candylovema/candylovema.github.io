@@ -292,7 +292,7 @@
 
       <div>
         <label class="block text-xs font-black text-slate-700 mb-1">Apps Script Web App 部署網址</label>
-        <input type="text" id="cfgWebAppUrl" value="https://script.google.com/macros/s/AKfycbx09-wsjkv5i2OSeewQtUhc8DJ5gKKPx_pIatlZL9P9byHDw1_l8oNNhKibfoG3WQn_/exec"
+        <input type="text" id="cfgWebAppUrl" value="https://script.google.com/macros/s/AKfycbwOeCTiKlYWrIVKPH9bbLamSHqxBJAm4X-aYtEV94knBH2VnJkj_WbStnn_ZtvgXHku/exec"
                class="w-full text-xs p-3 rounded-xl border-2 border-slate-200 font-mono focus:border-pink-400 outline-none">
       </div>
 
@@ -310,7 +310,7 @@
   <script>
     // Global State
     let SPREADSHEET_ID = "19qXMrVbxEdMyabeavaADjN4VCXBQzY37rG9de4CtJLk";
-    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx09-wsjkv5i2OSeewQtUhc8DJ5gKKPx_pIatlZL9P9byHDw1_l8oNNhKibfoG3WQn_/exec";
+    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwOeCTiKlYWrIVKPH9bbLamSHqxBJAm4X-aYtEV94knBH2VnJkj_WbStnn_ZtvgXHku/exec";
     
     let selectedGenderChoice = null;
     let genderDataCache = null;
@@ -324,10 +324,12 @@
       if (savedId) SPREADSHEET_ID = savedId;
       document.getElementById('cfgSpreadsheetId').value = SPREADSHEET_ID;
 
-      // 強制寫入並同步最新 Apps Script 部署 URL，防止舊快取阻擋寫入
-      const LATEST_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx09-wsjkv5i2OSeewQtUhc8DJ5gKKPx_pIatlZL9P9byHDw1_l8oNNhKibfoG3WQn_/exec";
-      WEB_APP_URL = LATEST_WEB_APP_URL;
-      localStorage.setItem('gender_app_web_url', LATEST_WEB_APP_URL);
+      const savedUrl = localStorage.getItem('gender_app_web_url');
+      if (savedUrl) {
+        WEB_APP_URL = savedUrl;
+      } else {
+        localStorage.setItem('gender_app_web_url', WEB_APP_URL);
+      }
       document.getElementById('cfgWebAppUrl').value = WEB_APP_URL;
 
       document.body.addEventListener('touchstart', initAudio, { once: true });
@@ -647,26 +649,15 @@
         return;
       }
 
-      // 2. Standalone 獨立網頁環境：採用 GET URL 參數 + Image Beacon 多重寫入技術 (100% 避開跨網域 CORS 阻擋)
+      // 2. Standalone 獨立網頁環境：使用單一 POST 請求 (避免多重發送重複寫入)
       if (WEB_APP_URL) {
         try {
-          const params = `action=submitVote&name=${encodeURIComponent(name)}&choice=${encodeURIComponent(choiceText)}&message=${encodeURIComponent(message)}&_t=${Date.now()}`;
-          const submitUrl = `${WEB_APP_URL}${WEB_APP_URL.includes('?') ? '&' : '?'}${params}`;
-
-          // 方法 A: Image Beacon (瀏覽器層級保證發送，不受 CORS 限制)
-          const img = new Image();
-          img.src = submitUrl;
-
-          // 方法 B: fetch GET 請求
-          fetch(submitUrl, { mode: 'no-cors' }).catch(() => {});
-
-          // 方法 C: fetch POST 備援
-          fetch(WEB_APP_URL, {
+          await fetch(WEB_APP_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'submitVote', name, choice: choiceText, message })
-          }).catch(() => {});
+          });
 
           handleVoteSuccess(name, choiceText);
           return;
