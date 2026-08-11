@@ -292,7 +292,7 @@
 
       <div>
         <label class="block text-xs font-black text-slate-700 mb-1">Apps Script Web App 部署網址</label>
-        <input type="text" id="cfgWebAppUrl" value="https://script.google.com/macros/s/AKfycbwOeCTiKlYWrIVKPH9bbLamSHqxBJAm4X-aYtEV94knBH2VnJkj_WbStnn_ZtvgXHku/exec"
+        <input type="text" id="cfgWebAppUrl" value="https://script.google.com/macros/s/AKfycbzd904gX0hQ62GNXk-7EGHchB-197ROhIi7YnIUA_UnfAgHWBEcsuUsxKKnk0fHeiFW/exec"
                class="w-full text-xs p-3 rounded-xl border-2 border-slate-200 font-mono focus:border-pink-400 outline-none">
       </div>
 
@@ -310,7 +310,7 @@
   <script>
     // Global State
     let SPREADSHEET_ID = "19qXMrVbxEdMyabeavaADjN4VCXBQzY37rG9de4CtJLk";
-    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwOeCTiKlYWrIVKPH9bbLamSHqxBJAm4X-aYtEV94knBH2VnJkj_WbStnn_ZtvgXHku/exec";
+    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzd904gX0hQ62GNXk-7EGHchB-197ROhIi7YnIUA_UnfAgHWBEcsuUsxKKnk0fHeiFW/exec";
     
     let selectedGenderChoice = null;
     let genderDataCache = null;
@@ -324,12 +324,9 @@
       if (savedId) SPREADSHEET_ID = savedId;
       document.getElementById('cfgSpreadsheetId').value = SPREADSHEET_ID;
 
-      const savedUrl = localStorage.getItem('gender_app_web_url');
-      if (savedUrl) {
-        WEB_APP_URL = savedUrl;
-      } else {
-        localStorage.setItem('gender_app_web_url', WEB_APP_URL);
-      }
+      // 強制同步更新最新 Web App URL，覆蓋舊瀏覽器快取
+      WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzd904gX0hQ62GNXk-7EGHchB-197ROhIi7YnIUA_UnfAgHWBEcsuUsxKKnk0fHeiFW/exec";
+      localStorage.setItem('gender_app_web_url', WEB_APP_URL);
       document.getElementById('cfgWebAppUrl').value = WEB_APP_URL;
 
       document.body.addEventListener('touchstart', initAudio, { once: true });
