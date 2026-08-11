@@ -4,95 +4,92 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>👶 寶貝性別大猜想與驚喜揭曉！</title>
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Canvas Confetti for particle effects -->
+  <!-- Canvas Confetti for celebrate particle effects -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <!-- Google Fonts for cute Japanese/Chinese font -->
+  <!-- Google Fonts for cute Maru Gothic -->
   <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
   
   <style>
     body {
       font-family: 'Zen Maru Gothic', sans-serif;
-      background: linear-gradient(135deg, #fff5f7 0%, #f0f9ff 100%);
+      background: linear-gradient(135deg, #fff1f2 0%, #f0f9ff 100%);
       min-height: 100vh;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Floating animation for baby items */
+    /* Floating animation for subtle background elements */
     @keyframes floatSlow {
       0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-12px) rotate(4deg); }
+      50% { transform: translateY(-10px) rotate(3deg); }
     }
-    .animate-float { animation: floatSlow 3.5s ease-in-out infinite; }
-    .animate-float-delayed { animation: floatSlow 3.5s ease-in-out 1.8s infinite; }
+    .animate-float { animation: floatSlow 3s ease-in-out infinite; }
 
-    /* Interactive Balloon Wobble Animation */
-    @keyframes balloonShake {
-      0%, 100% { transform: scale(1) rotate(0deg); }
-      20% { transform: scale(1.06) rotate(-5deg); }
-      40% { transform: scale(0.96) rotate(5deg); }
-      60% { transform: scale(1.08) rotate(-3deg); }
-      80% { transform: scale(0.98) rotate(3deg); }
+    /* Interactive Balloon Wobble and Pop Animations */
+    @keyframes balloonWobble {
+      0%, 100% { transform: scale(var(--balloon-scale, 1)) rotate(0deg); }
+      20% { transform: scale(calc(var(--balloon-scale, 1) * 1.1)) rotate(-8deg); }
+      40% { transform: scale(calc(var(--balloon-scale, 1) * 0.95)) rotate(8deg); }
+      60% { transform: scale(calc(var(--balloon-scale, 1) * 1.12)) rotate(-5deg); }
+      80% { transform: scale(calc(var(--balloon-scale, 1) * 0.98)) rotate(5deg); }
     }
-    .balloon-shake { animation: balloonShake 0.6s ease-in-out infinite; }
+    .balloon-wobble { animation: balloonWobble 0.5s ease-in-out; }
+
+    /* Balloon Pop Explosion Effect */
+    @keyframes balloonExplode {
+      0% { transform: scale(1.3); opacity: 1; filter: brightness(1.5); }
+      50% { transform: scale(2); opacity: 0.6; filter: brightness(2); }
+      100% { transform: scale(2.8); opacity: 0; }
+    }
+    .balloon-pop-anim { animation: balloonExplode 0.4s ease-out forwards; }
 
     /* Pulse Glow Border */
     @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 20px rgba(244, 114, 182, 0.5), 0 0 40px rgba(96, 165, 250, 0.3); }
-      50% { box-shadow: 0 0 35px rgba(244, 114, 182, 0.8), 0 0 60px rgba(96, 165, 250, 0.6); }
+      0%, 100% { box-shadow: 0 0 25px rgba(244, 114, 182, 0.6), 0 0 50px rgba(96, 165, 250, 0.4); }
+      50% { box-shadow: 0 0 45px rgba(244, 114, 182, 0.9), 0 0 75px rgba(96, 165, 250, 0.7); }
     }
-    .glow-balloon { animation: pulseGlow 2.5s infinite; }
+    .glow-balloon { animation: pulseGlow 2s infinite; }
 
     /* Modal Backdrop */
     .modal-backdrop {
-      background-color: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(6px);
-    }
-
-    /* Shimmer effect for buttons */
-    @keyframes shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-    .btn-shimmer {
-      background-size: 200% 100%;
-      background-image: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
-      animation: shimmer 3s infinite;
+      background-color: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
     }
   </style>
 </head>
 <body class="text-slate-800 p-3 sm:p-6 flex flex-col items-center justify-between">
 
   <!-- Top Navigation Header -->
-  <header class="w-full max-w-xl text-center my-3 relative">
-    <!-- Sound Effect Toggle Button -->
-    <button onclick="toggleAudio()" id="audioToggleBtn" class="absolute right-0 top-0 bg-white/80 border border-slate-200 text-slate-600 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 active:scale-95 transition">
+  <header class="w-full max-w-xl text-center my-2 sm:my-3 relative">
+    <!-- Sound Toggle Button -->
+    <button onclick="toggleAudio()" id="audioToggleBtn" class="absolute right-0 top-0 bg-white/90 border-2 border-pink-200 text-pink-700 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black shadow-md flex items-center gap-1.5 active:scale-95 transition">
       <span id="audioIcon">🔊</span> <span id="audioText">音效開啟</span>
     </button>
 
-    <div class="inline-block px-4 py-1.5 bg-gradient-to-r from-amber-100 to-rose-100 text-amber-800 rounded-full text-base font-black mb-2 shadow-sm border border-amber-200 animate-pulse">
+    <div class="inline-block px-4 py-1.5 bg-gradient-to-r from-amber-100 via-pink-100 to-sky-100 text-amber-900 rounded-full text-sm sm:text-base font-black mb-2 shadow-sm border border-amber-200/80 animate-pulse">
       ✨ 家族親友專屬 ‧ 幸福大猜想 ✨
     </div>
     <h1 class="text-3xl sm:text-4xl font-black text-slate-800 tracking-wide flex items-center justify-center gap-2">
       <span>👶</span> <span id="babyNameHeader" class="text-pink-600 border-b-4 border-pink-300">小寶貝</span> 性別揭曉 <span>🎉</span>
     </h1>
-    <p class="text-slate-600 font-bold mt-2 text-base sm:text-lg">各位長輩親友，快來猜猜是男寶還是女寶吧！</p>
+    <p class="text-slate-600 font-bold mt-1.5 text-base sm:text-lg">各位長輩親友，快來猜猜是男寶還是女寶吧！</p>
   </header>
 
   <!-- Main Application Container -->
   <main class="w-full max-w-xl bg-white/95 backdrop-blur rounded-3xl p-4 sm:p-7 shadow-2xl border-4 border-white flex-1 flex flex-col justify-between my-2">
     
-    <!-- Tab Navigation Bar -->
-    <div class="flex rounded-2xl bg-slate-100 p-1.5 mb-6 text-base sm:text-lg font-black border border-slate-200/80 shadow-inner">
-      <button id="tabGuessBtn" onclick="switchTab('guess')" class="flex-1 py-3 rounded-xl transition-all shadow bg-white text-pink-600 flex items-center justify-center gap-1">
+    <!-- Navigation Tabs Bar -->
+    <div class="flex rounded-2xl bg-slate-100 p-1.5 mb-5 text-base sm:text-lg font-black border border-slate-200/80 shadow-inner">
+      <button id="tabGuessBtn" onclick="switchTab('guess')" class="flex-1 py-3 rounded-xl transition-all shadow bg-white text-pink-600 flex items-center justify-center gap-1 font-black">
         <span>🗳️</span> 我要猜猜看
       </button>
-      <button id="tabStatsBtn" onclick="switchTab('stats')" class="flex-1 py-3 rounded-xl transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1">
+      <button id="tabStatsBtn" onclick="switchTab('stats')" class="flex-1 py-3 rounded-xl transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1 font-black">
         <span>📊</span> 戰況與祝福
       </button>
-      <button id="tabRevealBtn" onclick="switchTab('reveal')" class="flex-1 py-3 rounded-xl transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1">
+      <button id="tabRevealBtn" onclick="switchTab('reveal')" class="flex-1 py-3 rounded-xl transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1 font-black">
         <span>🎁</span> 驚喜揭曉
       </button>
     </div>
@@ -122,7 +119,7 @@
                     class="flex flex-col items-center justify-center p-5 rounded-2xl border-4 border-slate-200 bg-blue-50/60 hover:bg-blue-100 transition-all active:scale-95 group">
               <span class="text-6xl mb-2 group-hover:scale-110 transition-transform">👦</span>
               <span class="text-2xl font-black text-blue-700">帥氣男寶寶</span>
-              <span class="text-xs font-bold text-blue-500 mt-1 bg-blue-100/80 px-2 py-0.5 rounded-full">Little Prince</span>
+              <span class="text-xs font-bold text-blue-500 mt-1 bg-blue-100/80 px-2.5 py-0.5 rounded-full">Little Prince</span>
             </button>
 
             <!-- Girl Choice Card -->
@@ -130,7 +127,7 @@
                     class="flex flex-col items-center justify-center p-5 rounded-2xl border-4 border-slate-200 bg-pink-50/60 hover:bg-pink-100 transition-all active:scale-95 group">
               <span class="text-6xl mb-2 group-hover:scale-110 transition-transform">👧</span>
               <span class="text-2xl font-black text-pink-700">可愛女寶寶</span>
-              <span class="text-xs font-bold text-pink-500 mt-1 bg-pink-100/80 px-2 py-0.5 rounded-full">Little Princess</span>
+              <span class="text-xs font-bold text-pink-500 mt-1 bg-pink-100/80 px-2.5 py-0.5 rounded-full">Little Princess</span>
             </button>
 
           </div>
@@ -154,7 +151,7 @@
     </section>
 
     <!-- TAB 2: LIVE STATS & BLESSINGS WALL SECTION -->
-    <section id="tabStats" class="hidden space-y-6">
+    <section id="tabStats" class="hidden space-y-5">
       
       <!-- Voting Live Progress -->
       <div class="bg-gradient-to-br from-slate-50 to-pink-50 p-5 rounded-2xl border-2 border-pink-100 shadow-sm">
@@ -173,7 +170,7 @@
           </div>
         </div>
 
-        <div class="flex justify-between text-xs font-bold text-slate-500 px-1">
+        <div class="flex justify-between text-xs sm:text-sm font-bold text-slate-500 px-1">
           <span class="text-blue-600">👦 男寶預測票數：<strong id="boyVotesNum">0</strong> 票</span>
           <span class="text-pink-600">👧 女寶預測票數：<strong id="girlVotesNum">0</strong> 票</span>
         </div>
@@ -183,8 +180,8 @@
       <div>
         <h3 class="text-xl font-black text-slate-800 mb-3 flex items-center justify-between">
           <span>💌 親友溫馨祝福榜</span>
-          <button onclick="fetchBackendData()" class="text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-bold transition">
-            🔄 刷新資料
+          <button onclick="fetchBackendData()" class="text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
+            <span>🔄</span> <span>更新</span>
           </button>
         </h3>
         <div id="blessingsWall" class="max-h-72 overflow-y-auto space-y-3 pr-1">
@@ -197,50 +194,50 @@
     <!-- TAB 3: GRAND REVEAL CEREMONY SECTION -->
     <section id="tabReveal" class="hidden flex-1 flex flex-col items-center justify-center text-center py-2">
       
-      <!-- Stage 1: Mystery Balloon Interactivity -->
-      <div id="revealStage1" class="space-y-6 w-full">
+      <!-- Stage 1: Mystery Balloon Interactive Pop -->
+      <div id="revealStage1" class="space-y-5 w-full">
         <div class="inline-block px-4 py-1.5 bg-amber-100 text-amber-900 rounded-full text-base font-black border border-amber-300 shadow-sm">
-          🎈 點擊氣球揭曉答案 🎈
+          🎈 點擊戳破神秘氣球揭曉 🎈
         </div>
 
-        <!-- Giant Shimmering Mystery Balloon -->
-        <div class="relative py-4">
+        <!-- Giant Interactive Mystery Balloon -->
+        <div class="relative py-2">
           <div id="interactiveBalloon" onclick="handleBalloonTap()" 
-               class="w-56 h-56 sm:w-64 sm:h-64 mx-auto bg-gradient-to-br from-amber-200 via-pink-300 to-sky-300 rounded-full flex items-center justify-center shadow-2xl glow-balloon cursor-pointer transform hover:scale-105 active:scale-95 transition-transform relative border-4 border-white">
+               class="w-56 h-56 sm:w-64 sm:h-64 mx-auto bg-gradient-to-br from-amber-200 via-pink-300 to-sky-300 rounded-full flex items-center justify-center shadow-2xl glow-balloon cursor-pointer transition-transform relative border-4 border-white select-none">
             
             <div class="w-48 h-48 sm:w-52 sm:h-52 bg-white/90 rounded-full flex flex-col items-center justify-center shadow-inner p-4 border-2 border-pink-100">
               <span id="balloonEmoji" class="text-6xl sm:text-7xl mb-1 animate-float">🎁</span>
-              <span id="balloonText" class="text-2xl font-black text-slate-800">連續連戳 <span id="tapCountNeeded" class="text-pink-600">3</span> 下</span>
-              <span class="text-xs font-bold text-pink-500 mt-1 bg-pink-50 px-2 py-0.5 rounded-full">戳破神秘氣球！</span>
+              <span id="balloonText" class="text-2xl font-black text-slate-800">還需要連戳 <span id="tapCountNeeded" class="text-pink-600 text-3xl">3</span> 下</span>
+              <span class="text-xs font-bold text-pink-500 mt-1 bg-pink-50 px-2.5 py-0.5 rounded-full">戳破氣球揭曉性別！</span>
             </div>
 
-            <!-- Decorative Balloon Ribbon String -->
+            <!-- Balloon String Ribbon -->
             <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 w-2 h-10 bg-amber-300 rounded-full"></div>
           </div>
         </div>
 
-        <p class="text-xl font-black text-slate-700">準備好了嗎？點擊上方氣球啟動揭曉！</p>
+        <p class="text-lg sm:text-xl font-black text-slate-700">準備好了嗎？點擊上面氣球開始揭曉！</p>
 
         <button onclick="handleBalloonTap()" 
-                class="w-full py-5 bg-gradient-to-r from-amber-400 via-rose-400 to-purple-500 hover:opacity-95 text-white text-2xl font-black rounded-2xl shadow-xl active:scale-95 transition-all animate-bounce flex items-center justify-center gap-2">
-          <span>✨</span> <span>點擊戳破魔法氣球</span>
+                class="w-full py-5 bg-gradient-to-r from-amber-400 via-rose-400 to-purple-500 hover:opacity-95 text-white text-2xl font-black rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+          <span>✨</span> <span>點擊戳破氣球</span>
         </button>
       </div>
 
       <!-- Stage 2: Suspense Drums & Countdown -->
       <div id="revealStage2" class="hidden space-y-6 my-auto py-10 w-full">
-        <p class="text-2xl sm:text-3xl font-black text-slate-700">答 案 即 將 揭 曉...</p>
+        <p class="text-2xl sm:text-3xl font-black text-slate-700 tracking-wider">答 案 即 將 揭 曉...</p>
         <div id="countdownNum" class="text-9xl font-black text-transparent bg-clip-text bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 animate-pulse my-4">
           3
         </div>
         <p class="text-xl font-bold text-amber-600 animate-bounce">🥁 咚咚咚... 屏息以待！</p>
       </div>
 
-      <!-- Stage 3: THE GRAND RESULT CARD -->
+      <!-- Stage 3: THE GRAND RESULT ANNOUNCEMENT CARD -->
       <div id="revealStage3" class="hidden space-y-5 w-full my-auto">
         <div id="resultCard" class="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-white to-pink-50 border-4 border-pink-300 shadow-2xl transform transition-all duration-700 scale-95 opacity-0">
           
-          <div class="inline-block px-6 py-2 bg-yellow-300 text-yellow-950 rounded-full text-lg font-black mb-3 shadow border border-yellow-400">
+          <div class="inline-block px-6 py-2 bg-yellow-300 text-yellow-950 rounded-full text-lg sm:text-xl font-black mb-3 shadow border border-yellow-400">
             🎉 揭曉結果 🎉
           </div>
 
@@ -249,7 +246,7 @@
             恭喜！是個女寶寶 👧
           </div>
 
-          <!-- Cute Baby Avatar Icon -->
+          <!-- Baby Avatar Icon -->
           <div id="babyAvatar" class="text-8xl sm:text-9xl my-4 animate-float">
             👸
           </div>
@@ -264,9 +261,9 @@
             </p>
           </div>
 
-          <!-- Re-trigger Fireworks & Share Buttons -->
+          <!-- Interactive Fireworks & Share Actions -->
           <div class="flex flex-col sm:flex-row gap-3 mt-4">
-            <button onclick="fireConfettiBurst()" class="flex-1 py-4 bg-pink-500 hover:bg-pink-600 text-white font-black rounded-xl transition text-lg shadow active:scale-95 flex items-center justify-center gap-1">
+            <button onclick="triggerConfettiBurst()" class="flex-1 py-4 bg-pink-500 hover:bg-pink-600 text-white font-black rounded-xl transition text-lg shadow active:scale-95 flex items-center justify-center gap-1">
               <span>🎆</span> 再放一次慶祝煙火！
             </button>
             <button onclick="shareAppUrl()" class="py-4 px-5 bg-slate-800 hover:bg-slate-700 text-white font-black rounded-xl transition text-lg shadow active:scale-95 flex items-center justify-center gap-1">
@@ -285,7 +282,7 @@
     ❤️ 溫馨傳遞 ‧ 家族愛好連線 ❤️
   </footer>
 
-  <!-- Custom Elder-Friendly Modal Dialog (Replaces Browser Alert) -->
+  <!-- Custom Modal Alert Box -->
   <div id="customModal" class="fixed inset-0 modal-backdrop hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl border-4 border-pink-200 space-y-4 transform transition-all scale-100">
       <div id="modalIcon" class="text-6xl">💡</div>
@@ -307,17 +304,31 @@
     const MAX_TAPS = 3;
 
     window.onload = function() {
+      // Unlock AudioContext on mobile touch
+      document.body.addEventListener('touchstart', initAudio, { once: true });
+      document.body.addEventListener('click', initAudio, { once: true });
       fetchBackendData();
     };
 
-    /* Toggle Audio Mute State */
+    /* Web Audio Initialization & iOS Safari Unlock */
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
     function toggleAudio() {
+      initAudio();
       isAudioEnabled = !isAudioEnabled;
       document.getElementById('audioIcon').innerText = isAudioEnabled ? '🔊' : '🔇';
       document.getElementById('audioText').innerText = isAudioEnabled ? '音效開啟' : '靜音模式';
+      if (isAudioEnabled) playTapSound();
     }
 
-    /* Tab Switcher */
+    /* Tab Switcher Logic */
     function switchTab(tab) {
       playTapSound();
       const guessTab = document.getElementById('tabGuess');
@@ -328,30 +339,30 @@
       const statsBtn = document.getElementById('tabStatsBtn');
       const revealBtn = document.getElementById('tabRevealBtn');
 
-      // Reset tab visibility
       guessTab.classList.add('hidden');
       statsTab.classList.add('hidden');
       revealTab.classList.add('hidden');
 
-      guessBtn.className = "flex-1 py-3 rounded-xl transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1";
-      statsBtn.className = "flex-1 py-3 rounded-xl transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1";
-      revealBtn.className = "flex-1 py-3 rounded-xl transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1";
+      const defaultBtn = "flex-1 py-3 rounded-xl transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1 font-black";
+      guessBtn.className = defaultBtn;
+      statsBtn.className = defaultBtn;
+      revealBtn.className = defaultBtn;
 
-      const activeStyle = "flex-1 py-3 rounded-xl transition-all shadow bg-white text-pink-600 flex items-center justify-center gap-1 font-black";
+      const activeBtn = "flex-1 py-3 rounded-xl transition-all shadow bg-white text-pink-600 flex items-center justify-center gap-1 font-black";
 
       if (tab === 'guess') {
         guessTab.classList.remove('hidden');
-        guessBtn.className = activeStyle;
+        guessBtn.className = activeBtn;
       } else if (tab === 'stats') {
         statsTab.classList.remove('hidden');
-        statsBtn.className = activeStyle;
+        statsBtn.className = activeBtn;
       } else if (tab === 'reveal') {
         revealTab.classList.remove('hidden');
-        revealBtn.className = activeStyle;
+        revealBtn.className = activeBtn;
       }
     }
 
-    /* Gender Selection Handling */
+    /* Gender Card Selection Handler */
     function selectGender(gender) {
       playTapSound();
       selectedGenderChoice = gender;
@@ -367,7 +378,7 @@
       }
     }
 
-    /* Modal Helper */
+    /* Modal Dialog Helper */
     function showModal(title, msg, icon = "💡") {
       document.getElementById('modalTitle').innerText = title;
       document.getElementById('modalMessage').innerText = msg;
@@ -380,7 +391,6 @@
       document.getElementById('customModal').classList.add('hidden');
     }
 
-    /* Backend Data Fetching */
     function fetchBackendData() {
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
@@ -388,7 +398,7 @@
           .withFailureHandler(onDataError)
           .getGenderData();
       } else {
-        // Fallback simulated data for local standalone testing
+        // Fallback simulated data for local/offline testing
         setTimeout(() => {
           onDataFetched({
             success: true,
@@ -406,7 +416,7 @@
               ]
             }
           });
-        }, 800);
+        }, 600);
       }
     }
 
@@ -444,7 +454,7 @@
           document.getElementById('girlPercent').innerText = `${girlPct}%`;
         }
 
-        // Render Blessings Wall Cards
+        // Render Blessings Wall
         const wall = document.getElementById('blessingsWall');
         if (res.votes.records && res.votes.records.length > 0) {
           wall.innerHTML = res.votes.records.slice().reverse().map(r => `
@@ -452,7 +462,7 @@
               <div>
                 <div class="flex items-center gap-2">
                   <span class="font-black text-slate-800 text-base">${escapeHtml(r.name)}</span>
-                  <span class="text-xs px-2.5 py-1 rounded-full ${r.choice.includes('男') ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'} font-extrabold">
+                  <span class="text-xs px-2.5 py-1 rounded-full ${String(r.choice).includes('男') ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'} font-extrabold">
                     ${escapeHtml(r.choice)}
                   </span>
                 </div>
@@ -467,16 +477,16 @@
     }
 
     function onDataError(err) {
-      showModal("連線異常", "目前無法連線至 Google 試算表，請重新整理頁面再試", "❌");
+      showModal("連線異常", "目前無法讀取試算表資料，請稍後重新整理頁面再試！", "❌");
     }
 
-    /* Submit Vote Functionality */
+    /* Submit Guess to Google Sheet */
     function submitGuess() {
       const name = document.getElementById('voterName').value.trim();
       const message = document.getElementById('voterMessage').value.trim();
 
       if (!name) {
-        showModal("請輸入您的稱呼", "請填寫您的稱呼（例如：外公、大阿姨、叔叔），讓大家知道這是誰的專屬祝福喔！", "✍️");
+        showModal("請輸入您的稱呼", "請填寫您的稱呼（例如：外公、大阿姨、二叔叔），讓大家知道這是誰的祝福喔！", "✍️");
         return;
       }
       if (!selectedGenderChoice) {
@@ -487,54 +497,58 @@
       const choiceText = selectedGenderChoice === 'boy' ? '帥氣男寶寶' : '可愛女寶寶';
       const btn = document.getElementById('submitVoteBtn');
       btn.disabled = true;
-      btn.innerHTML = `<span>⏳</span> <span>正在傳送祝福中...</span>`;
+      btn.innerHTML = `<span>⏳</span> <span>正在寫入試算表...</span>`;
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(() => {
             btn.disabled = false;
             btn.innerHTML = `<span class="text-3xl">💖</span> <span>確認送出我的猜測</span>`;
-            showModal("猜測成功！", `謝謝${name}！您的預測【${choiceText}】已經成功記錄囉！快切換到「驚喜揭曉」頁面揭曉吧！`, "🎉");
+            showModal("猜測成功！", `謝謝 ${name}！您的預測【${choiceText}】已經寫入紀錄囉！請點選「驚喜揭曉」看結果！`, "🎉");
             fetchBackendData();
           })
           .withFailureHandler((err) => {
             btn.disabled = false;
             btn.innerHTML = `<span class="text-3xl">💖</span> <span>確認送出我的猜測</span>`;
-            showModal("失敗", "紀錄失敗：" + err, "❌");
+            showModal("寫入失敗", "傳送記錄失敗：" + err, "❌");
           })
           .submitVote(name, choiceText, message);
       } else {
-        // Fallback for local testing
         setTimeout(() => {
           btn.disabled = false;
           btn.innerHTML = `<span class="text-3xl">💖</span> <span>確認送出我的猜測</span>`;
-          showModal("猜測成功！", `謝謝${name}！您的預測【${choiceText}】已經成功記錄囉！`, "🎉");
+          showModal("猜測成功！", `謝謝 ${name}！您的預測【${choiceText}】已經寫入紀錄囉！`, "🎉");
         }, 600);
       }
     }
 
-    /* Interactive Balloon Tap Handler */
     function handleBalloonTap() {
       tapCount++;
-      playPopSound();
+      playPopProgressSound(tapCount);
 
       const balloon = document.getElementById('interactiveBalloon');
       const tapText = document.getElementById('tapCountNeeded');
 
-      // Wobble balloon effect
-      balloon.classList.add('balloon-shake');
-      setTimeout(() => balloon.classList.remove('balloon-shake'), 600);
+      // Dynamic balloon scale and wobble effect based on taps
+      const scaleVal = 1 + (tapCount * 0.08);
+      balloon.style.setProperty('--balloon-scale', scaleVal);
+      balloon.classList.remove('balloon-wobble');
+      void balloon.offsetWidth; // Trigger reflow
+      balloon.classList.add('balloon-wobble');
 
       const remaining = MAX_TAPS - tapCount;
       if (remaining > 0) {
         tapText.innerText = remaining;
       } else {
-        // Trigger reveal ceremony
-        startGrandReveal();
+        // Final Tap: Explode balloon and launch countdown
+        balloon.classList.add('balloon-pop-anim');
+        setTimeout(() => {
+          startGrandReveal();
+        }, 350);
       }
     }
 
-    /* Grand Reveal Ceremony Countdown */
+    /* Grand Reveal Countdown Flow */
     function startGrandReveal() {
       playDrumrollSound();
       
@@ -563,12 +577,12 @@
       }, 1000);
     }
 
-    /* Render Final Gender Result */
     function renderRevealResult() {
       const rawGender = genderDataCache ? genderDataCache.gender : '女';
       const customMsg = genderDataCache ? genderDataCache.customMessage : '謝謝全家人的愛與祝福！';
       
-      const isBoy = rawGender.includes('男') || rawGender.toLowerCase().includes('boy');
+      // Robust gender string parsing logic
+      const isBoy = checkIsBoy(rawGender);
       
       const card = document.getElementById('resultCard');
       const title = document.getElementById('genderTitle');
@@ -589,13 +603,19 @@
 
       msgText.innerText = customMsg;
 
-      // Play victory audio & fire confetti burst
+      // Play victory sound & trigger celebratory confetti blast
       playCelebrationFanfare();
-      fireConfettiBurst(isBoy ? ['#3b82f6', '#60a5fa', '#fef08a', '#22c55e'] : ['#ec4899', '#f472b6', '#fef08a', '#a855f7']);
+      triggerConfettiBurst(isBoy ? ['#3b82f6', '#60a5fa', '#fef08a', '#22c55e'] : ['#ec4899', '#f472b6', '#fef08a', '#a855f7']);
     }
 
-    /* Confetti Particle Burst */
-    function fireConfettiBurst(colors = ['#ec4899', '#3b82f6', '#f59e0b', '#10b981']) {
+    function checkIsBoy(str) {
+      if (!str) return false;
+      const s = String(str).trim().toLowerCase();
+      return s.includes('男') || s.includes('boy') || s.includes('male') || s.includes('子') || s.includes('公') || s.includes('帥');
+    }
+
+    /* Confetti Burst Particle Cannon */
+    function triggerConfettiBurst(colors = ['#ec4899', '#3b82f6', '#f59e0b', '#10b981']) {
       if (typeof confetti === 'function') {
         const count = 250;
         const defaults = { origin: { y: 0.65 } };
@@ -615,13 +635,6 @@
       }
     }
 
-    /* Web Audio Sound Synthesizers (Zero external mp3 files needed) */
-    function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-    }
-
     function playTapSound() {
       if (!isAudioEnabled) return;
       try {
@@ -630,7 +643,7 @@
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.frequency.value = 400;
+        osc.frequency.value = 450;
         gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
         osc.start();
@@ -638,7 +651,7 @@
       } catch (e) {}
     }
 
-    function playPopSound() {
+    function playPopProgressSound(stage) {
       if (!isAudioEnabled) return;
       try {
         initAudio();
@@ -646,8 +659,11 @@
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.15);
+        
+        const pitch = 300 + (stage * 200);
+        osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(pitch * 1.8, audioCtx.currentTime + 0.15);
+        
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
         osc.start();
@@ -663,7 +679,7 @@
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.frequency.value = 650;
+        osc.frequency.value = 700;
         gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
         osc.start();
@@ -681,8 +697,8 @@
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(280, audioCtx.currentTime + 3);
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 3);
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3);
         osc.start();
         osc.stop(audioCtx.currentTime + 3);
@@ -693,7 +709,7 @@
       if (!isAudioEnabled) return;
       try {
         initAudio();
-        const notes = [261.63, 329.63, 392.00, 523.25, 659.25];
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
         notes.forEach((freq, idx) => {
           setTimeout(() => {
             const osc = audioCtx.createOscillator();
@@ -705,12 +721,11 @@
             gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
             osc.start();
             osc.stop(audioCtx.currentTime + 0.8);
-          }, idx * 140);
+          }, idx * 130);
         });
       } catch (e) {}
     }
 
-    /* Share App Link Handler */
     function shareAppUrl() {
       const url = window.location.href;
       if (navigator.clipboard) {
