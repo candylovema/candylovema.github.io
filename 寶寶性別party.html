@@ -296,7 +296,7 @@
 
       <div>
         <label class="block text-xs font-black text-slate-700 mb-1">Apps Script Web App 部署網址</label>
-        <input type="text" id="cfgWebAppUrl" value="https://script.google.com/macros/s/AKfycby910NbYRDAitEf2-aAY2GKxZ33rlGiaIcYS6zACRpmYitz_Q2qklHJTui3V3jeTP3Y/exec"
+        <input type="text" id="cfgWebAppUrl" value="https://script.google.com/macros/s/AKfycbwOeCTiKlYWrIVKPH9bbLamSHqxBJAm4X-aYtEV94knBH2VnJkj_WbStnn_ZtvgXHku/exec"
                class="w-full text-xs p-3 rounded-xl border-2 border-slate-200 font-mono focus:border-pink-400 outline-none">
       </div>
 
@@ -314,7 +314,7 @@
   <script>
     // Global State
     let SPREADSHEET_ID = "19qXMrVbxEdMyabeavaADjN4VCXBQzY37rG9de4CtJLk";
-    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycby910NbYRDAitEf2-aAY2GKxZ33rlGiaIcYS6zACRpmYitz_Q2qklHJTui3V3jeTP3Y/exec";
+    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwOeCTiKlYWrIVKPH9bbLamSHqxBJAm4X-aYtEV94knBH2VnJkj_WbStnn_ZtvgXHku/exec";
     
     let selectedGenderChoice = null;
     let genderDataCache = null;
@@ -328,8 +328,9 @@
       if (savedId) SPREADSHEET_ID = savedId;
       document.getElementById('cfgSpreadsheetId').value = SPREADSHEET_ID;
 
+      // 自動覆蓋快取並更新為最新的 Apps Script 部署網址
       const savedUrl = localStorage.getItem('gender_app_web_url');
-      if (savedUrl) {
+      if (savedUrl && !savedUrl.includes('AKfycby910')) {
         WEB_APP_URL = savedUrl;
       } else {
         localStorage.setItem('gender_app_web_url', WEB_APP_URL);
@@ -639,6 +640,7 @@
       btn.disabled = true;
       btn.innerHTML = `<span>⏳</span> <span>正在傳送猜測...</span>`;
 
+      // 優先使用 GAS 內建 API
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(() => handleVoteSuccess(name, choiceText))
@@ -651,29 +653,26 @@
         return;
       }
 
+      // Standalone HTML Web App POST 請求 (使用 text/plain 避免 CORS preflight OPTIONS 請求被阻擋)
       if (WEB_APP_URL) {
         try {
           await fetch(WEB_APP_URL, {
             method: 'POST',
             mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ name, choice: choiceText, message })
           });
+          
           handleVoteSuccess(name, choiceText);
           return;
         } catch (e) {
-          console.warn("Webhook submit failed, falling back to local simulation", e);
+          console.warn("Webhook submit failed", e);
         }
       }
 
-      setTimeout(() => {
-        if (!genderDataCache) genderDataCache = getMockFallbackData();
-        if (selectedGenderChoice === 'boy') genderDataCache.votes.boy++;
-        else genderDataCache.votes.girl++;
-        genderDataCache.votes.total++;
-        genderDataCache.votes.records.push({ name, choice: choiceText, message, time: new Date().toLocaleTimeString() });
-        handleVoteSuccess(name, choiceText);
-      }, 500);
+      btn.disabled = false;
+      btn.innerHTML = `<span class="text-2xl sm:text-3xl">💖</span> <span>確認送出我的猜測</span>`;
+      showModal("傳送失敗", "無法連線至伺服器，請檢查網路連線或設定網址。", "❌");
     }
 
     function handleVoteSuccess(name, choiceText) {
@@ -681,8 +680,17 @@
       btn.disabled = false;
       btn.innerHTML = `<span class="text-2xl sm:text-3xl">💖</span> <span>確認送出我的猜測</span>`;
       
+      // 重置表單狀態，讓後續投票不卡住
+      document.getElementById('voterName').value = '';
+      document.getElementById('voterMessage').value = '';
+      selectedGenderChoice = null;
+      document.getElementById('btnBoy').className = "flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border-4 border-slate-200 bg-blue-50/60 hover:bg-blue-100 transition-all active:scale-95 group";
+      document.getElementById('btnGirl').className = "flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border-4 border-slate-200 bg-pink-50/60 hover:bg-pink-100 transition-all active:scale-95 group";
+
       showModal("猜測成功！", `謝謝 ${name}！您的預測【${choiceText}】已經記錄囉！快點選「驚喜揭曉」看結果！`, "🎉");
-      onDataFetched(genderDataCache);
+      
+      // 立即刷新戰況與祝福榜
+      setTimeout(() => fetchBackendData(false), 1500);
     }
 
     function handleBalloonTap() {
