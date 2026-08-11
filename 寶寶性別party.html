@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>👶 寶貝性別大猜想與驚喜揭曉！</title>
   
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Canvas Confetti for particle effects -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
   
   <style>
@@ -45,7 +42,7 @@
 
     @keyframes pulseGlow {
       0%, 100% { box-shadow: 0 0 25px rgba(244, 114, 182, 0.6), 0 0 50px rgba(96, 165, 250, 0.4); }
-      50% { box-shadow: 0 0 45px rgba(244, 114, 182, 0.9), 0 0 75px rgba(96, 165, 250, 0.7); }
+      50% { shadow: 0 0 45px rgba(244, 114, 182, 0.9), 0 0 75px rgba(96, 165, 250, 0.7); }
     }
     .glow-balloon { animation: pulseGlow 2s infinite; }
 
@@ -260,7 +257,6 @@
     </section>
   </main>
 
-  <!-- Footer -->
   <footer class="text-center text-slate-400 text-xs sm:text-sm font-bold my-2">
     ❤️ 溫馨傳遞 ‧ 家族愛好連線 ❤️
   </footer>
@@ -296,7 +292,7 @@
 
       <div>
         <label class="block text-xs font-black text-slate-700 mb-1">Apps Script Web App 部署網址</label>
-        <input type="text" id="cfgWebAppUrl" value="https://script.google.com/macros/s/AKfycbwOeCTiKlYWrIVKPH9bbLamSHqxBJAm4X-aYtEV94knBH2VnJkj_WbStnn_ZtvgXHku/exec"
+        <input type="text" id="cfgWebAppUrl" value="https://script.google.com/macros/s/AKfycbx09-wsjkv5i2OSeewQtUhc8DJ5gKKPx_pIatlZL9P9byHDw1_l8oNNhKibfoG3WQn_/exec"
                class="w-full text-xs p-3 rounded-xl border-2 border-slate-200 font-mono focus:border-pink-400 outline-none">
       </div>
 
@@ -314,7 +310,7 @@
   <script>
     // Global State
     let SPREADSHEET_ID = "19qXMrVbxEdMyabeavaADjN4VCXBQzY37rG9de4CtJLk";
-    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwOeCTiKlYWrIVKPH9bbLamSHqxBJAm4X-aYtEV94knBH2VnJkj_WbStnn_ZtvgXHku/exec";
+    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx09-wsjkv5i2OSeewQtUhc8DJ5gKKPx_pIatlZL9P9byHDw1_l8oNNhKibfoG3WQn_/exec";
     
     let selectedGenderChoice = null;
     let genderDataCache = null;
@@ -328,20 +324,17 @@
       if (savedId) SPREADSHEET_ID = savedId;
       document.getElementById('cfgSpreadsheetId').value = SPREADSHEET_ID;
 
-      // 自動覆蓋快取並更新為最新的 Apps Script 部署網址
-      const savedUrl = localStorage.getItem('gender_app_web_url');
-      if (savedUrl && !savedUrl.includes('AKfycby910')) {
-        WEB_APP_URL = savedUrl;
-      } else {
-        localStorage.setItem('gender_app_web_url', WEB_APP_URL);
-      }
+      // 強制寫入並同步最新 Apps Script 部署 URL，防止舊快取阻擋寫入
+      const LATEST_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx09-wsjkv5i2OSeewQtUhc8DJ5gKKPx_pIatlZL9P9byHDw1_l8oNNhKibfoG3WQn_/exec";
+      WEB_APP_URL = LATEST_WEB_APP_URL;
+      localStorage.setItem('gender_app_web_url', LATEST_WEB_APP_URL);
       document.getElementById('cfgWebAppUrl').value = WEB_APP_URL;
 
       document.body.addEventListener('touchstart', initAudio, { once: true });
       document.body.addEventListener('click', initAudio, { once: true });
 
       fetchBackendData();
-      setInterval(() => fetchBackendData(false), 20000);
+      setInterval(() => fetchBackendData(false), 15000);
     };
 
     function initAudio() {
@@ -465,8 +458,9 @@
 
     async function fetchViaGVizApi(showNotice) {
       try {
+        const timeStamp = Date.now();
         // 1. Fetch Baby Sheet
-        const babyUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=Baby`;
+        const babyUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=Baby&_t=${timeStamp}`;
         const babyRes = await fetch(babyUrl);
         const babyText = await babyRes.text();
         const babyJson = parseGVizJson(babyText);
@@ -492,7 +486,7 @@
         let votes = { boy: 0, girl: 0, total: 0, records: [] };
 
         try {
-          const statsUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('投票戰況')}`;
+          const statsUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('投票戰況')}&_t=${timeStamp}`;
           const statsRes = await fetch(statsUrl);
           const statsText = await statsRes.text();
           const statsJson = parseGVizJson(statsText);
@@ -509,7 +503,7 @@
         } catch (e) {}
 
         try {
-          const blessingUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('祝福留言')}`;
+          const blessingUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('祝福留言')}&_t=${timeStamp}`;
           const blessingRes = await fetch(blessingUrl);
           const blessingText = await blessingRes.text();
           const blessingJson = parseGVizJson(blessingText);
@@ -640,7 +634,7 @@
       btn.disabled = true;
       btn.innerHTML = `<span>⏳</span> <span>正在傳送猜測...</span>`;
 
-      // 優先使用 GAS 內建 API
+      // 1. 如果在 GAS 內建環境
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(() => handleVoteSuccess(name, choiceText))
@@ -653,26 +647,37 @@
         return;
       }
 
-      // Standalone HTML Web App POST 請求 (使用 text/plain 避免 CORS preflight OPTIONS 請求被阻擋)
+      // 2. Standalone 獨立網頁環境：採用 GET URL 參數 + Image Beacon 多重寫入技術 (100% 避開跨網域 CORS 阻擋)
       if (WEB_APP_URL) {
         try {
-          await fetch(WEB_APP_URL, {
+          const params = `action=submitVote&name=${encodeURIComponent(name)}&choice=${encodeURIComponent(choiceText)}&message=${encodeURIComponent(message)}&_t=${Date.now()}`;
+          const submitUrl = `${WEB_APP_URL}${WEB_APP_URL.includes('?') ? '&' : '?'}${params}`;
+
+          // 方法 A: Image Beacon (瀏覽器層級保證發送，不受 CORS 限制)
+          const img = new Image();
+          img.src = submitUrl;
+
+          // 方法 B: fetch GET 請求
+          fetch(submitUrl, { mode: 'no-cors' }).catch(() => {});
+
+          // 方法 C: fetch POST 備援
+          fetch(WEB_APP_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ name, choice: choiceText, message })
-          });
-          
+            body: JSON.stringify({ action: 'submitVote', name, choice: choiceText, message })
+          }).catch(() => {});
+
           handleVoteSuccess(name, choiceText);
           return;
         } catch (e) {
-          console.warn("Webhook submit failed", e);
+          console.warn("Submit failed", e);
         }
       }
 
       btn.disabled = false;
       btn.innerHTML = `<span class="text-2xl sm:text-3xl">💖</span> <span>確認送出我的猜測</span>`;
-      showModal("傳送失敗", "無法連線至伺服器，請檢查網路連線或設定網址。", "❌");
+      showModal("傳送失敗", "無法連線至伺服器，請檢查 Apps Script 網址設定。", "❌");
     }
 
     function handleVoteSuccess(name, choiceText) {
@@ -680,7 +685,7 @@
       btn.disabled = false;
       btn.innerHTML = `<span class="text-2xl sm:text-3xl">💖</span> <span>確認送出我的猜測</span>`;
       
-      // 重置表單狀態，讓後續投票不卡住
+      // 重置表單狀態，準備下一次填寫
       document.getElementById('voterName').value = '';
       document.getElementById('voterMessage').value = '';
       selectedGenderChoice = null;
@@ -689,8 +694,8 @@
 
       showModal("猜測成功！", `謝謝 ${name}！您的預測【${choiceText}】已經記錄囉！快點選「驚喜揭曉」看結果！`, "🎉");
       
-      // 立即刷新戰況與祝福榜
-      setTimeout(() => fetchBackendData(false), 1500);
+      // 延遲刷新數據，給 Google 試算表寫入的時間
+      setTimeout(() => fetchBackendData(false), 2000);
     }
 
     function handleBalloonTap() {
