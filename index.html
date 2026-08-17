@@ -14,7 +14,7 @@
     <script src="https://unpkg.com/lucide-react@0.284.0/dist/umd/lucide-react.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght=300;400;600;800&family=Noto+Sans+TC:wght=400;500;700;900&family=Noto+Serif+TC:wght=400;500;700;900&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&family=Liu+Jian+Mao+Cao&family=Long+Cang&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700;900&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&family=Liu+Jian+Mao+Cao&family=Long+Cang&display=swap');
         
         body { font-family: 'Outfit', 'Noto Sans TC', sans-serif; background-color: #F4F4F5; }
         .animate-in { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -81,6 +81,8 @@
         const FileText = lib.FileText || FallbackIcon;
         const ShieldAlert = lib.AlertTriangle || FallbackIcon;
         const Wand2 = lib.Wand2 || Sparkles;
+        const Bookmark = lib.Bookmark || FallbackIcon;
+        const Pin = lib.Pin || FallbackIcon;
 
         const availableIcons = {
             LayoutDashboard: { icon: LayoutDashboard, color: 'text-blue-500' },
@@ -95,11 +97,11 @@
             Sparkles: { icon: Sparkles, color: 'text-yellow-500' },
             Star: { icon: Star, color: 'text-yellow-400' },
             ShoppingCart: { icon: ShoppingCart, color: 'text-cyan-500' },
+            FileText: { icon: FileText, color: 'text-amber-500' },
             ExternalLink: { icon: ExternalLink, color: 'opacity-70' }
         };
 
-        // 🟢 已更新為您最新的 Apps Script API 部署網址
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwSdI3L8H_7SKm3LPet8V84kSc6KEwpBxFeHdFIQaJfI3ElMkRtZCnOgWzRE8BC2uNH/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbw50BLFcwgfOWHQqTm9UGpolgH8FqFE7NOacMBIcUc4MKnoiwVVH0HHB8mLe0kJkv4QnQ/exec";
 
         const formatImageUrl = (url) => {
             const transparentFallback = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -131,8 +133,9 @@
             mainBgColor: '#F4F4F5', mainTextColor: '#27272a', cardBgColor: '#ffffff', cardTextColor: '#3f3f46', kpiBgColor: '#ffffff',
             menuDashName: '營運分析中心', menuMarketingName: '行銷與推薦', menuBooksName: '總商品庫庫存',
             menuOrdersName: '銷售與物流', menuCsName: '智能客戶關係', menuExtName: '外部系統鏈接',
+            menuNotesName: '工作記事本',
             menuDashIcon: 'LayoutDashboard', menuMarketingIcon: 'Sparkles', menuBooksIcon: 'Database',
-            menuOrdersIcon: 'Truck', menuCsIcon: 'Bot', menuExtIcon: 'ExternalLink'
+            menuOrdersIcon: 'Truck', menuCsIcon: 'Bot', menuNotesIcon: 'FileText', menuExtIcon: 'ExternalLink'
         };
 
         const defaultUI = {
@@ -202,6 +205,7 @@
             const [orders, setOrders] = useState([]); 
             const [aiLogs, setAiLogs] = useState([]); 
             const [kpis, setKpis] = useState([]); 
+            const [notes, setNotes] = useState([]); // 📝 記事本狀態
             const [settings, setSettings] = useState(defaultSettings); 
             const [ui, setUi] = useState({}); 
             
@@ -214,7 +218,7 @@
 
             const [isLoggingIn, setIsLoggingIn] = useState(false);
             const [loadStatus, setLoadStatus] = useState({
-                kpis: true, orders: true, cs: true, carousels: true, choices: true, books: true
+                kpis: true, orders: true, cs: true, carousels: true, choices: true, books: true, notes: true
             });
 
             const [showBookModal, setShowBookModal] = useState(false);
@@ -228,6 +232,12 @@
             const [editingCSLog, setEditingCSLog] = useState(null);
             const [csResponseText, setCsResponseText] = useState('');
             const [isAIGenerating, setIsAIGenerating] = useState(false);
+
+            // 📝 記事本相關 state
+            const [showNoteModal, setShowNoteModal] = useState(false);
+            const [editingNote, setEditingNote] = useState(null);
+            const [noteSearchQuery, setNoteSearchQuery] = useState('');
+            const [noteCategoryFilter, setNoteCategoryFilter] = useState('全部');
             
             // 書籍 AI 生成簡介與心得 state
             const [modalBookTitle, setModalBookTitle] = useState('');
@@ -252,7 +262,7 @@
             });
 
             const [expandedMenus, setExpandedMenus] = useState({
-                group_dash: true, group_marketing: false, group_books: false, group_orders: false, group_cs: false, group_external: false, group_settings: false
+                group_dash: true, group_marketing: false, group_books: false, group_orders: false, group_cs: false, group_notes: true, group_external: false, group_settings: false
             });
 
             const toggleMenu = (menuId) => setExpandedMenus(prev => ({ ...prev, [menuId]: !prev[menuId] }));
@@ -272,7 +282,6 @@
                 return hh === '00' && min === '00' ? `${yyyy}/${mm}/${dd}` : `${yyyy}/${mm}/${dd} ${hh}:${min}`;
             };
 
-            // 當編輯書籍 Modal 開啟時同步內部狀態
             useEffect(() => {
                 if (showBookModal) {
                     setModalBookTitle(editingBook?.title || '');
@@ -350,7 +359,6 @@
                 }
             };
 
-            // 利用 Apps Script 後端呼叫 Gemini API 自動生成 Book 的 intro 與 心得
             const handleGenerateBookAI = async () => {
                 if (!modalBookTitle.trim()) {
                     showMsg('請先填寫書籍標題，以供 AI 生成介紹與心得！');
@@ -382,7 +390,6 @@
                 }
             };
 
-            // 利用 Apps Script 後端呼叫 Gemini API 自動生成客服回覆信函
             const handleGenerateAI = async () => {
                 if (!editingCSLog) return;
                 setIsAIGenerating(true);
@@ -448,6 +455,7 @@
                 setCarousels([]);
                 setOrders([]);
                 setAiLogs([]);
+                setNotes([]);
                 showMsg('Session 令牌已安全銷毀，您已成功登出。');
             };
 
@@ -491,6 +499,12 @@
                     if(res?.data) setBooks(res.data); 
                     setLoadStatus(prev => ({...prev, books: false})); 
                 }).catch(() => setLoadStatus(prev => ({...prev, books: false})));
+
+                // 📝 取得記事本資料
+                syncWithGAS('FETCH_NOTES').then(res => {
+                    if(res?.data) setNotes(res.data);
+                    setLoadStatus(prev => ({...prev, notes: false}));
+                }).catch(() => setLoadStatus(prev => ({...prev, notes: false})));
             }, [isAuthenticated, sessionToken]);
 
             useEffect(() => {
@@ -541,6 +555,28 @@
                 return [...new Set(cats)].sort();
             }, [books]);
 
+            const noteCategories = useMemo(() => {
+                const cats = (notes || []).map(n => n.category).filter(c => c && c.trim() !== "");
+                return ['全部', ...new Set(cats)];
+            }, [notes]);
+
+            const filteredNotes = useMemo(() => {
+                const query = (noteSearchQuery || '').toLowerCase().trim();
+                return (notes || []).filter(n => {
+                    const matchQuery = !query || 
+                        (n.title && n.title.toLowerCase().includes(query)) ||
+                        (n.content && n.content.toLowerCase().includes(query)) ||
+                        (n.tags && n.tags.toLowerCase().includes(query));
+                    const matchCategory = noteCategoryFilter === '全部' || n.category === noteCategoryFilter;
+                    return matchQuery && matchCategory;
+                }).sort((a, b) => {
+                    // 置頂優先，其次按更新時間
+                    if (a.isPinned && !b.isPinned) return -1;
+                    if (!a.isPinned && b.isPinned) return 1;
+                    return new Date(b.updatedAt || b.date || 0) - new Date(a.updatedAt || a.date || 0);
+                });
+            }, [notes, noteSearchQuery, noteCategoryFilter]);
+
             const filteredAdminBooks = useMemo(() => {
                 const query = (bookSearchQuery || '').toLowerCase().trim();
                 const targetList = activeTab === 'choice' ? (choiceBooks || []) : (books || []); 
@@ -555,26 +591,6 @@
             const visibleAdminBooks = useMemo(() => {
                 return (filteredAdminBooks || []).slice(0, adminVisibleCount);
             }, [filteredAdminBooks, adminVisibleCount]);
-
-            useEffect(() => {
-                const handleScroll = (e) => {
-                    const target = e.target;
-                    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 250) {
-                        setAdminVisibleCount(prev => {
-                            const total = filteredAdminBooks ? filteredAdminBooks.length : 0;
-                            if (prev < total) {
-                                return prev + 20;
-                            }
-                            return prev;
-                        });
-                    }
-                };
-                const mainContainer = document.querySelector('main .overflow-y-auto');
-                if (mainContainer) {
-                    mainContainer.addEventListener('scroll', handleScroll);
-                    return () => mainContainer.removeEventListener('scroll', handleScroll);
-                }
-            }, [filteredAdminBooks?.length]);
 
             const handleSaveBook = async (e) => {
                 e.preventDefault();
@@ -610,6 +626,49 @@
                 }
             };
 
+            // 📝 儲存記事本處理函式
+            const handleSaveNote = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const noteData = {
+                    title: sanitizeForSpreadsheet(formData.get('title') || '無標題記事'),
+                    category: sanitizeForSpreadsheet(formData.get('category') || '一般'),
+                    content: sanitizeForSpreadsheet(formData.get('content') || ''),
+                    tags: sanitizeForSpreadsheet(formData.get('tags') || ''),
+                    color: formData.get('color') || '#ffffff',
+                    isPinned: formData.get('isPinned') === 'on' ? 'TRUE' : 'FALSE',
+                    updatedAt: new Date().toISOString(),
+                    author: activeUser || 'Admin'
+                };
+
+                const isEdit = Boolean(editingNote && editingNote.id);
+                const action = isEdit ? 'UPDATE_NOTE' : 'ADD_NOTE';
+                const payload = isEdit ? { ...editingNote, ...noteData } : { ...noteData, id: 'NOTE-' + Date.now() };
+
+                showMsg(isEdit ? '正在更新記事...' : '正在建立新記事...');
+                const res = await syncWithGAS(action, payload);
+
+                if (res.status === 'success') {
+                    if (isEdit) {
+                        setNotes(notes.map(n => n.id === editingNote.id ? { ...editingNote, ...noteData } : n));
+                    } else {
+                        setNotes([{ ...payload }, ...notes]);
+                    }
+                    setShowNoteModal(false);
+                    setEditingNote(null);
+                    showMsg('記事本已同步至試算表！');
+                } else {
+                    showMsg('儲存失敗：' + (res.msg || '請重試'));
+                }
+            };
+
+            const togglePinNote = async (note) => {
+                const updated = { ...note, isPinned: note.isPinned === 'TRUE' || note.isPinned === true ? 'FALSE' : 'TRUE' };
+                setNotes(notes.map(n => n.id === note.id ? updated : n));
+                await syncWithGAS('UPDATE_NOTE', updated);
+                showMsg(updated.isPinned === 'TRUE' ? '已置頂此記事' : '已取消置頂');
+            };
+
             const openDeleteModal = (type, id, title) => {
                 setDeleteModal({
                     isOpen: true,
@@ -638,6 +697,9 @@
                     } else if (type === 'kpi') {
                         res = await syncWithGAS('DELETE_KPI', { id });
                         if (res.status === 'success') setKpis(kpis.filter(k => k.id !== id));
+                    } else if (type === 'note') {
+                        res = await syncWithGAS('DELETE_NOTE', { id });
+                        if (res.status === 'success') setNotes(notes.filter(n => n.id !== id));
                     }
 
                     if (res.status === 'success') {
@@ -773,6 +835,8 @@
                 { id: 'group_books', title: settings.menuBooksName, icon: availableIcons[settings.menuBooksIcon]?.icon || Database, items: [{ tab: 'books', name: '全部書籍管理 (Book_ALL)' }] },
                 { id: 'group_orders', title: settings.menuOrdersName, icon: availableIcons[settings.menuOrdersIcon]?.icon || Truck, items: [{ tab: 'orders', name: '訂單處理中心 (Orders)' }] },
                 { id: 'group_cs', title: settings.menuCsName, icon: availableIcons[settings.menuCsIcon]?.icon || Bot, items: [{ tab: 'ai', name: 'AI 客服信箱 (CS Logs)' }] },
+                // 📝 新增記事本選單
+                { id: 'group_notes', title: settings.menuNotesName || '工作記事本', icon: FileText, items: [{ tab: 'notes', name: '雲端筆記中心 (Notes)' }] },
                 { id: 'group_settings', title: '系統外觀設定', icon: SettingsIcon, items: [{ tab: 'settings', name: '全域設定與顏色 (Setting)' }] }
             ];
 
@@ -951,6 +1015,7 @@
                                     {activeTab === 'books' && settings.menuBooksName}
                                     {activeTab === 'orders' && settings.menuOrdersName}
                                     {activeTab === 'ai' && settings.menuCsName}
+                                    {activeTab === 'notes' && (settings.menuNotesName || '雲端筆記中心')}
                                     {activeTab === 'settings' && '全域設定與外觀'}
                                 </h2>
                             </div>
@@ -960,6 +1025,7 @@
                                 {activeTab === 'books' && <button type="button" onClick={() => { setModalType('book'); setEditingBook(null); setShowBookModal(true); }} className="text-white px-5 py-2.5 rounded-full shadow-lg transition-colors active:scale-95 flex items-center gap-2 font-bold text-sm hover:opacity-90" style={{ backgroundColor: settings.sidebarActiveColor }}><Plus size={16} /> 上架新書</button>}
                                 {activeTab === 'choice' && <button type="button" onClick={() => { setModalType('choice'); setEditingBook(null); setShowBookModal(true); }} className="text-white px-5 py-2.5 rounded-full shadow-lg transition-colors active:scale-95 flex items-center gap-2 font-bold text-sm hover:opacity-80" style={{ backgroundColor: settings.sidebarActiveColor }}><Plus size={16} /> 新增推薦書籍</button>}
                                 {activeTab === 'carousel' && <button type="button" onClick={() => { setEditingCarousel(null); setShowCarouselModal(true); }} className="text-white px-5 py-2.5 rounded-full shadow-lg transition-colors active:scale-95 flex items-center gap-2 font-bold text-sm hover:opacity-90" style={{ backgroundColor: settings.sidebarActiveColor }}><Plus size={16} /> 新增輪播項目</button>}
+                                {activeTab === 'notes' && <button type="button" onClick={() => { setEditingNote(null); setShowNoteModal(true); }} className="text-white px-5 py-2.5 rounded-full shadow-lg transition-colors active:scale-95 flex items-center gap-2 font-bold text-sm hover:opacity-90" style={{ backgroundColor: settings.sidebarActiveColor }}><Plus size={16} /> 新增記事</button>}
                             </div>
                         </header>
                         
@@ -1018,6 +1084,187 @@
                                 </div>
                             )}
 
+                            {/* 📝 記事本視圖 (Notes View) */}
+                            {activeTab === 'notes' && (
+                                <div className="animate-in flex flex-col h-full space-y-6">
+                                    <div className="flex flex-wrap justify-between items-center gap-4">
+                                        <div className="flex items-center gap-3 p-3 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-black/5 w-full max-w-md" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
+                                            <Search size={18} className="opacity-50 ml-2 shrink-0" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="搜尋記事標題、內文或標籤..." 
+                                                value={noteSearchQuery} 
+                                                onChange={e => setNoteSearchQuery(e.target.value)} 
+                                                className="w-full bg-transparent outline-none text-sm font-bold placeholder-black/30 p-1"
+                                                style={{ color: 'inherit' }}
+                                            />
+                                            {noteSearchQuery && <button type="button" onClick={() => setNoteSearchQuery('')} className="opacity-50 hover:opacity-100 px-2"><X size={14}/></button>}
+                                        </div>
+
+                                        <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+                                            {noteCategories.map(cat => (
+                                                <button
+                                                    key={cat}
+                                                    type="button"
+                                                    onClick={() => setNoteCategoryFilter(cat)}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${noteCategoryFilter === cat ? 'bg-zinc-900 text-white shadow-sm' : 'bg-black/5 hover:bg-black/10 text-zinc-600'}`}
+                                                >
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {loadStatus.notes ? (
+                                        <div className="flex flex-col items-center justify-center p-20 opacity-50">
+                                            <FileText size={32} className="animate-bounce mb-4" style={{ color: settings.sidebarActiveColor }} />
+                                            <p className="font-bold text-xs">正在從雲端試算表同步記事本...</p>
+                                        </div>
+                                    ) : filteredNotes.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {filteredNotes.map(n => {
+                                                const isPinned = n.isPinned === 'TRUE' || n.isPinned === true;
+                                                return (
+                                                    <div 
+                                                        key={n.id} 
+                                                        className="p-6 rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col group transition-all hover:-translate-y-1"
+                                                        style={{ backgroundColor: n.color && n.color !== '#ffffff' ? n.color : settings.cardBgColor, color: settings.cardTextColor }}
+                                                    >
+                                                        <div className="flex justify-between items-start mb-3 gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="px-3 py-1 bg-black/10 rounded-full text-[10px] font-black uppercase tracking-wider">{n.category || '一般'}</span>
+                                                                {isPinned && <span className="p-1 text-amber-500" title="已置頂"><Pin size={14} className="fill-amber-500" /></span>}
+                                                            </div>
+                                                            <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                                <button type="button" onClick={() => togglePinNote(n)} className="p-1.5 rounded-lg hover:bg-black/10 text-zinc-600" title={isPinned ? '取消置頂' : '置頂記事'}>
+                                                                    <Pin size={14} className={isPinned ? 'fill-amber-500 text-amber-500' : ''} />
+                                                                </button>
+                                                                <button type="button" onClick={() => { setEditingNote(n); setShowNoteModal(true); }} className="p-1.5 rounded-lg hover:bg-black/10 text-indigo-600" title="編輯">
+                                                                    <Edit2 size={14} />
+                                                                </button>
+                                                                <button type="button" onClick={() => openDeleteModal('note', n.id, n.title)} className="p-1.5 rounded-lg hover:bg-black/10 text-red-500" title="刪除">
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        <h4 className="text-lg font-black mb-2 line-clamp-1">{n.title}</h4>
+                                                        <p className="text-xs opacity-80 whitespace-pre-wrap line-clamp-6 leading-relaxed flex-1 font-medium">{n.content || '（無內文）'}</p>
+
+                                                        {n.tags && (
+                                                            <div className="flex flex-wrap gap-1 mt-4 pt-3 border-t border-black/5">
+                                                                {String(n.tags).split(',').map((tag, idx) => (
+                                                                    <span key={idx} className="text-[10px] font-bold opacity-60 bg-black/5 px-2 py-0.5 rounded-md">#{tag.trim()}</span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="mt-4 pt-2 text-[10px] opacity-40 font-bold flex justify-between items-center border-t border-black/5">
+                                                            <span>作者: {n.author || activeUser}</span>
+                                                            <span>{formatDate(n.updatedAt || n.date)}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="p-20 text-center font-bold rounded-[2rem] border-dashed border-2 border-black/10 opacity-60 flex flex-col items-center justify-center gap-3">
+                                            <FileText size={36} className="opacity-30" />
+                                            <span>目前沒有任何記事內容，點擊右上角新增您的第一篇工作筆記！</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* 記事本新增/編輯彈窗 */}
+                            {showNoteModal && (
+                                <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={()=>setShowNoteModal(false)}>
+                                    <div className="w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col max-h-[90vh]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e)=>e.stopPropagation()}>
+                                        <div className="p-5 border-b border-black/5 flex justify-between items-center font-bold tracking-tight bg-black/5">
+                                            <div className="flex items-center gap-2">
+                                                <FileText size={18} style={{ color: settings.sidebarActiveColor }}/> {editingNote ? '編輯工作記事' : '新增工作記事'}
+                                            </div>
+                                            <button type="button" onClick={() => setShowNoteModal(false)} className="opacity-50 hover:opacity-100">✖</button>
+                                        </div>
+                                        <form onSubmit={handleSaveNote} className="p-6 space-y-4 overflow-y-auto sidebar-scroll">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">記事標題</label>
+                                                <input 
+                                                    name="title" 
+                                                    defaultValue={editingNote?.title || ''} 
+                                                    required 
+                                                    className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" 
+                                                    placeholder="輸入記事標題..." 
+                                                    style={{ color: 'inherit' }}
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">分類類別</label>
+                                                    <input 
+                                                        name="category" 
+                                                        defaultValue={editingNote?.category || '日常交辦'} 
+                                                        className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" 
+                                                        placeholder="例如: 出版進度, 財務備忘" 
+                                                        style={{ color: 'inherit' }}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">標籤 (逗號隔開)</label>
+                                                    <input 
+                                                        name="tags" 
+                                                        defaultValue={editingNote?.tags || ''} 
+                                                        className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" 
+                                                        placeholder="加急, 重要, 校稿" 
+                                                        style={{ color: 'inherit' }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">卡片底色 (標記色彩)</label>
+                                                <input 
+                                                    type="color" 
+                                                    name="color" 
+                                                    defaultValue={editingNote?.color || '#ffffff'} 
+                                                    className="w-full border border-black/10 rounded-xl"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">記事完整內文</label>
+                                                <textarea 
+                                                    name="content" 
+                                                    defaultValue={editingNote?.content || ''} 
+                                                    required 
+                                                    className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none h-44 resize-none leading-relaxed" 
+                                                    placeholder="寫下詳細工作進度、會議紀錄或靈感..." 
+                                                    style={{ color: 'inherit' }}
+                                                />
+                                            </div>
+
+                                            <div className="flex items-center gap-2 p-2">
+                                                <input 
+                                                    type="checkbox" 
+                                                    name="isPinned" 
+                                                    id="isPinned" 
+                                                    defaultChecked={editingNote?.isPinned === 'TRUE' || editingNote?.isPinned === true} 
+                                                    className="w-4 h-4 rounded text-indigo-600 focus:ring-0 cursor-pointer"
+                                                />
+                                                <label htmlFor="isPinned" className="text-xs font-bold cursor-pointer select-none">📌 置頂此記事在最前列</label>
+                                            </div>
+
+                                            <div className="pt-4 pb-2">
+                                                <button className="w-full text-white py-4 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:opacity-90 flex items-center justify-center gap-2" style={{ backgroundColor: settings.sidebarActiveColor }}>
+                                                    <Save size={16}/> 儲存並同步至試算表
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
+
                             {activeTab === 'settings' && (
                                 <div className="animate-in max-w-4xl mx-auto">
                                     <div className="flex justify-between items-end mb-6 border-b border-black/10 pb-4">
@@ -1069,6 +1316,7 @@
                                                     <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂使用者頭像 (Drive ID / URL)</label><input name="userAvatarUrl" defaultValue={settings.userAvatarUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則顯示帳號首字母" /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄大字 (Sidebar Title)</label><input name="adminPanelName" defaultValue={settings.adminPanelName || 'ADMIN PANEL'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄小字 (Sidebar Subtext)</label><input name="sidebarSubText" defaultValue={settings.sidebarSubText || 'Digital CMS'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
+                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">記事本選單名稱</label><input name="menuNotesName" defaultValue={settings.menuNotesName || '工作記事本'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
                                                     <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">連線狀態文字 (Online)</label><input name="onlineStatusText" defaultValue={settings.onlineStatusText || 'Online'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
                                                 </div>
                                             </div>
@@ -1616,7 +1864,6 @@
                         </div>
                     )}
 
-                    {/* Carousel Modal */}
                     {showCarouselModal && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={()=>setShowCarouselModal(false)}>
                             <div className="w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col max-h-[90vh]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e)=>e.stopPropagation()}>
@@ -1632,7 +1879,6 @@
                         </div>
                     )}
 
-                    {/* Order Modal */}
                     {showOrderModal && editingOrder && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={()=>setShowOrderModal(false)}>
                             <div className="w-full max-w-2xl rounded-[2.5rem] shadow-2xl animate-in border border-black/10 flex flex-col max-h-[90vh]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e)=>e.stopPropagation()}>
@@ -1689,7 +1935,6 @@
                         </div>
                     )}
 
-                    {/* KPI Modal */}
                     {showKpiModal && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={()=>setShowKpiModal(false)}>
                             <div className="w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col max-h-[90vh]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e)=>e.stopPropagation()}>
@@ -1813,7 +2058,6 @@
                         </div>
                     )}
 
-                    {/* Iframe External Modal */}
                     {iframeModal.isOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center" onClick={() => setIframeModal(prev => ({ ...prev, isOpen: false }))}>
                             <div className="w-full max-w-5xl h-full max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in border border-black/10" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }} onClick={(e) => e.stopPropagation()}>
