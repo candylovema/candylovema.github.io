@@ -165,16 +165,12 @@
             csTitle: '客服與建議', csNamePlaceholder: '您的稱呼', csPhonePlaceholder: '聯絡電話', csEmailPlaceholder: '電子信箱 (Email)',
             csMessagePlaceholder: '請問您有什麼建議或問題想反映？', csSubmitBtn: '送出反映', csSubmittingBtn: '傳送中...',
             aboutStoryTitle: '品牌故事', aboutCloseBtn: '關閉', aboutIntroTitle: '出版社簡介',
-            aboutIntroP1: '「文史哲出版社」創立於1971年8月1日，主要致力於出版大學院校研究論著及文史相關書籍。出版範圍涵蓋總類、哲學類、宗教類、社會科學類、史地類、語文類以及美術史類等領域，為華文學術出版的重要推手之一。1992年3月11日改組為「文史哲出版社有限公司」，持續深耕學術出版市場。',
-            aboutIntroP2: '本社創辦人彭正雄先生，曾師事台大教授吳相湘，並多次向毛子水、鄭騫、高明等學者請益，亦獲嚴靈峰、戴君仁、夏德儀、昌彼得、林尹等名師指導。在諸位學者的薰陶與傳授之下，逐步培養出對古籍整理的深厚興趣，並奠定投身文化出版事業的志向。',
-            aboutConceptTitle: '經營理念',
-            aboutConceptP1: '文史哲出版社以出版「文史圖書」及「學術專業圖書」為核心宗旨，目前已累積出版書籍約2500種，其中約2100種仍可供讀者選購。由於學術出版品在海外行銷較具挑戰，本社現正積極拓展網路通路與電子書市場，期望進一步打開華文地區之出版版圖。',
-            aboutAuthorTitle: '代表作家與學術著作',
-            aboutAuthorIntro: '本社出版眾知知之作家與學者作品，包括：',
-            aboutAuthorLit: '文學作家：',
-            aboutAuthorLitItems: '無名氏（卜乃夫）《塔里的女人》\n馮馮《霧航》\n紀弦、羅門、辛鬱等',
-            aboutAuthorAcad: '學術著作：',
-            aboutAuthorAcadItems: '昌彼得《中國目錄學》\n嚴靈峰、高明、潘重規、林尹、陳新雄、李威熊、黃永武、王更生等學者著作\n龔鵬程、鄭樑生《中日關係史研究論集》（共14冊）\n莊吉發《清史論集》（1–30集）\n《滿語叢刊》（共50冊）\n蔡宗陽《文心雕龍與經學》、《修辭學》等',
+            aboutIntroP1: '「文史哲出版社」創立於1971年8月1日，主要致力於出版大學院校研究論著及文史相關書籍。出版範圍涵蓋總類、哲學類、宗教類、社會科學類、史地類、語文類以及美術史類等領域，為華文學術出版 Important 推手之一。',
+            aboutIntroP2: '本社創辦人彭正雄先生，曾師事台大教授吳相湘，並多次向毛子水、鄭騫、高明等學者請益...',
+            aboutConceptTitle: '經營理念', aboutConceptP1: '文史哲出版社以出版「文史圖書」及「學術專業圖書」為核心宗旨...',
+            aboutAuthorTitle: '代表作家與學術著作', aboutAuthorIntro: '本社出版眾知知之作家與學者作品，包括：',
+            aboutAuthorLit: '文學作家：', aboutAuthorLitItems: '無名氏（卜乃夫）《塔裡的女人》\n馮馮《霧航》\n紀弦、羅門、辛鬱等',
+            aboutAuthorAcad: '學術著作：', aboutAuthorAcadItems: '昌彼得《中國目錄學》\n嚴靈峰、高明等',
             aboutStartExploringBtn: '開始探索好書',
             searchTitle: '書籍目錄查詢', searchSubtitle: '圖書檢索', searchFilterTitle: '進階篩選器',
             searchLabelCode: '書碼查詢', searchLabelTitle: '書名關鍵字', searchLabelAuthor: '作者關鍵字',
@@ -215,7 +211,7 @@
             const [aiLogs, setAiLogs] = useState([]); 
             const [kpis, setKpis] = useState([]); 
             const [notes, setNotes] = useState([]); 
-            const [changeLogs, setChangeLogs] = useState([]); // 📜 書籍修改歷程紀錄 state
+            const [changeLogs, setChangeLogs] = useState([]); 
             const [settings, setSettings] = useState(defaultSettings); 
             const [ui, setUi] = useState({}); 
             
@@ -231,7 +227,6 @@
                 kpis: true, orders: true, cs: true, carousels: true, choices: true, books: true, notes: true, changeLogs: true
             });
 
-            // 內頁視窗全螢幕控制狀態
             const [modalMaximized, setModalMaximized] = useState({});
             const toggleMaximize = (key) => setModalMaximized(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -247,13 +242,11 @@
             const [csResponseText, setCsResponseText] = useState('');
             const [isAIGenerating, setIsAIGenerating] = useState(false);
 
-            // 記事本相關 state
             const [showNoteModal, setShowNoteModal] = useState(false);
             const [editingNote, setEditingNote] = useState(null);
             const [noteSearchQuery, setNoteSearchQuery] = useState('');
             const [noteCategoryFilter, setNoteCategoryFilter] = useState('全部');
             
-            // 書籍 AI 生成簡介與心得 state
             const [modalBookTitle, setModalBookTitle] = useState('');
             const [modalBookAuthor, setModalBookAuthor] = useState('');
             const [modalBookYear, setModalBookYear] = useState('');
@@ -262,25 +255,17 @@
             const [modalBookReview, setModalBookReview] = useState('');
             const [isGeneratingBookAI, setIsGeneratingBookAI] = useState(false);
 
-            // 🌟 專屬「書籍快速修改與變更紀錄」頁面 State
-            const [quickMode, setQuickMode] = useState('modify'); // 'modify' | 'add'
-            const [quickTargetSheet, setQuickTargetSheet] = useState('Book_ALL'); // 'Book_ALL' | 'Choice'
+            const [quickTargetSheet, setQuickTargetSheet] = useState('Book_ALL'); 
             const [quickSelectedBook, setQuickTargetBook] = useState(null);
             const [quickNewBookId, setQuickNewBookId] = useState('');
             const [quickNewTitle, setQuickNewTitle] = useState('');
             const [quickNewPrice, setQuickNewPrice] = useState('');
-            const [quickNewAuthor, setQuickNewAuthor] = useState('');
-            const [quickNewYear, setQuickNewYear] = useState('');
-            const [quickNewCategory, setQuickNewCategory] = useState('');
-            const [quickNewStock, setQuickNewStock] = useState('10');
-            const [quickNewCover, setQuickNewCover] = useState('');
             const [quickNote, setQuickNote] = useState('');
             const [isSavingQuickModify, setIsSavingQuickModify] = useState(false);
             
-            // 變更歷史索引與篩選 state
             const [logSearchQuery, setLogSearchQuery] = useState('');
-            const [logCategoryFilter, setLogCategoryFilter] = useState('全部'); // '全部' | '改價格' | '改名稱' | '改書碼' | '新增書籍'
-            const [showGasCodeModal, setShowGasCodeModal] = useState(false); // GAS 部署教學視窗
+            const [logCategoryFilter, setLogCategoryFilter] = useState('全部'); 
+            const [showGasCodeModal, setShowGasCodeModal] = useState(false); 
 
             const [showKpiModal, setShowKpiModal] = useState(false);
             const [editingKpi, setEditingKpi] = useState(null);
@@ -288,11 +273,7 @@
             const [iframeModal, setIframeModal] = useState({ isOpen: false, url: '', title: '' });
 
             const [deleteModal, setDeleteModal] = useState({
-                isOpen: false,
-                type: '', 
-                id: null,
-                title: '',
-                isDeleting: false
+                isOpen: false, type: '', id: null, title: '', isDeleting: false
             });
 
             const [expandedMenus, setExpandedMenus] = useState({
@@ -316,16 +297,59 @@
                 return hh === '00' && min === '00' ? `${yyyy}/${mm}/${dd}` : `${yyyy}/${mm}/${dd} ${hh}:${min}`;
             };
 
-            useEffect(() => {
-                if (showBookModal) {
-                    setModalBookTitle(editingBook?.title || '');
-                    setModalBookAuthor(editingBook?.author || '');
-                    setModalBookYear(editingBook?.year || '');
-                    setModalBookCategory(editingBook?.category || '');
-                    setModalBookIntro(editingBook?.intro || '');
-                    setModalBookReview(editingBook?.["心得"] || editingBook?.review || editingBook?.notes || '');
+            const sanitizeForSpreadsheet = (val) => {
+                if (val === undefined || val === null) return "";
+                let str = String(val).trim();
+                if (/^[=\+\-\@]/.test(str)) {
+                    return "'" + str; 
                 }
-            }, [showBookModal, editingBook]);
+                return str;
+            };
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                if (isLoggingIn) return;
+                setIsLoggingIn(true);
+                showMsg('正在向雲端安全性通道驗證身分...');
+
+                const username = e.target.username.value;
+                const password = e.target.password.value;
+
+                try {
+                    const res = await syncWithGAS('LOGIN', { user: username, password: password });
+                    if (res && res.status === 'success' && res.sessionToken) {
+                        sessionStorage.setItem('lapen_cms_auth', 'true');
+                        sessionStorage.setItem('lapen_cms_token', res.sessionToken);
+                        sessionStorage.setItem('lapen_cms_user', username);
+                        
+                        setIsAuthenticated(true);
+                        setSessionToken(res.sessionToken);
+                        setActiveUser(username);
+                        showMsg('身分驗證通過， Session 令牌已安全儲存！');
+                    } else {
+                        showMsg('登入失敗：' + (res.msg || '帳號或密碼錯誤'));
+                    }
+                } catch (err) {
+                    showMsg('驗證發生異常：' + err.toString());
+                } finally {
+                    setIsLoggingIn(false);
+                }
+            };
+
+            const handleLogout = () => {
+                sessionStorage.clear();
+                setIsAuthenticated(false);
+                setSessionToken('');
+                setActiveUser('');
+                setBooks([]);
+                setChoiceBooks([]);
+                setCarousels([]);
+                setOrders([]);
+                setAiLogs([]);
+                setNotes([]);
+                setChangeLogs([]);
+                showMsg('Session 令牌已安全銷毀，您已成功登出。');
+            };
 
             const syncWithGAS = async (action, payloadData = null) => {
                 try {
@@ -365,7 +389,6 @@
                     let data = await response.json();
                     
                     if (data && data.status === 'error' && data.msg && data.msg.includes("Method Not Allowed")) {
-                        console.warn("POST converted to GET on redirect. Retrying with GET parameters...");
                         const retryParams = new URLSearchParams();
                         retryParams.append("action", action);
                         if (sessionToken) retryParams.append("sessionToken", sessionToken);
@@ -377,11 +400,9 @@
                         data = await response.json();
                     }
 
-                    if (data.status === 'error') {
+                    if (data && data.status === 'error') {
                         console.error("後端拒絕請求:", data.msg);
-                        if (data.msg && data.msg.includes("未知 action")) {
-                            console.warn("GAS 後端尚未更新對應的 Action。請至「書籍快速修改與變更紀錄」頁面點擊『後端 GAS 部署代碼』複製最新程式碼並於 Google Apps Script 重新部署新版本。");
-                        } else {
+                        if (data.msg && !data.msg.includes("未知 action")) {
                             showMsg("拒絕存取: " + data.msg); 
                         }
                         if (data.msg && (data.msg.includes("驗證失敗") || data.msg.includes("未授權") || data.msg.includes("過期"))) {
@@ -392,7 +413,7 @@
                     return data;
                 } catch (e) {
                     console.error("GAS Sync Error:", e);
-                    showMsg("網路安全通道異常: " + e.toString()); 
+                    showMsg("網絡安全通道異常: " + e.toString()); 
                     return { status: 'error', msg: e.toString() };
                 }
             };
@@ -453,50 +474,347 @@
                 }
             };
 
-            const handleLogin = async (e) => {
+            const handleSaveBook = async (e) => {
                 e.preventDefault();
-                if (isLoggingIn) return;
-                setIsLoggingIn(true);
-                showMsg('正在向雲端安全性通道驗證身分...');
+                const formData = new FormData(e.target);
+                const bookData = {
+                    title: sanitizeForSpreadsheet(formData.get('title')), 
+                    category: sanitizeForSpreadsheet(formData.get('category')), 
+                    price: parseInt(formData.get('price')) || 0, 
+                    stock: parseInt(formData.get('stock')) || 0,
+                    cover: sanitizeForSpreadsheet(formData.get('cover') || ''), 
+                    author: sanitizeForSpreadsheet(formData.get('author') || ''), 
+                    year: sanitizeForSpreadsheet(formData.get('year') || ''),
+                    intro: sanitizeForSpreadsheet(modalBookIntro || formData.get('intro') || ''),
+                    "心得": sanitizeForSpreadsheet(modalBookReview || formData.get('心得') || '')
+                };
+                
+                const isChoice = modalType === 'choice';
+                const currentList = isChoice ? choiceBooks : books;
+                const setList = isChoice ? setChoiceBooks : setBooks;
+                const updateAction = isChoice ? 'UPDATE_CHOICE' : 'UPDATE_BOOK';
+                const addAction = isChoice ? 'ADD_CHOICE' : 'ADD_BOOK';
 
-                const username = e.target.username.value;
-                const password = e.target.password.value;
-
-                try {
-                    const res = await syncWithGAS('LOGIN', { user: username, password: password });
-                    if (res && res.status === 'success' && res.sessionToken) {
-                        sessionStorage.setItem('lapen_cms_auth', 'true');
-                        sessionStorage.setItem('lapen_cms_token', res.sessionToken);
-                        sessionStorage.setItem('lapen_cms_user', username);
-                        
-                        setIsAuthenticated(true);
-                        setSessionToken(res.sessionToken);
-                        setActiveUser(username);
-                        showMsg('身分驗證通過， Session 令牌已安全儲存！');
+                const res = await syncWithGAS(editingBook ? updateAction : addAction, editingBook ? { ...editingBook, ...bookData } : { ...bookData, id: Date.now() });
+                
+                if (res && res.status === 'success') {
+                    if (editingBook) {
+                        setList(currentList.map(b => b.id === editingBook.id ? { ...editingBook, ...bookData } : b));
                     } else {
-                        showMsg('登入失敗：' + (res.msg || '帳號或密碼錯誤'));
+                        setList([{ ...bookData, id: Date.now() }, ...currentList]);
                     }
-                } catch (err) {
-                    showMsg('驗證發生異常：' + err.toString());
-                } finally {
-                    setIsLoggingIn(false);
+                    setShowBookModal(false); setEditingBook(null);
+                    showMsg(`${isChoice ? '精選推薦' : '書籍庫存'}已更新至雲端`);
                 }
             };
 
-            const handleLogout = () => {
-                sessionStorage.clear();
-                setIsAuthenticated(false);
-                setSessionToken('');
-                setActiveUser('');
-                setBooks([]);
-                setChoiceBooks([]);
-                setCarousels([]);
-                setOrders([]);
-                setAiLogs([]);
-                setNotes([]);
-                setChangeLogs([]);
-                showMsg('Session 令牌已安全銷毀，您已成功登出。');
+            const handleQuickModifyBook = async (e) => {
+                e.preventDefault();
+                if (!quickSelectedBook) {
+                    showMsg('請先選擇要修改的書籍！');
+                    return;
+                }
+                if (!quickNewBookId.trim() || !quickNewTitle.trim() || quickNewPrice === '') {
+                    showMsg('請完整填寫書碼、書名與定價！');
+                    return;
+                }
+
+                setIsSavingQuickModify(true);
+                showMsg('正在向雲端寫入書籍修改，並記錄變更歷史...');
+
+                let changeTypes = [];
+                let oldDiffs = [];
+                let newDiffs = [];
+
+                if (String(quickSelectedBook.id).trim() !== String(quickNewBookId.trim())) {
+                    changeTypes.push('改書碼');
+                    oldDiffs.push(`書碼:${quickSelectedBook.id}`);
+                    newDiffs.push(`書碼:${quickNewBookId.trim()}`);
+                }
+                if (String(quickSelectedBook.title).trim() !== String(quickNewTitle.trim())) {
+                    changeTypes.push('改名稱');
+                    oldDiffs.push(`書名:${quickSelectedBook.title}`);
+                    newDiffs.push(`書名:${quickNewTitle.trim()}`);
+                }
+                if (Number(quickSelectedBook.price) !== Number(quickNewPrice)) {
+                    changeTypes.push('改價格');
+                    oldDiffs.push(`定價:NT$${quickSelectedBook.price}`);
+                    newDiffs.push(`定價:NT$${quickNewPrice}`);
+                }
+
+                const primaryChangeType = changeTypes.length === 1 ? changeTypes[0] : (changeTypes.length > 1 ? '綜合修改' : '內容微調');
+                const oldValueStr = oldDiffs.join(' | ') || '無變更';
+                const newValueStr = newDiffs.join(' | ') || '無變更';
+
+                try {
+                    const parsedPrice = parseInt(quickNewPrice, 10);
+                    const safePrice = isNaN(parsedPrice) ? 0 : parsedPrice;
+
+                    const payload = {
+                        targetSheet: quickTargetSheet,
+                        target: quickTargetSheet === 'Choice' ? 'choice' : 'Book_ALL',
+                        id: String(quickSelectedBook.id).trim(),
+                        bookId: String(quickSelectedBook.id).trim(),
+                        newBookId: quickNewBookId.trim(),
+                        newTitle: quickNewTitle.trim(),
+                        newPrice: safePrice,
+                        price: safePrice,
+                        newVal: safePrice,
+                        bookTitle: quickNewTitle.trim(),
+                        changeType: primaryChangeType,
+                        field: primaryChangeType,
+                        oldValue: oldValueStr,
+                        newValue: newValueStr,
+                        note: quickNote.trim() || '快速屬性修正',
+                        operator: activeUser || 'Admin'
+                    };
+
+                    const res = await syncWithGAS('QUICK_UPDATE_BOOK_LOG', payload);
+
+                    if (res && res.status === 'success') {
+                        const updateInList = (list) => list.map(b => {
+                            if (String(b.id).trim() === String(quickSelectedBook.id).trim()) {
+                                return {
+                                    ...b,
+                                    id: quickNewBookId.trim(),
+                                    title: quickNewTitle.trim(),
+                                    price: safePrice
+                                };
+                            }
+                            return b;
+                        });
+
+                        setBooks(prev => updateInList(prev));
+                        setChoiceBooks(prev => updateInList(prev));
+
+                        const newLog = {
+                            id: 'LOG-' + Date.now(),
+                            timestamp: new Date().toLocaleString("zh-TW"),
+                            operator: activeUser || 'Admin',
+                            targetSheet: quickTargetSheet,
+                            bookId: quickNewBookId.trim(),
+                            bookTitle: quickNewTitle.trim(),
+                            changeType: primaryChangeType,
+                            oldValue: oldValueStr,
+                            newValue: newValueStr,
+                            note: quickNote.trim() || '快速屬性修正'
+                        };
+                        setChangeLogs(prev => [newLog, ...prev]);
+
+                        setQuickTargetBook(null);
+                        setQuickNewBookId('');
+                        setQuickNewTitle('');
+                        setQuickNewPrice('');
+                        setQuickNote('');
+
+                        showMsg(`✨ 「${newLog.bookTitle}」修改已儲存 (定價: NT$ ${safePrice})，Book_ALL 與 Choice 已自動跨表同步，變更紀錄已寫入！`);
+                    } else {
+                        showMsg('修改失敗：' + (res.msg || '請重新嘗試'));
+                    }
+                } catch (err) {
+                    console.error('快速修改失敗:', err);
+                    showMsg('修改出錯：' + err.toString());
+                } finally {
+                    setIsSavingQuickModify(false);
+                }
             };
+
+            const handleSaveNote = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const noteData = {
+                    title: sanitizeForSpreadsheet(formData.get('title') || '無標題記事'),
+                    category: sanitizeForSpreadsheet(formData.get('category') || '一般'),
+                    content: sanitizeForSpreadsheet(formData.get('content') || ''),
+                    tags: sanitizeForSpreadsheet(formData.get('tags') || ''),
+                    color: formData.get('color') || '#ffffff',
+                    isPinned: formData.get('isPinned') === 'on' ? 'TRUE' : 'FALSE',
+                    updatedAt: new Date().toISOString(),
+                    author: activeUser || 'Admin'
+                };
+
+                const isEdit = Boolean(editingNote && editingNote.id);
+                const action = isEdit ? 'UPDATE_NOTE' : 'ADD_NOTE';
+                const payload = isEdit ? { ...editingNote, ...noteData } : { ...noteData, id: 'NOTE-' + Date.now() };
+
+                showMsg(isEdit ? '正在更新記事...' : '正在建立新記事...');
+                const res = await syncWithGAS(action, payload);
+
+                if (res && res.status === 'success') {
+                    if (isEdit) {
+                        setNotes(notes.map(n => n.id === editingNote.id ? { ...editingNote, ...noteData } : n));
+                    } else {
+                        setNotes([{ ...payload }, ...notes]);
+                    }
+                    setShowNoteModal(false);
+                    setEditingNote(null);
+                    showMsg('記事本已同步至試算表！');
+                } else {
+                    showMsg('儲存失敗：' + (res?.msg || '請重試'));
+                }
+            };
+
+            const togglePinNote = async (note) => {
+                const updated = { ...note, isPinned: note.isPinned === 'TRUE' || note.isPinned === true ? 'FALSE' : 'TRUE' };
+                setNotes(notes.map(n => n.id === note.id ? updated : n));
+                await syncWithGAS('UPDATE_NOTE', updated);
+                showMsg(updated.isPinned === 'TRUE' ? '已置頂此記事' : '已取消置頂');
+            };
+
+            const openDeleteModal = (type, id, title) => {
+                setDeleteModal({
+                    isOpen: true, type, id, title, isDeleting: false
+                });
+            };
+
+            const confirmSecureDelete = async () => {
+                const { type, id } = deleteModal;
+                setDeleteModal(prev => ({ ...prev, isDeleting: true }));
+
+                let res = { status: 'error', msg: '未知錯誤' };
+                try {
+                    if (type === 'book') {
+                        res = await syncWithGAS('DELETE_BOOK', { id });
+                        if (res.status === 'success') setBooks(books.filter(b => b.id !== id));
+                    } else if (type === 'choice') {
+                        res = await syncWithGAS('DELETE_CHOICE', { id });
+                        if (res.status === 'success') setChoiceBooks(choiceBooks.filter(b => b.id !== id));
+                    } else if (type === 'carousel') {
+                        res = await syncWithGAS('DELETE_CAROUSEL', { id });
+                        if (res.status === 'success') setCarousels(carousels.filter(c => c.id !== id));
+                    } else if (type === 'kpi') {
+                        res = await syncWithGAS('DELETE_KPI', { id });
+                        if (res.status === 'success') setKpis(kpis.filter(k => k.id !== id));
+                    } else if (type === 'note') {
+                        res = await syncWithGAS('DELETE_NOTE', { id });
+                        if (res.status === 'success') setNotes(notes.filter(n => n.id !== id));
+                    }
+
+                    if (res && res.status === 'success') {
+                        showMsg('資料已成功安全刪除');
+                    } else {
+                        showMsg('刪除失敗：' + (res.msg || '存取拒絕'));
+                    }
+                } catch (e) {
+                    showMsg('刪除出錯：' + e.toString());
+                } finally {
+                    setDeleteModal({ isOpen: false, type: '', id: null, title: '', isDeleting: false });
+                }
+            };
+
+            const handleSaveOrder = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const newId = sanitizeForSpreadsheet(formData.get('orderId')); 
+                const updated = {
+                    ...editingOrder, 
+                    newId: newId, 
+                    customer: sanitizeForSpreadsheet(formData.get('customer')), 
+                    phone: sanitizeForSpreadsheet(formData.get('phone')), 
+                    email: sanitizeForSpreadsheet(formData.get('email')), 
+                    address: sanitizeForSpreadsheet(formData.get('address')),
+                    items: sanitizeForSpreadsheet(formData.get('items')), 
+                    total: parseInt(formData.get('total')) || 0, 
+                    payment: sanitizeForSpreadsheet(formData.get('payment')), 
+                    status: sanitizeForSpreadsheet(formData.get('status')),
+                    memo: sanitizeForSpreadsheet(formData.get('memo') || '') 
+                };
+                
+                const res = await syncWithGAS('UPDATE_ORDER', updated); 
+                if (res && res.status === 'success') {
+                    setOrders(orders.map(o => o.id === editingOrder.id ? { ...updated, id: newId || updated.id } : o));
+                    setShowOrderModal(false); setEditingOrder(null);
+                    showMsg('訂單完整內容已修改');
+                }
+            };
+
+            const handleSaveCarousel = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const slideData = { 
+                    title: sanitizeForSpreadsheet(formData.get('title')), 
+                    description: sanitizeForSpreadsheet(formData.get('description')), 
+                    image: sanitizeForSpreadsheet(formData.get('image') || ''), 
+                    status: sanitizeForSpreadsheet(formData.get('status')) 
+                };
+                
+                const res = await syncWithGAS(editingCarousel ? 'UPDATE_CAROUSEL' : 'ADD_CAROUSEL', editingCarousel ? { ...editingCarousel, ...slideData } : { ...slideData, id: Date.now() });
+                
+                if (res && res.status === 'success') {
+                    if (editingCarousel) setCarousels(carousels.map(c => c.id === editingCarousel.id ? { ...editingCarousel, ...slideData } : c));
+                    else setCarousels([{ ...slideData, id: Date.now() }, ...carousels]);
+                    setShowCarouselModal(false); setEditingCarousel(null); showMsg('輪播設定已儲存');
+                }
+            };
+
+            const handleSaveKpi = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const inputUnit = sanitizeForSpreadsheet(formData.get('unit') || '');
+                const combinedUnit = `${inputUnit}||${selectedKpiIcon}`;
+                const kpiData = { 
+                    title: sanitizeForSpreadsheet(formData.get('title')), 
+                    value: sanitizeForSpreadsheet(formData.get('value')), 
+                    unit: combinedUnit 
+                };
+                
+                const res = await syncWithGAS(editingKpi ? 'UPDATE_KPI' : 'ADD_KPI', editingKpi ? { ...editingKpi, ...kpiData } : { ...kpiData, id: Date.now() });
+
+                if (res && res.status === 'success') {
+                    if (editingKpi) setKpis(kpis.map(k => k.id === editingKpi.id ? { ...editingKpi, ...kpiData } : k));
+                    else setKpis([...kpis, { ...kpiData, id: Date.now() }]);
+                    setEditingKpi(null); setShowKpiModal(false); showMsg('KPI 指標已更新');
+                }
+            };
+
+            const handleSaveSettings = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const newSettings = { ...settings };
+                const newUi = { ...ui };
+
+                for (let [key, value] of formData.entries()) {
+                    const safeVal = sanitizeForSpreadsheet(value);
+                    if (key in defaultUI) {
+                        newUi[key] = safeVal;
+                    } else {
+                        newSettings[key] = safeVal;
+                    }
+                }
+
+                showMsg('正在向雲端寫入系統與 UI 設定...');
+                const resSettings = await syncWithGAS('UPDATE_SETTINGS', newSettings);
+                const resUi = await syncWithGAS('UPDATE_UI', newUi);
+
+                if (resSettings && resSettings.status === 'success' && resUi && resUi.status === 'success') {
+                    setSettings(newSettings);
+                    setUi(newUi);
+                    showMsg('系統設定與前台 UI 樣式已同步保存至雲端！');
+                } else {
+                    showMsg('部分設定寫入失敗，請確認與試算表的連結');
+                }
+            };
+
+            const handleSaveCS = async () => {
+                if (!csResponseText.trim()) return showMsg('請輸入回覆內容');
+                const safeResponse = sanitizeForSpreadsheet(csResponseText);
+                const res = await syncWithGAS('UPDATE_CS_LOG', { id: editingCSLog.id, response: safeResponse });
+                if (res && res.status === 'success') {
+                    setAiLogs(aiLogs.map(l => l.id === editingCSLog.id ? { ...l, response: safeResponse, status: '已回覆' } : l));
+                    setShowCSModal(false); setEditingCSLog(null); setCsResponseText(''); showMsg('客服回覆已送出並同步至雲端');
+                }
+            };
+
+            useEffect(() => {
+                if (showBookModal) {
+                    setModalBookTitle(editingBook?.title || '');
+                    setModalBookAuthor(editingBook?.author || '');
+                    setModalBookYear(editingBook?.year || '');
+                    setModalBookCategory(editingBook?.category || '');
+                    setModalBookIntro(editingBook?.intro || '');
+                    setModalBookReview(editingBook?.["心得"] || editingBook?.review || editingBook?.notes || '');
+                }
+            }, [showBookModal, editingBook]);
 
             useEffect(() => {
                 if (!isAuthenticated || !sessionToken) return;
@@ -544,7 +862,6 @@
                     setLoadStatus(prev => ({...prev, notes: false}));
                 }).catch(() => setLoadStatus(prev => ({...prev, notes: false})));
 
-                // 📜 讀取書籍變更歷史紀錄
                 syncWithGAS('FETCH_CHANGE_LOGS').then(res => {
                     if(res?.data) setChangeLogs(res.data);
                     setLoadStatus(prev => ({...prev, changeLogs: false}));
@@ -635,7 +952,6 @@
                 return (filteredAdminBooks || []).slice(0, adminVisibleCount);
             }, [filteredAdminBooks, adminVisibleCount]);
 
-            // 🌟 計算與過濾書籍變更歷史紀錄 (Filtered Change Logs)
             const filteredChangeLogs = useMemo(() => {
                 const query = (logSearchQuery || '').toLowerCase().trim();
                 return (changeLogs || []).filter(log => {
@@ -649,447 +965,6 @@
                     return matchQuery && matchCat;
                 });
             }, [changeLogs, logSearchQuery, logCategoryFilter]);
-
-            const handleSaveBook = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const bookData = {
-                    title: sanitizeForSpreadsheet(formData.get('title')), 
-                    category: sanitizeForSpreadsheet(formData.get('category')), 
-                    price: parseInt(formData.get('price')) || 0, 
-                    stock: parseInt(formData.get('stock')) || 0,
-                    cover: sanitizeForSpreadsheet(formData.get('cover') || ''), 
-                    author: sanitizeForSpreadsheet(formData.get('author') || ''), 
-                    year: sanitizeForSpreadsheet(formData.get('year') || ''),
-                    intro: sanitizeForSpreadsheet(modalBookIntro || formData.get('intro') || ''),
-                    "心得": sanitizeForSpreadsheet(modalBookReview || formData.get('心得') || '')
-                };
-                
-                const isChoice = modalType === 'choice';
-                const currentList = isChoice ? choiceBooks : books;
-                const setList = isChoice ? setChoiceBooks : setBooks;
-                const updateAction = isChoice ? 'UPDATE_CHOICE' : 'UPDATE_BOOK';
-                const addAction = isChoice ? 'ADD_CHOICE' : 'ADD_BOOK';
-
-                const res = await syncWithGAS(editingBook ? updateAction : addAction, editingBook ? { ...editingBook, ...bookData } : { ...bookData, id: Date.now() });
-                
-                if (res.status === 'success') {
-                    if (editingBook) {
-                        setList(currentList.map(b => b.id === editingBook.id ? { ...editingBook, ...bookData } : b));
-                    } else {
-                        setList([{ ...bookData, id: Date.now() }, ...currentList]);
-                    }
-                    setShowBookModal(false); setEditingBook(null);
-                    showMsg(`${isChoice ? '精選推薦' : '書籍庫存'}已更新至雲端`);
-                }
-            };
-
-            // 🌟 處理「書籍快速修改與變更紀錄」提交 (修改與新增)
-            const handleQuickModifyBook = async (e) => {
-                e.preventDefault();
-                setIsSavingQuickModify(true);
-
-                // 🟢 情況一：新增書籍模式
-                if (quickMode === 'add') {
-                    if (!quickNewBookId.trim() || !quickNewTitle.trim() || quickNewPrice === '') {
-                        showMsg('請完整填寫新書碼、書名與定價！');
-                        setIsSavingQuickModify(false);
-                        return;
-                    }
-                    showMsg('正在向雲端寫入新書，並記錄上架歷史...');
-
-                    const payload = {
-                        targetSheet: quickTargetSheet,
-                        target: quickTargetSheet === 'Choice' ? 'choice' : 'Book_ALL',
-                        id: quickNewBookId.trim(),
-                        bookId: quickNewBookId.trim(),
-                        title: quickNewTitle.trim(),
-                        price: parseInt(quickNewPrice) || 0,
-                        author: quickNewAuthor.trim() || '未知作者',
-                        year: quickNewYear.trim() || String(new Date().getFullYear()),
-                        category: quickNewCategory.trim() || '未分類',
-                        stock: parseInt(quickNewStock) || 0,
-                        cover: quickNewCover.trim(),
-                        changeType: '新增書籍',
-                        field: '新增書籍',
-                        note: quickNote.trim() || '快速上架新書',
-                        operator: activeUser || 'Admin'
-                    };
-
-                    try {
-                        let res = await syncWithGAS('QUICK_ADD_BOOK_LOG', payload);
-
-                        // 後端未更新時之相容回退
-                        if (res && res.status === 'error' && res.msg && res.msg.includes('未知 action')) {
-                            const addAction = quickTargetSheet === 'Choice' ? 'ADD_CHOICE' : 'ADD_BOOK';
-                            res = await syncWithGAS(addAction, {
-                                id: payload.bookId,
-                                title: payload.title,
-                                price: payload.price,
-                                author: payload.author,
-                                year: payload.year,
-                                category: payload.category,
-                                stock: payload.stock,
-                                cover: payload.cover
-                            });
-                        }
-
-                        if (res && res.status === 'success') {
-                            const newBookObj = {
-                                id: payload.bookId,
-                                title: payload.title,
-                                price: payload.price,
-                                author: payload.author,
-                                year: payload.year,
-                                category: payload.category,
-                                stock: payload.stock,
-                                cover: payload.cover
-                            };
-
-                            if (quickTargetSheet === 'Book_ALL') setBooks(prev => [newBookObj, ...prev]);
-                            else setChoiceBooks(prev => [newBookObj, ...prev]);
-
-                            const newLog = {
-                                id: 'LOG-' + Date.now(),
-                                timestamp: new Date().toLocaleString("zh-TW"),
-                                operator: activeUser || 'Admin',
-                                targetSheet: quickTargetSheet,
-                                bookId: payload.bookId,
-                                bookTitle: payload.title,
-                                changeType: '新增書籍',
-                                oldValue: '無 (新上架書籍)',
-                                newValue: `書碼:${payload.bookId} | 定價:NT$${payload.price} | 分類:${payload.category}`,
-                                note: quickNote.trim() || '快速上架新書'
-                            };
-                            setChangeLogs(prev => [newLog, ...prev]);
-
-                            setQuickNewBookId('');
-                            setQuickNewTitle('');
-                            setQuickNewPrice('');
-                            setQuickNewAuthor('');
-                            setQuickNewYear('');
-                            setQuickNewCategory('');
-                            setQuickNewStock('10');
-                            setQuickNewCover('');
-                            setQuickNote('');
-
-                            showMsg(`✨ 新書「${newBookObj.title}」已上架，變更紀錄已同步新增！`);
-                        } else {
-                            showMsg('新增失敗：' + (res.msg || '請重新嘗試'));
-                        }
-                    } catch (err) {
-                        console.error('快速新增失敗:', err);
-                        showMsg('新增出錯：' + err.toString());
-                    } finally {
-                        setIsSavingQuickModify(false);
-                    }
-                    return;
-                }
-
-                // 🟠 情況二：修改既有書籍模式
-                if (!quickSelectedBook) {
-                    showMsg('請先選擇要修改的書籍！');
-                    setIsSavingQuickModify(false);
-                    return;
-                }
-                if (!quickNewBookId.trim() || !quickNewTitle.trim() || quickNewPrice === '') {
-                    showMsg('請完整填寫書碼、書名與定價！');
-                    setIsSavingQuickModify(false);
-                    return;
-                }
-
-                showMsg('正在向雲端寫入書籍修改，並記錄變更歷史...');
-
-                let changeTypes = [];
-                let oldDiffs = [];
-                let newDiffs = [];
-
-                if (String(quickSelectedBook.id).trim() !== String(quickNewBookId.trim())) {
-                    changeTypes.push('改書碼');
-                    oldDiffs.push(`書碼:${quickSelectedBook.id}`);
-                    newDiffs.push(`書碼:${quickNewBookId.trim()}`);
-                }
-                if (String(quickSelectedBook.title).trim() !== String(quickNewTitle.trim())) {
-                    changeTypes.push('改名稱');
-                    oldDiffs.push(`書名:${quickSelectedBook.title}`);
-                    newDiffs.push(`書名:${quickNewTitle.trim()}`);
-                }
-                if (Number(quickSelectedBook.price) !== Number(quickNewPrice)) {
-                    changeTypes.push('改價格');
-                    oldDiffs.push(`定價:NT$${quickSelectedBook.price}`);
-                    newDiffs.push(`定價:NT$${quickNewPrice}`);
-                }
-
-                const primaryChangeType = changeTypes.length === 1 ? changeTypes[0] : (changeTypes.length > 1 ? '綜合修改' : '內容微調');
-                const oldValueStr = oldDiffs.join(' | ') || '無變更';
-                const newValueStr = newDiffs.join(' | ') || '無變更';
-
-                try {
-                    const payload = {
-                        targetSheet: quickTargetSheet,
-                        target: quickTargetSheet === 'Choice' ? 'choice' : 'Book_ALL',
-                        id: String(quickSelectedBook.id).trim(),
-                        bookId: String(quickSelectedBook.id).trim(),
-                        newBookId: quickNewBookId.trim(),
-                        newTitle: quickNewTitle.trim(),
-                        newPrice: parseInt(quickNewPrice) || 0,
-                        bookTitle: quickNewTitle.trim(),
-                        changeType: primaryChangeType,
-                        field: primaryChangeType, // Ensure compatibility with GAS scripts checking payload.field
-                        oldValue: oldValueStr,
-                        newValue: newValueStr,
-                        note: quickNote.trim() || '快速屬性修正',
-                        operator: activeUser || 'Admin'
-                    };
-
-                    const res = await syncWithGAS('QUICK_UPDATE_BOOK_LOG', payload);
-
-                    if (res && res.status === 'success') {
-                        const updateInList = (list) => list.map(b => {
-                            if (String(b.id).trim() === String(quickSelectedBook.id).trim()) {
-                                return {
-                                    ...b,
-                                    id: quickNewBookId.trim(),
-                                    title: quickNewTitle.trim(),
-                                    price: parseInt(quickNewPrice) || 0
-                                };
-                            }
-                            return b;
-                        });
-
-                        if (quickTargetSheet === 'Book_ALL') setBooks(prev => updateInList(prev));
-                        else setChoiceBooks(prev => updateInList(prev));
-
-                        const newLog = {
-                            id: 'LOG-' + Date.now(),
-                            timestamp: new Date().toLocaleString("zh-TW"),
-                            operator: activeUser || 'Admin',
-                            targetSheet: quickTargetSheet,
-                            bookId: quickNewBookId.trim(),
-                            bookTitle: quickNewTitle.trim(),
-                            changeType: primaryChangeType,
-                            oldValue: oldValueStr,
-                            newValue: newValueStr,
-                            note: quickNote.trim() || '快速屬性修正'
-                        };
-                        setChangeLogs(prev => [newLog, ...prev]);
-
-                        setQuickTargetBook(null);
-                        setQuickNewBookId('');
-                        setQuickNewTitle('');
-                        setQuickNewPrice('');
-                        setQuickNote('');
-
-                        showMsg(`✨ 「${newLog.bookTitle}」修改已儲存，變更紀錄已同步新增至 Sheet「Book_Change_Logs」！`);
-                    } else {
-                        showMsg('修改失敗：' + (res.msg || '請重新嘗試'));
-                    }
-                } catch (err) {
-                    console.error('快速修改失敗:', err);
-                    showMsg('修改出錯：' + err.toString());
-                } finally {
-                    setIsSavingQuickModify(false);
-                }
-            };
-
-            const handleSaveNote = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const noteData = {
-                    title: sanitizeForSpreadsheet(formData.get('title') || '無標題記事'),
-                    category: sanitizeForSpreadsheet(formData.get('category') || '一般'),
-                    content: sanitizeForSpreadsheet(formData.get('content') || ''),
-                    tags: sanitizeForSpreadsheet(formData.get('tags') || ''),
-                    color: formData.get('color') || '#ffffff',
-                    isPinned: formData.get('isPinned') === 'on' ? 'TRUE' : 'FALSE',
-                    updatedAt: new Date().toISOString(),
-                    author: activeUser || 'Admin'
-                };
-
-                const isEdit = Boolean(editingNote && editingNote.id);
-                const action = isEdit ? 'UPDATE_NOTE' : 'ADD_NOTE';
-                const payload = isEdit ? { ...editingNote, ...noteData } : { ...noteData, id: 'NOTE-' + Date.now() };
-
-                showMsg(isEdit ? '正在更新記事...' : '正在建立新記事...');
-                const res = await syncWithGAS(action, payload);
-
-                if (res.status === 'success') {
-                    if (isEdit) {
-                        setNotes(notes.map(n => n.id === editingNote.id ? { ...editingNote, ...noteData } : n));
-                    } else {
-                        setNotes([{ ...payload }, ...notes]);
-                    }
-                    setShowNoteModal(false);
-                    setEditingNote(null);
-                    showMsg('記事本已同步至試算表！');
-                } else {
-                    showMsg('儲存失敗：' + (res.msg || '請重試'));
-                }
-            };
-
-            const togglePinNote = async (note) => {
-                const updated = { ...note, isPinned: note.isPinned === 'TRUE' || note.isPinned === true ? 'FALSE' : 'TRUE' };
-                setNotes(notes.map(n => n.id === note.id ? updated : n));
-                await syncWithGAS('UPDATE_NOTE', updated);
-                showMsg(updated.isPinned === 'TRUE' ? '已置頂此記事' : '已取消置頂');
-            };
-
-            const openDeleteModal = (type, id, title) => {
-                setDeleteModal({
-                    isOpen: true,
-                    type,
-                    id,
-                    title,
-                    isDeleting: false
-                });
-            };
-
-            const confirmSecureDelete = async () => {
-                const { type, id } = deleteModal;
-                setDeleteModal(prev => ({ ...prev, isDeleting: true }));
-
-                let res = { status: 'error', msg: '未知錯誤' };
-                try {
-                    if (type === 'book') {
-                        res = await syncWithGAS('DELETE_BOOK', { id });
-                        if (res.status === 'success') setBooks(books.filter(b => b.id !== id));
-                    } else if (type === 'choice') {
-                        res = await syncWithGAS('DELETE_CHOICE', { id });
-                        if (res.status === 'success') setChoiceBooks(choiceBooks.filter(b => b.id !== id));
-                    } else if (type === 'carousel') {
-                        res = await syncWithGAS('DELETE_CAROUSEL', { id });
-                        if (res.status === 'success') setCarousels(carousels.filter(c => c.id !== id));
-                    } else if (type === 'kpi') {
-                        res = await syncWithGAS('DELETE_KPI', { id });
-                        if (res.status === 'success') setKpis(kpis.filter(k => k.id !== id));
-                    } else if (type === 'note') {
-                        res = await syncWithGAS('DELETE_NOTE', { id });
-                        if (res.status === 'success') setNotes(notes.filter(n => n.id !== id));
-                    }
-
-                    if (res.status === 'success') {
-                        showMsg('資料已成功安全刪除');
-                    } else {
-                        showMsg('刪除失敗：' + res.msg);
-                    }
-                } catch (e) {
-                    showMsg('刪除出錯：' + e.toString());
-                } finally {
-                    setDeleteModal({ isOpen: false, type: '', id: null, title: '', isDeleting: false });
-                }
-            };
-
-            const handleSaveOrder = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const newId = sanitizeForSpreadsheet(formData.get('orderId')); 
-                const updated = {
-                    ...editingOrder, 
-                    newId: newId, 
-                    customer: sanitizeForSpreadsheet(formData.get('customer')), 
-                    phone: sanitizeForSpreadsheet(formData.get('phone')), 
-                    email: sanitizeForSpreadsheet(formData.get('email')), 
-                    address: sanitizeForSpreadsheet(formData.get('address')),
-                    items: sanitizeForSpreadsheet(formData.get('items')), 
-                    total: parseInt(formData.get('total')) || 0, 
-                    payment: sanitizeForSpreadsheet(formData.get('payment')), 
-                    status: sanitizeForSpreadsheet(formData.get('status')),
-                    memo: sanitizeForSpreadsheet(formData.get('memo') || '') 
-                };
-                
-                const res = await syncWithGAS('UPDATE_ORDER', updated); 
-                if(res.status === 'success') {
-                    setOrders(orders.map(o => o.id === editingOrder.id ? { ...updated, id: newId || updated.id } : o));
-                    setShowOrderModal(false); setEditingOrder(null);
-                    showMsg('訂單完整內容已修改');
-                }
-            };
-
-            const handleSaveCarousel = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const slideData = { 
-                    title: sanitizeForSpreadsheet(formData.get('title')), 
-                    description: sanitizeForSpreadsheet(formData.get('description')), 
-                    image: sanitizeForSpreadsheet(formData.get('image') || ''), 
-                    status: sanitizeForSpreadsheet(formData.get('status')) 
-                };
-                
-                const res = await syncWithGAS(editingCarousel ? 'UPDATE_CAROUSEL' : 'ADD_CAROUSEL', editingCarousel ? { ...editingCarousel, ...slideData } : { ...slideData, id: Date.now() });
-                
-                if (res.status === 'success') {
-                    if (editingCarousel) setCarousels(carousels.map(c => c.id === editingCarousel.id ? { ...editingCarousel, ...slideData } : c));
-                    else setCarousels([{ ...slideData, id: Date.now() }, ...carousels]);
-                    setShowCarouselModal(false); setEditingCarousel(null); showMsg('輪播設定已儲存');
-                }
-            };
-
-            const handleSaveKpi = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const inputUnit = sanitizeForSpreadsheet(formData.get('unit') || '');
-                const combinedUnit = `${inputUnit}||${selectedKpiIcon}`;
-                const kpiData = { 
-                    title: sanitizeForSpreadsheet(formData.get('title')), 
-                    value: sanitizeForSpreadsheet(formData.get('value')), 
-                    unit: combinedUnit 
-                };
-                
-                const res = await syncWithGAS(editingKpi ? 'UPDATE_KPI' : 'ADD_KPI', editingKpi ? { ...editingKpi, ...kpiData } : { ...kpiData, id: Date.now() });
-
-                if (res.status === 'success') {
-                    if (editingKpi) setKpis(kpis.map(k => k.id === editingKpi.id ? { ...editingKpi, ...kpiData } : k));
-                    else setKpis([...kpis, { ...kpiData, id: Date.now() }]);
-                    setEditingKpi(null); setShowKpiModal(false); showMsg('KPI 指標已更新');
-                }
-            };
-
-            const handleSaveSettings = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const newSettings = { ...settings };
-                const newUi = { ...ui };
-
-                for (let [key, value] of formData.entries()) {
-                    const safeVal = sanitizeForSpreadsheet(value);
-                    if (key in defaultUI) {
-                        newUi[key] = safeVal;
-                    } else {
-                        newSettings[key] = safeVal;
-                    }
-                }
-
-                showMsg('正在向雲端寫入系統與 UI 設定...');
-                const resSettings = await syncWithGAS('UPDATE_SETTINGS', newSettings);
-                const resUi = await syncWithGAS('UPDATE_UI', newUi);
-
-                if (resSettings.status === 'success' && resUi.status === 'success') {
-                    setSettings(newSettings);
-                    setUi(newUi);
-                    showMsg('系統設定與前台 UI 樣式已同步保存至雲端！');
-                } else {
-                    showMsg('部分設定寫入失敗，請確認與試算表的連結');
-                }
-            };
-
-            const handleSaveCS = async () => {
-                if (!csResponseText.trim()) return showMsg('請輸入回覆內容');
-                const safeResponse = sanitizeForSpreadsheet(csResponseText);
-                const res = await syncWithGAS('UPDATE_CS_LOG', { id: editingCSLog.id, response: safeResponse });
-                if(res.status === 'success') {
-                    setAiLogs(aiLogs.map(l => l.id === editingCSLog.id ? { ...l, response: safeResponse, status: '已回覆' } : l));
-                    setShowCSModal(false); setEditingCSLog(null); setCsResponseText(''); showMsg('客服回覆已送出並同步至雲端');
-                }
-            };
-
-            const sanitizeForSpreadsheet = (val) => {
-                if (val === undefined || val === null) return "";
-                let str = String(val).trim();
-                if (/^[=\+\-\@]/.test(str)) {
-                    return "'" + str; 
-                }
-                return str;
-            };
 
             const adminMenuConfig = [
                 { id: 'group_dash', title: settings.menuDashName, icon: availableIcons[settings.menuDashIcon]?.icon || LayoutDashboard, items: [{ tab: 'dashboard', name: '營運儀表板' }] },
@@ -1196,7 +1071,6 @@
                         </button>
                     )}
 
-                    {}
                     <aside className={`flex-shrink-0 transition-all z-30 shadow-2xl flex flex-col ${isSidebarOpen ? '' : '-translate-x-full absolute md:relative'}`} style={{ width: isSidebarOpen ? '260px' : '0px', backgroundColor: settings.sidebarBgColor }}>
                         <div className="flex items-center gap-3 h-20 shrink-0 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors pr-4" onClick={() => setIsSidebarOpen(false)} title="點擊收起側邊欄">
                             <div className="h-full aspect-square text-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm p-0" style={{ backgroundColor: settings.logoUrl ? 'transparent' : settings.sidebarActiveColor }}>
@@ -1269,8 +1143,7 @@
                             <button type="button" onClick={() => { window.open('index.html', '_blank'); }} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition text-xs font-bold shadow-sm" style={{ color: settings.sidebarTextColor }}><Globe size={14} /> 前往前台官網</button>
                         </div>
                     </aside>
-                    
-                    {}
+
                     <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
                         <header className={`h-20 backdrop-blur-xl border-b border-black/5 flex justify-between items-center z-40 relative shrink-0 transition-all ${isSidebarOpen ? 'px-6 lg:px-10' : 'pl-20 pr-6 lg:pr-10'}`} style={{ backgroundColor: `${settings.mainBgColor}E6` }}>
                             <div className="flex items-center gap-4">
@@ -1305,7 +1178,6 @@
                         </header>
                         
                         <div className="p-6 lg:p-10 overflow-y-auto flex-1 z-10 sidebar-scroll">
-                            {}
                             {activeTab === 'dashboard' && (
                                 <div className="animate-in">
                                     <div className="flex justify-between items-end mb-6 border-b border-black/10 pb-4">
@@ -1360,10 +1232,8 @@
                                 </div>
                             )}
 
-                            {}
                             {activeTab === 'book_logs' && (
                                 <div className="animate-in space-y-10">
-                                    {/* 頂部功能區 1: 快速修改/新增書籍表單 */}
                                     <div className="p-8 rounded-[2.5rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
                                         <div className="flex flex-wrap justify-between items-center gap-4 mb-6 border-b border-black/10 pb-4">
                                             <div className="flex items-center gap-3">
@@ -1371,262 +1241,130 @@
                                                     <Zap size={22} />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-xl font-black">
-                                                        {quickMode === 'modify' ? '書籍快速屬性修改 (改價格 / 改名稱 / 改書碼)' : '快速上架新增書籍 (自動記錄變更歷程)'}
-                                                    </h3>
+                                                    <h3 className="text-xl font-black">書籍快速屬性修改 (改價格 / 改名稱 / 改書碼)</h3>
                                                     <p className="text-xs opacity-60 font-bold mt-0.5">直接針對 Book_ALL 或 Choice 進行即時維護，變更將會即時記錄至 Sheet「Book_Change_Logs」</p>
                                                 </div>
                                             </div>
 
-                                            {/* 操作模式與目標分頁切換器 */}
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <div className="flex items-center gap-1 bg-black/5 p-1.5 rounded-2xl border border-black/10">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setQuickMode('modify'); setQuickTargetBook(null); }}
-                                                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${quickMode === 'modify' ? 'bg-zinc-900 text-white shadow-sm' : 'text-zinc-600 hover:bg-black/5'}`}
-                                                    >
-                                                        ✏️ 快速修改
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setQuickMode('add'); setQuickTargetBook(null); }}
-                                                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${quickMode === 'add' ? 'bg-emerald-600 text-white shadow-sm' : 'text-zinc-600 hover:bg-black/5'}`}
-                                                    >
-                                                        ➕ 快速新增
-                                                    </button>
-                                                </div>
-
-                                                <div className="flex items-center gap-1 bg-black/5 p-1.5 rounded-2xl border border-black/10">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setQuickTargetSheet('Book_ALL'); setQuickTargetBook(null); }}
-                                                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${quickTargetSheet === 'Book_ALL' ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-600 hover:bg-black/5'}`}
-                                                    >
-                                                        📚 Book_ALL
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setQuickTargetSheet('Choice'); setQuickTargetBook(null); }}
-                                                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${quickTargetSheet === 'Choice' ? 'bg-amber-600 text-white shadow-sm' : 'text-zinc-600 hover:bg-black/5'}`}
-                                                    >
-                                                        ⭐ Choice
-                                                    </button>
-                                                </div>
+                                            <div className="flex items-center gap-2 bg-black/5 p-1.5 rounded-2xl border border-black/10">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setQuickTargetSheet('Book_ALL'); setQuickTargetBook(null); }}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${quickTargetSheet === 'Book_ALL' ? 'bg-indigo-600 text-white shadow-md' : 'text-zinc-600 hover:bg-black/5'}`}
+                                                >
+                                                    📚 全館庫存 (Book_ALL)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setQuickTargetSheet('Choice'); setQuickTargetBook(null); }}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${quickTargetSheet === 'Choice' ? 'bg-amber-600 text-white shadow-md' : 'text-zinc-600 hover:bg-black/5'}`}
+                                                >
+                                                    ⭐ 編輯推薦 (Choice)
+                                                </button>
                                             </div>
                                         </div>
 
                                         <form onSubmit={handleQuickModifyBook} className="space-y-6">
-                                            {quickMode === 'modify' ? (
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                    {/* 選擇書籍下拉選單 */}
-                                                    <div className="space-y-2 md:col-span-3">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">選擇要修改的書籍 (從 {quickTargetSheet})</label>
-                                                        <select
-                                                            value={quickSelectedBook ? quickSelectedBook.id : ''}
-                                                            onChange={(e) => {
-                                                                const bookId = e.target.value;
-                                                                const list = quickTargetSheet === 'Choice' ? choiceBooks : books;
-                                                                const found = list.find(b => String(b.id).trim() === String(bookId).trim());
-                                                                if (found) {
-                                                                    setQuickTargetBook(found);
-                                                                    setQuickNewBookId(String(found.id));
-                                                                    setQuickNewTitle(String(found.title));
-                                                                    setQuickNewPrice(String(found.price));
-                                                                } else {
-                                                                    setQuickTargetBook(null);
-                                                                    setQuickNewBookId('');
-                                                                    setQuickNewTitle('');
-                                                                    setQuickNewPrice('');
-                                                                }
-                                                            }}
-                                                            className="w-full bg-black/5 border border-black/10 p-4 rounded-2xl text-sm font-bold outline-none cursor-pointer"
-                                                            style={{ color: 'inherit' }}
-                                                        >
-                                                            <option value="">-- 請選擇書籍 --</option>
-                                                            {(quickTargetSheet === 'Choice' ? choiceBooks : books).map((b, idx) => (
-                                                                <option key={(b.id || 'book') + '-' + idx} value={b.id}>
-                                                                    [書碼: {b.id}] {b.title} (NT$ {b.price}) - 作者: {b.author || '未知'}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-
-                                                    {/* 改書碼 */}
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-indigo-600 ml-1 flex items-center gap-1"><Tag size={12}/> 書碼 / 書籍ID (改書碼)</label>
-                                                        <input
-                                                            type="text"
-                                                            value={quickNewBookId}
-                                                            onChange={e => setQuickNewBookId(e.target.value)}
-                                                            placeholder="請輸入新書碼..."
-                                                            disabled={!quickSelectedBook}
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-mono font-bold outline-none disabled:opacity-40"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
-
-                                                    {/* 改名稱 */}
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-purple-600 ml-1 flex items-center gap-1"><FileText size={12}/> 書籍名稱 (改名稱)</label>
-                                                        <input
-                                                            type="text"
-                                                            value={quickNewTitle}
-                                                            onChange={e => setQuickNewTitle(e.target.value)}
-                                                            placeholder="請輸入新書名..."
-                                                            disabled={!quickSelectedBook}
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none disabled:opacity-40"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
-
-                                                    {/* 改價格 */}
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 ml-1 flex items-center gap-1"><TrendingUp size={12}/> 定價金額 (改價格)</label>
-                                                        <input
-                                                            type="number"
-                                                            value={quickNewPrice}
-                                                            onChange={e => setQuickNewPrice(e.target.value)}
-                                                            placeholder="請輸入新定價..."
-                                                            disabled={!quickSelectedBook}
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-mono font-bold outline-none disabled:opacity-40"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
-
-                                                    {/* 變更備註 */}
-                                                    <div className="space-y-2 md:col-span-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">修改原由 / 備註說明 (選填)</label>
-                                                        <input
-                                                            type="text"
-                                                            value={quickNote}
-                                                            onChange={e => setQuickNote(e.target.value)}
-                                                            placeholder="例如: 價格調整、版次更名、輸入訛誤更正..."
-                                                            disabled={!quickSelectedBook}
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none disabled:opacity-40"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
-
-                                                    {/* 送出按鈕 */}
-                                                    <div className="flex items-end">
-                                                        <button
-                                                            type="submit"
-                                                            disabled={!quickSelectedBook || isSavingQuickModify}
-                                                            className="w-full text-white py-3.5 px-6 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer"
-                                                            style={{ backgroundColor: settings.sidebarActiveColor }}
-                                                        >
-                                                            {isSavingQuickModify ? <Clock size={16} className="animate-spin"/> : <Save size={16}/>}
-                                                            {isSavingQuickModify ? '同步寫入並記錄中...' : '儲存修改並寫入歷程'}
-                                                        </button>
-                                                    </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div className="space-y-2 md:col-span-3">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">選擇要修改的書籍 (從 {quickTargetSheet})</label>
+                                                    <select
+                                                        value={quickSelectedBook ? quickSelectedBook.id : ''}
+                                                        onChange={(e) => {
+                                                            const bookId = e.target.value;
+                                                            const list = quickTargetSheet === 'Choice' ? choiceBooks : books;
+                                                            const found = list.find(b => String(b.id).trim() === String(bookId).trim());
+                                                            if (found) {
+                                                                setQuickTargetBook(found);
+                                                                setQuickNewBookId(String(found.id));
+                                                                setQuickNewTitle(String(found.title));
+                                                                setQuickNewPrice(String(found.price));
+                                                            } else {
+                                                                setQuickTargetBook(null);
+                                                                setQuickNewBookId('');
+                                                                setQuickNewTitle('');
+                                                                setQuickNewPrice('');
+                                                            }
+                                                        }}
+                                                        className="w-full bg-black/5 border border-black/10 p-4 rounded-2xl text-sm font-bold outline-none cursor-pointer"
+                                                        style={{ color: 'inherit' }}
+                                                    >
+                                                        <option value="">-- 請選擇書籍 --</option>
+                                                        {(quickTargetSheet === 'Choice' ? choiceBooks : books).map((b, idx) => (
+                                                            <option key={(b.id || 'book') + '-' + idx} value={b.id}>
+                                                                [書碼: {b.id}] {b.title} (NT$ {b.price}) - 作者: {b.author || '未知'}
+                                                            </option>
+                                                        ))}
+                                                    </select>
                                                 </div>
-                                            ) : (
-                                                /* 🟢 快速新增書籍表單 */
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-indigo-600 ml-1 flex items-center gap-1"><Tag size={12}/> 新書碼 / 書籍ID</label>
-                                                        <input
-                                                            type="text"
-                                                            value={quickNewBookId}
-                                                            onChange={e => setQuickNewBookId(e.target.value)}
-                                                            placeholder="例如: B1099"
-                                                            required
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-mono font-bold outline-none"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
 
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-purple-600 ml-1 flex items-center gap-1"><FileText size={12}/> 書籍名稱</label>
-                                                        <input
-                                                            type="text"
-                                                            value={quickNewTitle}
-                                                            onChange={e => setQuickNewTitle(e.target.value)}
-                                                            placeholder="請輸入完整書名..."
-                                                            required
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
-
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 ml-1 flex items-center gap-1"><TrendingUp size={12}/> 定價 (NT$)</label>
-                                                        <input
-                                                            type="number"
-                                                            value={quickNewPrice}
-                                                            onChange={e => setQuickNewPrice(e.target.value)}
-                                                            placeholder="定價金額..."
-                                                            required
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-mono font-bold outline-none"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
-
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">作者</label>
-                                                        <input
-                                                            type="text"
-                                                            value={quickNewAuthor}
-                                                            onChange={e => setQuickNewAuthor(e.target.value)}
-                                                            placeholder="作者姓名..."
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
-
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">出版年份</label>
-                                                        <input
-                                                            type="text"
-                                                            value={quickNewYear}
-                                                            onChange={e => setQuickNewYear(e.target.value)}
-                                                            placeholder="例如: 2026"
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
-
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">書籍類別</label>
-                                                        <input
-                                                            type="text"
-                                                            value={quickNewCategory}
-                                                            onChange={e => setQuickNewCategory(e.target.value)}
-                                                            placeholder="例如: 史地類 / 哲學類"
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
-
-                                                    <div className="space-y-2 md:col-span-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">上架備註</label>
-                                                        <input
-                                                            type="text"
-                                                            value={quickNote}
-                                                            onChange={e => setQuickNote(e.target.value)}
-                                                            placeholder="上架原因、增訂版次..."
-                                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none"
-                                                            style={{ color: 'inherit' }}
-                                                        />
-                                                    </div>
-
-                                                    <div className="flex items-end">
-                                                        <button
-                                                            type="submit"
-                                                            disabled={isSavingQuickModify}
-                                                            className="w-full bg-emerald-600 text-white py-3.5 px-6 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:bg-emerald-700 flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer"
-                                                        >
-                                                            {isSavingQuickModify ? <Clock size={16} className="animate-spin"/> : <Plus size={16}/>}
-                                                            {isSavingQuickModify ? '同步寫入並記錄中...' : '確認上架新書並記錄'}
-                                                        </button>
-                                                    </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-indigo-600 ml-1 flex items-center gap-1"><Tag size={12}/> 書碼 / 書籍ID (改書碼)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={quickNewBookId}
+                                                        onChange={e => setQuickNewBookId(e.target.value)}
+                                                        placeholder="請輸入新書碼..."
+                                                        disabled={!quickSelectedBook}
+                                                        className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-mono font-bold outline-none disabled:opacity-40"
+                                                        style={{ color: 'inherit' }}
+                                                    />
                                                 </div>
-                                            )}
+
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-purple-600 ml-1 flex items-center gap-1"><FileText size={12}/> 書籍名稱 (改名稱)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={quickNewTitle}
+                                                        onChange={e => setQuickNewTitle(e.target.value)}
+                                                        placeholder="請輸入新書名..."
+                                                        disabled={!quickSelectedBook}
+                                                        className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none disabled:opacity-40"
+                                                        style={{ color: 'inherit' }}
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 ml-1 flex items-center gap-1"><TrendingUp size={12}/> 定價金額 (改價格)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={quickNewPrice}
+                                                        onChange={e => setQuickNewPrice(e.target.value)}
+                                                        placeholder="請輸入新定價..."
+                                                        disabled={!quickSelectedBook}
+                                                        className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-mono font-bold outline-none disabled:opacity-40"
+                                                        style={{ color: 'inherit' }}
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-2 md:col-span-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">修改原由 / 備註說明 (選填)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={quickNote}
+                                                        onChange={e => setQuickNote(e.target.value)}
+                                                        placeholder="例如: 價格調整、版次更名、輸入訛誤更正..."
+                                                        disabled={!quickSelectedBook}
+                                                        className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none disabled:opacity-40"
+                                                        style={{ color: 'inherit' }}
+                                                    />
+                                                </div>
+
+                                                <div className="flex items-end">
+                                                    <button
+                                                        type="submit"
+                                                        disabled={!quickSelectedBook || isSavingQuickModify}
+                                                        className="w-full text-white py-3.5 px-6 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer"
+                                                        style={{ backgroundColor: settings.sidebarActiveColor }}
+                                                    >
+                                                        {isSavingQuickModify ? <Clock size={16} className="animate-spin"/> : <Save size={16}/>}
+                                                        {isSavingQuickModify ? '同步寫入並記錄中...' : '儲存修改並寫入歷程'}
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </form>
                                     </div>
 
-                                    {/* 下方功能區 2: 變更歷史紀錄表 & 索引篩選器 */}
                                     <div className="p-8 rounded-[2.5rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
                                         <div className="flex flex-wrap justify-between items-center gap-4 mb-6 border-b border-black/10 pb-4">
                                             <div className="flex items-center gap-3">
@@ -1635,13 +1373,12 @@
                                                 </div>
                                                 <div>
                                                     <h3 className="text-xl font-black">書籍修改歷史紀錄與分類索引 (Book_Change_Logs)</h3>
-                                                    <p className="text-xs opacity-60 font-bold mt-0.5">即時追蹤所有定價、書名、書碼變更與新書上架歷程，具備完整稽核軌跡</p>
+                                                    <p className="text-xs opacity-60 font-bold mt-0.5">即時追蹤所有定價、書名、書碼變更歷史，具備完整稽核軌跡</p>
                                                 </div>
                                             </div>
 
-                                            {/* 分類篩選按鈕 (改價格 / 改名稱 / 改書碼 / 新增書籍) */}
                                             <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
-                                                {['全部', '改價格', '改名稱', '改書碼', '新增書籍', '綜合修改'].map(cat => (
+                                                {['全部', '改價格', '改名稱', '改書碼', '綜合修改'].map(cat => (
                                                     <button
                                                         key={cat}
                                                         type="button"
@@ -1655,14 +1392,12 @@
                                                         {cat === '改價格' && '💰 '}
                                                         {cat === '改名稱' && '📝 '}
                                                         {cat === '改書碼' && '🏷️ '}
-                                                        {cat === '新增書籍' && '➕ '}
                                                         {cat}
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        {/* 關鍵字搜尋 */}
                                         <div className="mb-6 flex justify-between items-center gap-4">
                                             <div className="flex items-center gap-3 p-3 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-black/5 w-full max-w-md bg-black/5">
                                                 <Search size={18} className="opacity-50 ml-2 shrink-0" />
@@ -1681,7 +1416,6 @@
                                             </div>
                                         </div>
 
-                                        {/* 歷史紀錄表格 */}
                                         {loadStatus.changeLogs ? (
                                             <div className="flex flex-col items-center justify-center p-16 opacity-50">
                                                 <History size={32} className="animate-spin mb-4" style={{ color: settings.sidebarActiveColor }} />
@@ -1706,7 +1440,6 @@
                                                             if (log.changeType === '改價格') catBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
                                                             else if (log.changeType === '改名稱') catBadgeClass = 'bg-purple-50 text-purple-700 border-purple-200';
                                                             else if (log.changeType === '改書碼') catBadgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
-                                                            else if (log.changeType === '新增書籍') catBadgeClass = 'bg-teal-50 text-teal-700 border-teal-200';
                                                             else if (log.changeType === '綜合修改') catBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
 
                                                             return (
@@ -1753,7 +1486,6 @@
                                 </div>
                             )}
 
-                            {}
                             {activeTab === 'notes' && (
                                 <div className="animate-in flex flex-col h-full space-y-6">
                                     <div className="flex flex-wrap justify-between items-center gap-4">
@@ -1845,268 +1577,6 @@
                                 </div>
                             )}
 
-                            {}
-                            {activeTab === 'settings' && (
-                                <div className="animate-in max-w-4xl mx-auto">
-                                    <div className="flex justify-between items-end mb-6 border-b border-black/10 pb-4">
-                                        <h3 className="text-xl font-black flex items-center gap-2" style={{ color: settings.mainTextColor }}><Palette style={{ color: settings.sidebarActiveColor }}/> 全域外觀與選單設定</h3>
-                                    </div>
-                                    
-                                    <div className="flex flex-wrap gap-2 mb-6 border-b border-black/10 pb-4 font-sans">
-                                        {settingSubTabs.map(subTab => (
-                                            <button
-                                                key={subTab.id}
-                                                type="button"
-                                                onClick={() => setSettingSubTab(subTab.id)}
-                                                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                                                    settingSubTab === subTab.id
-                                                        ? 'bg-zinc-900 text-white shadow-sm'
-                                                        : 'bg-black/5 text-zinc-600 hover:bg-black/10'
-                                                }`}
-                                            >
-                                                {subTab.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    
-                                    <form onSubmit={handleSaveSettings} className="space-y-8 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-black/5" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
-                                        {settingSubTab === 'backend' && (
-                                            <div className="space-y-6 animate-in">
-                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Palette size={16} className="opacity-50"/> 系統後台視覺色彩</h4>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入頁背景</label><input type="color" name="loginBgColor" defaultValue={settings.loginBgColor} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入卡片底色</label><input type="color" name="loginCardBgColor" defaultValue={settings.loginCardBgColor} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入文字顏色</label><input type="color" name="loginTextColor" defaultValue={settings.loginTextColor} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄背景</label><input type="color" name="sidebarBgColor" defaultValue={settings.sidebarBgColor} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊選單文字色</label><input type="color" name="sidebarTextColor" defaultValue={settings.sidebarTextColor} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊用戶名稱色</label><input type="color" name="sidebarUserColor" defaultValue={settings.sidebarUserColor || '#ffffff'} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">高亮主題色 (選單)</label><input type="color" name="sidebarActiveColor" defaultValue={settings.sidebarActiveColor} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">內頁主背景顏色</label><input type="color" name="mainBgColor" defaultValue={settings.mainBgColor} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">內頁主文字顏色</label><input type="color" name="mainTextColor" defaultValue={settings.mainTextColor} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">卡片/區塊底色</label><input type="color" name="cardBgColor" defaultValue={settings.cardBgColor} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">卡片/區塊文字</label><input type="color" name="cardTextColor" defaultValue={settings.cardTextColor} className="shadow-sm border border-black/10" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">KPI 卡片底色</label><input type="color" name="kpiBgColor" defaultValue={settings.kpiBgColor} className="shadow-sm border border-black/10" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><FileEdit size={16} className="opacity-50"/> 後台標誌與選單設定</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入頁大字 (System Name)</label><input name="systemName" defaultValue={settings.systemName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">登入頁小字 (Sub Name)</label><input name="systemSubName" defaultValue={settings.systemSubName} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂主 Logo 圖片 (Drive ID / URL)</label><input name="logoUrl" defaultValue={settings.logoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則使用預設圖示" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂副標題圖片 (Sub Logo URL)</label><input name="subLogoUrl" defaultValue={settings.subLogoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則使用文字副標題" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">自訂使用者頭像 (Drive ID / URL)</label><input name="userAvatarUrl" defaultValue={settings.userAvatarUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則顯示帳號首字母" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄大字 (Sidebar Title)</label><input name="adminPanelName" defaultValue={settings.adminPanelName || 'ADMIN PANEL'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">側邊欄小字 (Sidebar Subtext)</label><input name="sidebarSubText" defaultValue={settings.sidebarSubText || 'Digital CMS'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">記事本選單名稱</label><input name="menuNotesName" defaultValue={settings.menuNotesName || '工作記事本'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">連線狀態文字 (Online)</label><input name="onlineStatusText" defaultValue={settings.onlineStatusText || 'Online'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {settingSubTab === 'frontend_colors' && (
-                                            <div className="space-y-6 animate-in">
-                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Globe size={16} className="text-amber-700" /> 前台官網 - 基本設定 (網頁名稱與 Logo)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台網頁名稱 (Frontend Web Name)</label><input name="frontendName" defaultValue={ui.frontendName || '文史哲出版社'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">前台官網 Logo 圖片 (Drive ID / URL)</label><input name="frontendLogoUrl" defaultValue={ui.frontendLogoUrl || ''} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }} placeholder="留空則顯示預設圖示" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><Palette size={16} className="text-amber-700" /> 前台官網 - 經典中式視覺調色盤</h4>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">前台主特色色 (Theme Primary)</label><input type="color" name="themeColor" defaultValue={ui.themeColor} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">前台深色底色 (Theme Dark)</label><input type="color" name="darkThemeColor" defaultValue={ui.darkThemeColor} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">主白背景色 (Light Bg)</label><input type="color" name="lightBgColor" defaultValue={ui.lightBgColor} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">次白背景色 (Bg Light)</label><input type="color" name="bgLightColor" defaultValue={ui.bgLightColor} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">主字深色 (Text Dark)</label><input type="color" name="textDarkColor" defaultValue={ui.textDarkColor} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">優雅邊框色 (Border Color)</label><input type="color" name="borderColor" defaultValue={ui.borderColor} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">強調輔助色 (Accent Color)</label><input type="color" name="accentColor" defaultValue={ui.accentColor} /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">頁尾背景色 (Footer Bg)</label><input type="color" name="footerBgColor" defaultValue={ui.footerBgColor} /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-6 flex items-center gap-2 border-b border-black/10 pb-2"><FileText size={16} className="text-amber-700" /> 前台官網 - 中式人文字體</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase opacity-60">前台主頁面字體 (Body Font Family)</label>
-                                                        <select name="bodyFont" defaultValue={ui.bodyFont || 'Noto Sans TC'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }}>
-                                                            <option value="Noto Sans TC">思源黑體 (Noto Sans TC)</option>
-                                                            <option value="Noto Serif TC">思源明體 (Noto Serif TC)</option>
-                                                            <option value="'Ma Shan Zheng', cursive">霸氣毛筆書法 (Ma Shan Zheng)</option>
-                                                            <option value="'Long Cang', cursive">極簡行楷鋼筆 (Long Cang)</option>
-                                                        </select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black uppercase opacity-60">前台標題字體 (Title Font Family)</label>
-                                                        <select name="titleFont" defaultValue={ui.titleFont || 'Noto Serif TC'} className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" style={{ color: 'inherit' }}>
-                                                            <option value="Noto Serif TC">思源明體 (Noto Serif TC)</option>
-                                                            <option value="Noto Sans TC">思源黑體 (Noto Sans TC)</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {settingSubTab === 'frontend_text' && (
-                                            <div className="space-y-6 animate-in">
-                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><FileText size={16} className="opacity-50" /> 導覽選單與迎賓標題</h4>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：關於我們</label><input name="menuAbout" defaultValue={ui.menuAbout} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：關於社長</label><input name="menuPresident" defaultValue={ui.menuPresident} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：聯繫我們</label><input name="menuContact" defaultValue={ui.menuContact} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：新書上市</label><input name="menuNewArrivals" defaultValue={ui.menuNewArrivals} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：書籍檢索</label><input name="menuSearch" defaultValue={ui.menuSearch} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：我的書包</label><input name="menuCart" defaultValue={ui.menuCart} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">選單：管理入口</label><input name="menuAdmin" defaultValue={ui.menuAdmin} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {settingSubTab === 'frontend_footer' && (
-                                            <div className="space-y-6 animate-in">
-                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><MapPin size={16} className="text-amber-700" /> 頁尾資訊與聯絡細節 (Footer)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">頁尾品牌故事短評</label><textarea name="footerBrandDesc" defaultValue={ui.footerBrandDesc} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-16 resize-none font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">故事按鈕文字</label><input name="footerStoryBtn" defaultValue={ui.footerStoryBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">聯絡區主標題</label><input name="footerContactTitle" defaultValue={ui.footerContactTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">地址</label><input name="footerAddress" defaultValue={ui.footerAddress} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">電話</label><input name="footerPhone" defaultValue={ui.footerPhone} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">傳真 (Fax)</label><input name="footerFax" defaultValue={ui.footerFax} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">聯絡信箱 (Email)</label><input name="footerEmail" defaultValue={ui.footerEmail} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">營業時間標示</label><input name="footerHours" defaultValue={ui.footerHours} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">郵撥轉帳資訊</label><input name="footerTransfer" defaultValue={ui.footerTransfer} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">推薦好站標題</label><input name="footerLinksTitle" defaultValue={ui.footerLinksTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">Facebook 粉絲專頁名稱</label><input name="footerFacebookLinkText" defaultValue={ui.footerFacebookLinkText} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">Facebook 專頁網址 (URL)</label><input name="footerFacebookUrl" defaultValue={ui.footerFacebookUrl} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">版權宣傳口號 (footer Copyright)</label><input name="footerCopyright" defaultValue={ui.footerCopyright} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><BookOpen size={16} className="opacity-50" /> 關於我們品牌故事視窗 (About Modal Content)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">故事總標題</label><input name="aboutStoryTitle" defaultValue={ui.aboutStoryTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">關閉按鈕文字</label><input name="aboutCloseBtn" defaultValue={ui.aboutCloseBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">簡介主標</label><input name="aboutIntroTitle" defaultValue={ui.aboutIntroTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">介紹段落 1</label><textarea name="aboutIntroP1" defaultValue={ui.aboutIntroP1} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-24 resize-none font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">介紹段落 2</label><textarea name="aboutIntroP2" defaultValue={ui.aboutIntroP2} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-24 resize-none font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">理念主標</label><input name="aboutConceptTitle" defaultValue={ui.aboutConceptTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">理念內文</label><textarea name="aboutConceptP1" defaultValue={ui.aboutConceptP1} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-20 resize-none font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">作家大作展示區標題</label><input name="aboutAuthorTitle" defaultValue={ui.aboutAuthorTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">作家代表前言文字</label><textarea name="aboutAuthorIntro" defaultValue={ui.aboutAuthorIntro} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-16 resize-none font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">文學作家分類標籤</label><input name="aboutAuthorLit" defaultValue={ui.aboutAuthorLit} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">文學作家清單 (以 \n 斷行分行條列)</label><textarea name="aboutAuthorLitItems" defaultValue={ui.aboutAuthorLitItems} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-24 font-mono font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">學術著作分類標籤</label><input name="aboutAuthorAcad" defaultValue={ui.aboutAuthorAcad} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">學術著作清單 (以 \n 斷行分行條列)</label><textarea name="aboutAuthorAcadItems" defaultValue={ui.aboutAuthorAcadItems} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-24 font-mono font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">故事底部引導按鈕文字</label><input name="aboutStartExploringBtn" defaultValue={ui.aboutStartExploringBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {settingSubTab === 'frontend_search' && (
-                                            <div className="space-y-6 animate-in">
-                                                <h4 className="text-sm font-black mb-5 flex items-center gap-2 border-b border-black/10 pb-2"><Search size={16} className="text-amber-700" /> 圖書目錄檢索與篩選 (Search Modal)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">檢索區大標</label><input name="searchTitle" defaultValue={ui.searchTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">檢索區副標</label><input name="searchSubtitle" defaultValue={ui.searchSubtitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">進階篩選標題</label><input name="searchFilterTitle" defaultValue={ui.searchFilterTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">書碼查詢標籤</label><input name="searchLabelCode" defaultValue={ui.searchLabelCode} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">書名關鍵字標籤</label><input name="searchLabelTitle" defaultValue={ui.searchLabelTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">作者關鍵字標籤</label><input name="searchLabelAuthor" defaultValue={ui.searchLabelAuthor} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">出版年標籤</label><input name="searchLabelYear" defaultValue={ui.searchLabelYear} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">分類選單標籤</label><input name="searchLabelCategory" defaultValue={ui.searchLabelCategory} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">查詢按鈕文字</label><input name="searchBtnQuery" defaultValue={ui.searchBtnQuery} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：書碼</label><input name="searchTableHeaderCode" defaultValue={ui.searchTableHeaderCode} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：書名</label><input name="searchTableHeaderTitle" defaultValue={ui.searchTableHeaderTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：作者</label><input name="searchTableHeaderAuthor" defaultValue={ui.searchTableHeaderAuthor} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：出版年</label><input name="searchTableHeaderYear" defaultValue={ui.searchTableHeaderYear} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：價格</label><input name="searchTableHeaderPrice" defaultValue={ui.searchTableHeaderPrice} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：分類</label><input name="searchTableHeaderCategory" defaultValue={ui.searchTableHeaderCategory} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">列表標頭：操作</label><input name="searchTableHeaderAction" defaultValue={ui.searchTableHeaderAction} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">載入更多按鈕文字</label><input name="searchBtnMore" defaultValue={ui.searchBtnMore} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><ShoppingCart size={16} className="opacity-50" /> 購物書包與結帳流程 (Cart Drawer)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">書包抽屜大標</label><input name="cartTitle" defaultValue={ui.cartTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">關閉按鈕文字</label><input name="cartCloseBtn" defaultValue={ui.cartCloseBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">空書包提示語</label><input name="cartEmptyText" defaultValue={ui.cartEmptyText} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">填寫收件資訊標題</label><input name="cartCheckoutTitle" defaultValue={ui.cartCheckoutTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">收件人欄位預設文字</label><input name="cartLabelName" defaultValue={ui.cartLabelName} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">聯絡電話欄位預設文字</label><input name="cartLabelPhone" defaultValue={ui.cartLabelPhone} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">電子信箱欄位預設文字</label><input name="cartLabelEmail" defaultValue={ui.cartLabelEmail} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">收件地址欄位預設文字</label><input name="cartLabelAddress" defaultValue={ui.cartLabelAddress} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款方式欄位預設文字</label><input name="cartLabelPayment" defaultValue={ui.cartLabelPayment} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">備註欄位預設文字</label><input name="cartLabelMemo" defaultValue={ui.cartLabelMemo} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">買家備註 Placeholder</label><input name="cartMemoPlaceholder" defaultValue={ui.cartMemoPlaceholder} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">確認下單按鈕</label><input name="cartBtnCheckout" defaultValue={ui.cartBtnCheckout} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">結帳處理中狀態</label><input name="cartCheckingOutBtn" defaultValue={ui.cartCheckingOutBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：店取付現</label><input name="cartOptionCash" defaultValue={ui.cartOptionCash} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">付款：轉帳</label><input name="cartOptionTransfer" defaultValue={ui.cartOptionTransfer} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">金額總計標籤</label><input name="cartTotalLabel" defaultValue={ui.cartTotalLabel} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">幾本書數量標籤 (支援 {"{count}"})</label><input name="cartBookCountLabel" defaultValue={ui.cartBookCountLabel} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><Zap size={16} className="opacity-50" /> 系統隨機推薦與前台狀態提示語 (Messages)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">隨機新書推薦標題</label><input name="newArrivalsTitle" defaultValue={ui.newArrivalsTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">更換新書按鈕文字</label><input name="newArrivalsBtnRefresh" defaultValue={ui.newArrivalsBtnRefresh} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">隨機視窗關閉按鈕</label><input name="newArrivalsCloseBtn" defaultValue={ui.newArrivalsCloseBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：同步庫存中</label><input name="msgLoadingInventory" defaultValue={ui.msgLoadingInventory} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：庫存已載入</label><input name="msgLoadedInventory" defaultValue={ui.msgLoadedInventory} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：載入更多書目中</label><input name="msgLoadingMoreBooks" defaultValue={ui.msgLoadingMoreBooks} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：已售罄</label><input name="msgOutOfStock" defaultValue={ui.msgOutOfStock} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：無相關書籍</label><input name="msgNoBooksFound" defaultValue={ui.msgNoBooksFound} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">提示語：尋找書籍中</label><input name="msgSearchingBooks" defaultValue={ui.msgSearchingBooks} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-
-                                                <h4 className="text-sm font-black mb-5 pt-4 flex items-center gap-2 border-b border-black/10 pb-2"><MessageSquare size={16} className="opacity-50" /> 讀者客服與意見反映元件 (CS Component)</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">客服主體標題</label><input name="csTitle" defaultValue={ui.csTitle} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">稱呼 Placeholder</label><input name="csNamePlaceholder" defaultValue={ui.csNamePlaceholder} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">聯絡電話 Placeholder</label><input name="csPhonePlaceholder" defaultValue={ui.csPhonePlaceholder} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">信箱 Placeholder</label><input name="csEmailPlaceholder" defaultValue={ui.csEmailPlaceholder} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase opacity-60">反映訊息 Placeholder</label><textarea name="csMessagePlaceholder" defaultValue={ui.csMessagePlaceholder} className="w-full bg-black/5 p-3.5 rounded-2xl text-sm h-16 resize-none font-bold outline-none leading-relaxed" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">送出反映按鈕</label><input name="csSubmitBtn" defaultValue={ui.csSubmitBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black uppercase opacity-60">傳送中狀態按鈕</label><input name="csSubmittingBtn" defaultValue={ui.csSubmittingBtn} className="w-full bg-black/5 p-3 rounded-xl text-xs font-bold outline-none" /></div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="pt-4 border-t border-black/5 flex justify-end">
-                                            <button type="submit" className="text-white px-8 py-3.5 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:opacity-90 flex items-center gap-2" style={{ backgroundColor: settings.sidebarActiveColor }}>
-                                                <Save size={18}/> 套用並同步設定至雲端
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            )}
-
-                            {}
-                            {activeTab === 'carousel' && (
-                                <div className="animate-in">
-                                    {loadStatus.carousels ? (
-                                        <div className="text-sm font-bold animate-pulse opacity-60">載入輪播設定中...</div>
-                                    ) : carousels.length > 0 ? (
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                            {carousels.map((c, idx) => (
-                                                <div key={c.id} className="rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col group relative" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
-                                                    <div className={`absolute top-4 left-4 text-white text-[10px] px-4 py-1.5 rounded-full font-bold z-10 shadow-lg backdrop-blur-md border border-white/20 ${c.status === '已發佈' ? 'bg-emerald-500/90' : 'bg-zinc-800/90'}`}>順序 {idx + 1} | {c.status}</div>
-                                                    <img src={formatImageUrl(c.image)} className="h-56 w-full object-cover transition duration-700 group-hover:scale-105" onError={(e)=>{e.target.src='https://via.placeholder.com/600x300?text=Invalid+Image+URL'}} />
-                                                    <div className="p-6 flex-1 flex flex-col relative z-10">
-                                                        <h3 className="font-black text-xl mb-2">{c.title}</h3>
-                                                        <p className="text-sm opacity-70 line-clamp-2 mb-6 leading-relaxed">{c.description}</p>
-                                                        <div className="mt-auto flex justify-end gap-3 pt-4 border-t border-black/5">
-                                                            <button type="button" onClick={() => { setEditingCarousel(c); setShowCarouselModal(true); }} className="opacity-60 hover:opacity-100 hover:text-indigo-600 px-5 py-2 rounded-xl flex items-center gap-2 transition font-bold text-xs bg-black/5"><Edit2 size={14}/> 編輯</button>
-                                                            <button type="button" onClick={() => openDeleteModal('carousel', c.id, c.title)} className="opacity-60 hover:opacity-100 text-red-500 px-5 py-2 rounded-xl flex items-center gap-2 transition font-bold text-xs bg-black/5"><Trash2 size={14}/> 刪除</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="p-20 text-center font-bold rounded-[2rem] border-dashed border-2 border-black/10 opacity-60" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>目前無輪播資料，請點擊右上角新增。</div>
-                                    )}
-                                </div>
-                            )}
-
-                            {}
                             {(activeTab === 'books' || activeTab === 'choice') && (
                                 <div className="animate-in flex flex-col relative h-full min-h-[500px]">
                                     <div className="mb-6 flex flex-wrap justify-between items-center gap-4 shrink-0">
@@ -2194,7 +1664,6 @@
                                 </div>
                             )}
 
-                            {}
                             {activeTab === 'orders' && (
                                 <div className="rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden animate-in flex flex-col relative h-full min-h-[500px]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
                                     {loadStatus.orders ? (
@@ -2245,7 +1714,6 @@
                                 </div>
                             )}
 
-                            {}
                             {activeTab === 'ai' && (
                                 <div className="animate-in">
                                     {loadStatus.cs ? (
@@ -2326,7 +1794,6 @@
                         </div>
                     )}
 
-                    {}
                     {showBookModal && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center">
                             <div className={`w-full shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col transition-all duration-300 ${modalMaximized['book'] ? 'w-full h-full max-w-none max-h-none rounded-none' : 'max-w-lg max-h-[90vh] rounded-[2.5rem]'}`} style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
@@ -2459,7 +1926,6 @@
                         </div>
                     )}
 
-                    {}
                     {showCarouselModal && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center">
                             <div className={`w-full shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col transition-all duration-300 ${modalMaximized['carousel'] ? 'w-full h-full max-w-none max-h-none rounded-none' : 'max-w-lg max-h-[90vh] rounded-[2.5rem]'}`} style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
@@ -2483,7 +1949,6 @@
                         </div>
                     )}
 
-                    {}
                     {showOrderModal && editingOrder && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center">
                             <div className={`w-full shadow-2xl animate-in border border-black/10 flex flex-col transition-all duration-300 ${modalMaximized['order'] ? 'w-full h-full max-w-none max-h-none rounded-none' : 'max-w-2xl max-h-[90vh] rounded-[2.5rem]'}`} style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
@@ -2545,7 +2010,6 @@
                         </div>
                     )}
 
-                    {}
                     {showKpiModal && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center">
                             <div className={`w-full shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col transition-all duration-300 ${modalMaximized['kpi'] ? 'w-full h-full max-w-none max-h-none rounded-none' : 'max-w-2xl max-h-[90vh] rounded-[2.5rem]'}`} style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
@@ -2632,7 +2096,6 @@
                         </div>
                     )}
 
-                    {}
                     {showCSModal && editingCSLog && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center">
                             <div className={`w-full shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col transition-all duration-300 ${modalMaximized['cs'] ? 'w-full h-full max-w-none max-h-none rounded-none' : 'max-w-xl max-h-[90vh] rounded-[2.5rem]'}`} style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
@@ -2680,7 +2143,6 @@
                         </div>
                     )}
 
-                    {}
                     {iframeModal.isOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center">
                             <div className={`w-full shadow-2xl flex flex-col overflow-hidden animate-in border border-black/10 transition-all duration-300 ${modalMaximized['iframe'] ? 'w-full h-full max-w-none max-h-none rounded-none' : 'max-w-5xl max-h-[90vh] rounded-[2.5rem]'}`} style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
@@ -2700,7 +2162,6 @@
                         </div>
                     )}
 
-                    {}
                     {showGasCodeModal && (
                         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 p-4 py-8 flex items-center justify-center">
                             <div className="bg-zinc-900 text-white rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col border border-zinc-700 overflow-hidden animate-in">
@@ -2718,7 +2179,7 @@
                                 </div>
                                 <div className="p-6 overflow-y-auto flex-1 font-mono text-xs leading-relaxed text-zinc-300 space-y-4">
                                     <div className="p-4 bg-emerald-950/40 border border-emerald-800/50 rounded-2xl text-emerald-200">
-                                        <strong>💡 升級提示：</strong> 本次更新已在 Google Apps Script 新增 `Book_Change_Logs` (書籍變更歷史紀錄表) 之自動讀取(`FETCH_CHANGE_LOGS`) 與寫入(`QUICK_UPDATE_BOOK_LOG`) 處理程序。
+                                        <strong>💡 升級提示：</strong> 本次更新已在 Google Apps Script 新增 `Book_Change_Logs` (書籍變更歷史紀錄表) 之自動讀取與寫入處理程序。
                                     </div>
                                     <textarea
                                         readOnly
@@ -2863,15 +2324,7 @@ function processLogin(payload) {
 
 function processAdminAction(action, payload, currentUser) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const parseNumber = (val) => {
-    if (!val) return 0;
-    const num = parseInt(String(val).replace(/[^0-9]/g, ""), 10);
-    return isNaN(num) ? 0 : num;
-  };
 
-  /* =========================
-     📜 書籍變更紀錄系統 (Book_Change_Logs)
-  ========================= */
   if (action === "FETCH_CHANGE_LOGS") {
     const headers = ["紀錄ID", "變更時間", "操作者", "目標分頁", "書籍ID", "書籍名稱", "變更類型", "變更前內容", "變更後內容", "備註說明"];
     const sheet = getOrCreateSheet(ss, "Book_Change_Logs", headers);
@@ -2893,109 +2346,75 @@ function processAdminAction(action, payload, currentUser) {
   }
 
   if (action === "QUICK_UPDATE_BOOK_LOG") {
-    const isChoice = payload.targetSheet === "Choice" || payload.target === "choice" || payload.target === "Choice";
-    const targetSheetName = isChoice ? "Choice" : "Book_ALL";
-    const sheet = ss.getSheetByName(targetSheetName);
-    if (!sheet) return { status: "error", msg: "找不到 " + targetSheetName + " 分頁" };
+    const parsePrice = (val) => {
+      if (val === undefined || val === null) return null;
+      const num = parseInt(String(val).replace(/[^0-9]/g, ""), 10);
+      return isNaN(num) ? null : num;
+    };
 
-    const rawData = sheet.getDataRange().getValues();
-    let targetRow = -1;
-    let bookTitle = payload.bookTitle || payload.newTitle || "";
     const targetId = String(payload.bookId || payload.id || "").trim();
-
     if (!targetId) {
       return { status: "error", msg: "傳遞的書碼為空，請重新選擇書籍" };
     }
 
-    for (let i = 1; i < rawData.length; i++) {
-      if (String(rawData[i][0]).trim() === targetId) {
-        targetRow = i + 1;
-        break;
+    const newBookId = payload.newBookId ? String(payload.newBookId).trim() : targetId;
+    const newTitle = payload.newTitle || payload.bookTitle || "";
+    const rawPrice = payload.newPrice !== undefined ? payload.newPrice : (payload.newVal !== undefined ? payload.newVal : payload.price);
+    const safePrice = parsePrice(rawPrice);
+
+    const updateSheetRow = (sheetName) => {
+      const sheet = ss.getSheetByName(sheetName);
+      if (!sheet) return false;
+      const rawData = sheet.getDataRange().getValues();
+      let isFound = false;
+
+      for (let i = 1; i < rawData.length; i++) {
+        if (String(rawData[i][0]).trim() === targetId) {
+          const maxCols = Math.max(sheet.getLastColumn(), 15);
+          const rowRange = sheet.getRange(i + 1, 1, 1, maxCols);
+          const rowData = rowRange.getValues()[0];
+
+          if (newBookId) rowData[0] = sanitizeForSpreadsheet(newBookId);
+          if (newTitle) rowData[1] = sanitizeForSpreadsheet(newTitle);
+          if (safePrice !== null) rowData[4] = safePrice;
+
+          rowRange.setValues([rowData]);
+          isFound = true;
+        }
       }
-    }
+      return isFound;
+    };
 
-    if (targetRow === -1) {
-      return { status: "error", msg: "在 " + targetSheetName + " 找不到書碼為 [" + targetId + "] 的書籍" };
-    }
+    const primaryTarget = (payload.targetSheet === "Choice" || payload.target === "choice") ? "Choice" : "Book_ALL";
+    const secondaryTarget = primaryTarget === "Choice" ? "Book_ALL" : "Choice";
 
-    const maxCols = Math.max(sheet.getLastColumn(), 15);
-    const rowRange = sheet.getRange(targetRow, 1, 1, maxCols);
-    const rowData = rowRange.getValues()[0];
+    const updatedPrimary = updateSheetRow(primaryTarget);
+    const updatedSecondary = updateSheetRow(secondaryTarget);
 
-    if (payload.newBookId && String(payload.newBookId).trim() !== "") {
-      rowData[0] = sanitizeForSpreadsheet(payload.newBookId);
+    if (!updatedPrimary && !updatedSecondary) {
+      return { status: "error", msg: "在試算表中找不到書碼為 [" + targetId + "] 的書籍" };
     }
-    if (payload.newTitle !== undefined) {
-      rowData[1] = sanitizeForSpreadsheet(payload.newTitle);
-      bookTitle = payload.newTitle;
-    }
-    if (payload.newPrice !== undefined) {
-      rowData[4] = parseInt(payload.newPrice) || 0;
-    }
-
-    rowRange.setValues([rowData]);
 
     const changeTypeStr = payload.changeType || payload.field || "綜合修改";
-
     const logSheet = getOrCreateSheet(ss, "Book_Change_Logs", ["紀錄ID", "變更時間", "操作者", "目標分頁", "書籍ID", "書籍名稱", "變更類型", "變更前內容", "變更後內容", "備註說明"]);
     const nowStr = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm:ss");
+
     logSheet.appendRow([
       "LOG-" + Date.now(),
       "'" + nowStr,
       sanitizeForSpreadsheet(payload.operator || currentUser || "Admin"),
-      targetSheetName,
-      sanitizeForSpreadsheet(payload.newBookId || payload.bookId || payload.id),
-      sanitizeForSpreadsheet(bookTitle),
+      primaryTarget + (updatedSecondary ? " (已同步 Book_ALL)" : ""),
+      sanitizeForSpreadsheet(newBookId),
+      sanitizeForSpreadsheet(newTitle),
       sanitizeForSpreadsheet(changeTypeStr),
       sanitizeForSpreadsheet(payload.oldValue || ""),
       sanitizeForSpreadsheet(payload.newValue || ""),
       sanitizeForSpreadsheet(payload.note || "快速修改性編輯")
     ]);
 
-    return { status: "success", msg: "書籍修改已儲存，並寫入變更紀錄表！" };
+    return { status: "success", msg: "書籍修改已儲存，且 Book_ALL 與 Choice 已自動同步！" };
   }
 
-  if (action === "QUICK_ADD_BOOK_LOG") {
-    const isChoice = payload.targetSheet === "Choice" || payload.target === "choice" || payload.target === "Choice";
-    const targetSheetName = isChoice ? "Choice" : "Book_ALL";
-    const sheet = getOrCreateSheet(ss, targetSheetName, ["編號", "書名", "作者", "年份", "定價", "isbn", "庫存", "分類", "newyn", "lastyn", "照片"]);
-
-    const newRow = new Array(15).fill("");
-    const bookId = sanitizeForSpreadsheet(payload.bookId || payload.id || Date.now());
-    const bookTitle = sanitizeForSpreadsheet(payload.title || "未命名書籍");
-    const price = parseInt(payload.price) || 0;
-
-    newRow[0] = bookId;
-    newRow[1] = bookTitle;
-    newRow[2] = sanitizeForSpreadsheet(payload.author || "");
-    newRow[3] = sanitizeForSpreadsheet(payload.year || "");
-    newRow[4] = price;
-    newRow[6] = parseInt(payload.stock) || 0;
-    newRow[7] = sanitizeForSpreadsheet(payload.category || "未分類");
-    newRow[10] = sanitizeForSpreadsheet(payload.cover || "");
-    if (targetSheetName === "Book_ALL") newRow[11] = sanitizeForSpreadsheet(payload.category || "未分類");
-
-    sheet.appendRow(newRow);
-
-    const logSheet = getOrCreateSheet(ss, "Book_Change_Logs", ["紀錄ID", "變更時間", "操作者", "目標分頁", "書籍ID", "書籍名稱", "變更類型", "變更前內容", "變更後內容", "備註說明"]);
-    const nowStr = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm:ss");
-    logSheet.appendRow([
-      "LOG-" + Date.now(),
-      "'" + nowStr,
-      sanitizeForSpreadsheet(payload.operator || currentUser || "Admin"),
-      targetSheetName,
-      bookId,
-      bookTitle,
-      "新增書籍",
-      "無 (新上架書籍)",
-      "書碼:" + bookId + " | 定價:NT$" + price + " | 分類:" + (payload.category || "未分類"),
-      sanitizeForSpreadsheet(payload.note || "快速上架書籍")
-    ]);
-
-    return { status: "success", msg: "新書已成功上架並記錄至變更歷史表！" };
-  }
-
-  // 其餘已有 action ...
   return { status: "error", msg: "未知 action" };
 }`}
                                     />
@@ -3009,7 +2428,6 @@ function processAdminAction(action, payload, currentUser) {
                         </div>
                     )}
 
-                    {}
                     {notification && <div className="fixed bottom-12 right-12 bg-zinc-900 text-white px-8 py-5 rounded-2xl shadow-2xl animate-in font-bold text-sm z-[200] flex items-center gap-3 border border-zinc-700"><CheckCircle size={20} className="text-emerald-400" /> {notification}</div>}
                 </div> 
             );
