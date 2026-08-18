@@ -262,7 +262,7 @@
             const [quickNewPrice, setQuickNewPrice] = useState('');
             const [quickNote, setQuickNote] = useState('');
             const [isSavingQuickModify, setIsSavingQuickModify] = useState(false);
-            const [quickBookSearchQuery, setQuickBookSearchQuery] = useState(''); // 🔍 書籍快速修改關鍵字搜尋 state
+            const [quickBookSearchQuery, setQuickBookSearchQuery] = useState('');
             
             const [logSearchQuery, setLogSearchQuery] = useState('');
             const [logCategoryFilter, setLogCategoryFilter] = useState('全部'); 
@@ -278,7 +278,7 @@
             });
 
             const [expandedMenus, setExpandedMenus] = useState({
-                group_dash: true, group_marketing: false, group_books: true, group_orders: false, group_cs: false, group_notes: true, group_external: false, group_settings: false
+                group_dash: true, group_marketing: true, group_books: true, group_orders: false, group_cs: false, group_notes: true, group_external: false, group_settings: false
             });
 
             const toggleMenu = (menuId) => setExpandedMenus(prev => ({ ...prev, [menuId]: !prev[menuId] }));
@@ -917,7 +917,6 @@
                 return [...new Set(cats)].sort();
             }, [books]);
 
-            // 🔍 快速修改書籍過濾索引 (Filtered QuickBooks for Selection)
             const filteredQuickBooks = useMemo(() => {
                 const list = quickTargetSheet === 'Choice' ? (choiceBooks || []) : (books || []);
                 const q = (quickBookSearchQuery || '').toLowerCase().trim();
@@ -1195,6 +1194,7 @@
                             </div>
                         </header>
                         
+                        {}
                         <div className="p-6 lg:p-10 overflow-y-auto flex-1 z-10 sidebar-scroll">
                             {activeTab === 'dashboard' && (
                                 <div className="animate-in">
@@ -1250,6 +1250,34 @@
                                 </div>
                             )}
 
+                            {/* 🎠 首頁熱賣輪播 (Carousels View) */}
+                            {activeTab === 'carousel' && (
+                                <div className="animate-in">
+                                    {loadStatus.carousels ? (
+                                        <div className="text-sm font-bold animate-pulse opacity-60 text-center p-12">載入輪播設定中...</div>
+                                    ) : carousels.length > 0 ? (
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                            {carousels.map((c, idx) => (
+                                                <div key={c.id} className="rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col group relative" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
+                                                    <div className={`absolute top-4 left-4 text-white text-[10px] px-4 py-1.5 rounded-full font-bold z-10 shadow-lg backdrop-blur-md border border-white/20 ${c.status === '已發佈' ? 'bg-emerald-500/90' : 'bg-zinc-800/90'}`}>順序 {idx + 1} | {c.status}</div>
+                                                    <img src={formatImageUrl(c.image)} className="h-56 w-full object-cover transition duration-700 group-hover:scale-105" onError={(e)=>{e.target.src='https://via.placeholder.com/600x300?text=Invalid+Image+URL'}} />
+                                                    <div className="p-6 flex-1 flex flex-col relative z-10">
+                                                        <h3 className="font-black text-xl mb-2">{c.title}</h3>
+                                                        <p className="text-sm opacity-70 line-clamp-2 mb-6 leading-relaxed">{c.description}</p>
+                                                        <div className="mt-auto flex justify-end gap-3 pt-4 border-t border-black/5">
+                                                            <button type="button" onClick={() => { setEditingCarousel(c); setShowCarouselModal(true); }} className="opacity-60 hover:opacity-100 hover:text-indigo-600 px-5 py-2 rounded-xl flex items-center gap-2 transition font-bold text-xs bg-black/5"><Edit2 size={14}/> 編輯</button>
+                                                            <button type="button" onClick={() => openDeleteModal('carousel', c.id, c.title)} className="opacity-60 hover:opacity-100 text-red-500 px-5 py-2 rounded-xl flex items-center gap-2 transition font-bold text-xs bg-black/5"><Trash2 size={14}/> 刪除</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="p-20 text-center font-bold rounded-[2rem] border-dashed border-2 border-black/10 opacity-60" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>目前無輪播資料，請點擊右上角新增。</div>
+                                    )}
+                                </div>
+                            )}
+
                             {activeTab === 'book_logs' && (
                                 <div className="animate-in space-y-10">
                                     <div className="p-8 rounded-[2.5rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
@@ -1284,7 +1312,6 @@
 
                                         <form onSubmit={handleQuickModifyBook} className="space-y-6">
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                {/* 選擇與快速索引區塊 */}
                                                 <div className="space-y-2 md:col-span-3">
                                                     <div className="flex justify-between items-center">
                                                         <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">選擇要修改的書籍 (從 {quickTargetSheet})</label>
@@ -1296,7 +1323,6 @@
                                                     </div>
 
                                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                                        {/* 🔍 快速關鍵字/書碼搜尋索引輸入框 */}
                                                         <div className="md:col-span-1 flex items-center gap-2 p-3.5 rounded-2xl bg-black/5 border border-black/10 shadow-inner">
                                                             <Search size={16} className="opacity-50 shrink-0 ml-1" />
                                                             <input
@@ -1314,7 +1340,6 @@
                                                             )}
                                                         </div>
 
-                                                        {/* 下拉選單 (顯示過濾後的選項) */}
                                                         <div className="md:col-span-2">
                                                             <select
                                                                 value={quickSelectedBook ? quickSelectedBook.id : ''}
@@ -2189,6 +2214,100 @@
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 📝 記事本新增/編輯彈窗 */}
+                    {showNoteModal && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center">
+                            <div className={`w-full shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col transition-all duration-300 ${modalMaximized['note'] ? 'w-full h-full max-w-none max-h-none rounded-none' : 'max-w-xl max-h-[90vh] rounded-[2.5rem]'}`} style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
+                                <div className="p-5 border-b border-black/5 flex justify-between items-center font-bold tracking-tight bg-black/5">
+                                    <div className="flex items-center gap-2">
+                                        <FileText size={18} style={{ color: settings.sidebarActiveColor }}/> {editingNote ? '編輯工作記事' : '新增工作記事'}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button type="button" onClick={() => toggleMaximize('note')} className="p-1.5 rounded-lg hover:bg-black/10 transition text-zinc-500 hover:text-zinc-800" title={modalMaximized['note'] ? "復原" : "放大"}>
+                                            {modalMaximized['note'] ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                                        </button>
+                                        <button type="button" onClick={() => setShowNoteModal(false)} className="p-1.5 rounded-lg hover:bg-red-500 hover:text-white transition text-zinc-500" title="關閉"><X size={16}/></button>
+                                    </div>
+                                </div>
+                                <form onSubmit={handleSaveNote} className="p-6 space-y-4 overflow-y-auto sidebar-scroll">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">記事標題</label>
+                                        <input 
+                                            name="title" 
+                                            defaultValue={editingNote?.title || ''} 
+                                            required 
+                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" 
+                                            placeholder="輸入記事標題..." 
+                                            style={{ color: 'inherit' }}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">分類類別</label>
+                                            <input 
+                                                name="category" 
+                                                defaultValue={editingNote?.category || '日常交辦'} 
+                                                className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" 
+                                                placeholder="例如: 出版進度, 財務備忘" 
+                                                style={{ color: 'inherit' }}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">標籤 (逗號隔開)</label>
+                                            <input 
+                                                name="tags" 
+                                                defaultValue={editingNote?.tags || ''} 
+                                                className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" 
+                                                placeholder="加急, 重要, 校稿" 
+                                                style={{ color: 'inherit' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">卡片底色 (標記色彩)</label>
+                                        <input 
+                                            type="color" 
+                                            name="color" 
+                                            defaultValue={editingNote?.color || '#ffffff'} 
+                                            className="w-full border border-black/10 rounded-xl"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">記事完整內文</label>
+                                        <textarea 
+                                            name="content" 
+                                            defaultValue={editingNote?.content || ''} 
+                                            required 
+                                            className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none h-44 resize-none leading-relaxed" 
+                                            placeholder="寫下詳細工作進度、會議紀錄或靈感..." 
+                                            style={{ color: 'inherit' }}
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center gap-2 p-2">
+                                        <input 
+                                            type="checkbox" 
+                                            name="isPinned" 
+                                            id="isPinned" 
+                                            defaultChecked={editingNote?.isPinned === 'TRUE' || editingNote?.isPinned === true} 
+                                            className="w-4 h-4 rounded text-indigo-600 focus:ring-0 cursor-pointer"
+                                        />
+                                        <label htmlFor="isPinned" className="text-xs font-bold cursor-pointer select-none">📌 置頂此記事在最前列</label>
+                                    </div>
+
+                                    <div className="pt-4 pb-2">
+                                        <button className="w-full text-white py-4 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:opacity-90 flex items-center justify-center gap-2" style={{ backgroundColor: settings.sidebarActiveColor }}>
+                                            <Save size={16}/> 儲存並同步至試算表
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}
