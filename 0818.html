@@ -18,16 +18,16 @@
     <script src="https://unpkg.com/lucide-react@0.284.0/dist/umd/lucide-react.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700;900&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&family=Liu+Jian+Mao+Cao&family=Long+Cang&display=swap');
         
         body { font-family: 'Outfit', 'Noto Sans TC', sans-serif; background-color: #F4F4F5; }
         .animate-in { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar { width: 14px; height: 14px; }
         ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.04); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.4); border: 2px solid transparent; background-clip: padding-box; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.4); border: 3px solid transparent; background-clip: padding-box; }
         
         .sidebar-scroll::-webkit-scrollbar { display: none; }
         .sidebar-scroll { -ms-overflow-style: none; scrollbar-width: none; }
@@ -40,19 +40,15 @@
     </style>
 </head>
 <body class="text-zinc-800 overflow-hidden">
-    <div id="root"></div>
-
     <!-- 
     ========================================================================================
-    🟢【後端 Google Apps Script 擴充碼說明】
-    若欲搭配完整後端，請複製下方程式碼至 Google Apps Script (Code.gs) 中部署：
+    🟢【後端 Google Apps Script (Code.gs) 擴充邏輯】
+    若需執行雙向同步與異動歷史紀錄，請複製下方程式碼至 Google Apps Script Code.gs 中：
     ========================================================================================
-    
+
     function processAdminAction(action, payload) {
       const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-      
-      // ... 原有 action 處理 ...
-      
+
       /* =========================
          📜 異動紀錄系統 (AuditLog)
       ========================= */
@@ -92,7 +88,7 @@
          🔄 雙向同步更新書籍 (UPDATE_BOOK_DUAL)
       ========================= */
       if (action === "UPDATE_BOOK_DUAL") {
-        const targetSheets = payload.targetSheets || ["Book_ALL", "Choice"]; // 預設兩邊同步
+        const targetSheets = payload.targetSheets || ["Book_ALL", "Choice"];
         let updatedSheets = [];
         
         targetSheets.forEach(sheetName => {
@@ -124,7 +120,6 @@
           }
         });
 
-        // 自動寫入 Audit Log
         if (payload.logs && Array.isArray(payload.logs)) {
           const auditSheet = getOrCreateSheet(ss, "AuditLog", ["時間", "操作者", "書籍ID", "書籍名稱", "變更項目", "原數值", "新數值", "影響分頁"]);
           payload.logs.forEach(log => {
@@ -145,7 +140,6 @@
       }
 
       if (action === "BATCH_UPDATE_BOOKS") {
-        // 批次更新陣列處理
         const items = payload.items || [];
         const targetSheets = payload.targetSheets || ["Book_ALL", "Choice"];
         let count = 0;
@@ -173,9 +167,11 @@
         return { status: "success", msg: "已批次更新 " + count + " 筆紀錄" };
       }
 
-      return { status: "error", msg: "未知 action" };
+      // ... 原有其他 action 處理程序 ...
     }
     -->
+
+    <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
@@ -191,6 +187,7 @@
         const Globe = lib.Globe || FallbackIcon;
         const Menu = lib.Menu || FallbackIcon;
         const ChevronRight = lib.ChevronRight || FallbackIcon;
+        const ChevronLeft = lib.ChevronLeft || FallbackIcon;
         const ChevronDown = lib.ChevronDown || FallbackIcon;
         const ExternalLink = lib.ExternalLink || FallbackIcon;
         const Plus = lib.Plus || FallbackIcon;
@@ -202,6 +199,8 @@
         const X = lib.X || FallbackIcon;
         const Maximize2 = lib.Maximize2 || FallbackIcon;
         const Minimize2 = lib.Minimize2 || FallbackIcon;
+        const Lock = lib.Lock || FallbackIcon;
+        const Bot = lib.Bot || FallbackIcon;
         const User = lib.User || FallbackIcon;
         const CheckCircle = lib.CheckCircle || FallbackIcon;
         const Search = lib.Search || FallbackIcon;
@@ -212,15 +211,17 @@
         const Phone = lib.Phone || FallbackIcon;
         const Mail = lib.Mail || FallbackIcon;
         const TrendingUp = lib.TrendingUp || FallbackIcon;
+        const ShoppingCart = lib.ShoppingCart || FallbackIcon;
         const SettingsIcon = lib.Settings || FallbackIcon;
         const Palette = lib.Palette || FallbackIcon;
+        const MapPin = lib.MapPin || FallbackIcon;
         const FileText = lib.FileText || FallbackIcon;
         const ShieldAlert = lib.AlertTriangle || FallbackIcon;
         const Wand2 = lib.Wand2 || Sparkles;
+        const Bookmark = lib.Bookmark || FallbackIcon;
         const Pin = lib.Pin || FallbackIcon;
         const RefreshCw = lib.RefreshCw || FallbackIcon;
         const History = lib.History || FallbackIcon;
-        const DollarSign = lib.DollarSign || FallbackIcon;
         const Layers = lib.Layers || FallbackIcon;
         const CheckSquare = lib.CheckSquare || FallbackIcon;
         const Square = lib.Square || FallbackIcon;
@@ -234,11 +235,13 @@
             BookOpen: { icon: BookOpen, color: 'text-red-500' },
             User: { icon: User, color: 'text-purple-500' },
             MessageSquare: { icon: MessageSquare, color: 'text-pink-500' },
+            Bot: { icon: Bot, color: 'text-pink-600' },
             Zap: { icon: Zap, color: 'text-orange-500' },
             Sparkles: { icon: Sparkles, color: 'text-yellow-500' },
+            Star: { icon: Star, color: 'text-yellow-400' },
+            ShoppingCart: { icon: ShoppingCart, color: 'text-cyan-500' },
             FileText: { icon: FileText, color: 'text-amber-500' },
-            DollarSign: { icon: DollarSign, color: 'text-emerald-600' },
-            History: { icon: History, color: 'text-cyan-600' }
+            ExternalLink: { icon: ExternalLink, color: 'opacity-70' }
         };
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbw50BLFcwgfOWHQqTm9UGpolgH8FqFE7NOacMBIcUc4MKnoiwVVH0HHB8mLe0kJkv4QnQ/exec";
@@ -273,9 +276,15 @@
             mainBgColor: '#F4F4F5', mainTextColor: '#27272a', cardBgColor: '#ffffff', cardTextColor: '#3f3f46', kpiBgColor: '#ffffff',
             menuDashName: '營運分析中心', menuMarketingName: '行銷與推薦', menuBooksName: '總商品庫庫存',
             menuOrdersName: '銷售與物流', menuCsName: '智能客戶關係', menuExtName: '外部系統鏈接',
-            menuNotesName: '工作記事本', menuPriceName: '書籍與價格雙重調控', menuAuditName: '修改異動歷史紀錄',
+            menuNotesName: '工作記事本',
             menuDashIcon: 'LayoutDashboard', menuMarketingIcon: 'Sparkles', menuBooksIcon: 'Database',
-            menuOrdersIcon: 'Truck', menuCsIcon: 'Bot', menuNotesIcon: 'FileText'
+            menuOrdersIcon: 'Truck', menuCsIcon: 'Bot', menuNotesIcon: 'FileText', menuExtIcon: 'ExternalLink'
+        };
+
+        const defaultUI = {
+            themeColor: '#8C5A2B', darkThemeColor: '#2C241B', lightBgColor: '#FDFBF7', bgLightColor: '#F9F6F0',
+            textDarkColor: '#4A3728', borderColor: '#E6D5C3', accentColor: '#C4B29E', footerBgColor: '#1A1412',
+            bodyFont: 'Noto Sans TC', titleFont: 'Noto Serif TC', frontendLogoUrl: '', frontendName: '文史哲出版社'
         };
 
         const sanitizeForSpreadsheet = (val) => {
@@ -301,14 +310,14 @@
             const [notes, setNotes] = useState([]); 
             const [auditLogs, setAuditLogs] = useState([]); // 異動紀錄 state
             const [settings, setSettings] = useState(defaultSettings); 
-            const [ui, setUi] = useState({}); 
+            const [ui, setUi] = useState(defaultUI); 
             
             const [activeTab, setActiveTab] = useState('dashboard');
             const [settingSubTab, setSettingSubTab] = useState('backend'); 
             const [isSidebarOpen, setIsSidebarOpen] = useState(true);
             const [notification, setNotification] = useState(null);
             const [bookSearchQuery, setBookSearchQuery] = useState('');
-            const [adminVisibleCount, setAdminVisibleCount] = useState(25);
+            const [adminVisibleCount, setAdminVisibleCount] = useState(20);
 
             const [isLoggingIn, setIsLoggingIn] = useState(false);
             const [loadStatus, setLoadStatus] = useState({
@@ -347,7 +356,7 @@
             const [modalBookReview, setModalBookReview] = useState('');
             const [isGeneratingBookAI, setIsGeneratingBookAI] = useState(false);
 
-            // 🆕 書籍價格與設定調整頁面 State
+            // 🆕 書籍價格與設定雙向同步調整 State
             const [priceSearchQuery, setPriceSearchQuery] = useState('');
             const [priceCategoryFilter, setPriceCategoryFilter] = useState('全部');
             const [syncTargetSheet, setSyncTargetSheet] = useState('DUAL'); // 'DUAL', 'Book_ALL', 'Choice'
@@ -367,8 +376,9 @@
                 isOpen: false, type: '', id: null, title: '', isDeleting: false
             });
 
+            // 選單展開狀態 (預設保持不變)
             const [expandedMenus, setExpandedMenus] = useState({
-                group_dash: true, group_marketing: false, group_books: true, group_orders: false, group_cs: false, group_notes: false, group_settings: false
+                group_dash: true, group_marketing: false, group_books: false, group_orders: false, group_cs: false, group_notes: true, group_external: false, group_settings: false
             });
 
             const toggleMenu = (menuId) => setExpandedMenus(prev => ({ ...prev, [menuId]: !prev[menuId] }));
@@ -435,7 +445,7 @@
 
                     if (data.status === 'error') {
                         console.error("後端拒絕請求:", data.msg);
-                        showMsg("提示/拒絕: " + data.msg); 
+                        showMsg("拒絕存取: " + data.msg); 
                         if (data.msg.includes("驗證失敗") || data.msg.includes("未授權") || data.msg.includes("過期")) {
                             handleLogout();
                         }
@@ -444,7 +454,7 @@
                     return data;
                 } catch (e) {
                     console.error("GAS Sync Error:", e);
-                    showMsg("連線請求通知: " + e.toString()); 
+                    showMsg("網路安全通道異常: " + e.toString()); 
                     return { status: 'error', msg: e.toString() };
                 }
             };
@@ -457,7 +467,7 @@
                 }).catch(() => {});
 
                 syncWithGAS('FETCH_UI').then(res => {
-                    if (res && res.data) setUi(res.data);
+                    if (res && res.data) setUi(prev => ({...prev, ...res.data}));
                 }).catch(() => {});
 
                 syncWithGAS('FETCH_KPIS').then(res => { 
@@ -581,7 +591,6 @@
                 const res = await syncWithGAS('UPDATE_BOOK_DUAL', payload);
 
                 if (res.status === 'success') {
-                    // 本地狀態更新
                     const updatedBook = { ...book, ...newFields };
                     if (sheetsToUpdate.includes("Book_ALL")) {
                         setBooks(prev => prev.map(b => String(b.id) === String(book.id) ? updatedBook : b));
@@ -590,7 +599,6 @@
                         setChoiceBooks(prev => prev.map(c => String(c.id) === String(book.id) ? updatedBook : c));
                     }
 
-                    // 本地 Audit Log 新增
                     const newLogEntries = changes.map(c => ({
                         timestamp: nowStr,
                         user: activeUser,
@@ -631,7 +639,6 @@
                     let newStock = book.stock;
                     let newCat = book.category;
 
-                    // 價格批次計算
                     if (batchPriceValue !== '') {
                         const val = parseFloat(batchPriceValue);
                         if (!isNaN(val)) {
@@ -643,18 +650,15 @@
                         }
                     }
 
-                    // 庫存批次計算
                     if (batchStockValue !== '') {
                         const stVal = parseInt(batchStockValue, 10);
                         if (!isNaN(stVal)) newStock = Math.max(0, stVal);
                     }
 
-                    // 分類批次
                     if (batchCategoryValue.trim() !== '') {
                         newCat = batchCategoryValue.trim();
                     }
 
-                    // 記錄變更
                     if (newPrice !== book.price) {
                         newAuditLogs.push({
                             timestamp: nowStr, user: activeUser, bookId: String(book.id), bookTitle: book.title,
@@ -685,12 +689,10 @@
                 });
 
                 if (res.status === 'success') {
-                    // 同步 Audit Log 至 GAS
                     newAuditLogs.forEach(log => {
                         syncWithGAS('ADD_AUDIT_LOG', log);
                     });
 
-                    // 本地狀態刷新
                     const updatedMap = new Map(updatedItems.map(i => [String(i.id), i]));
                     if (sheetsToUpdate.includes("Book_ALL")) {
                         setBooks(prev => prev.map(b => updatedMap.has(String(b.id)) ? { ...b, ...updatedMap.get(String(b.id)) } : b));
@@ -763,46 +765,70 @@
 
             const adminMenuConfig = [
                 { id: 'group_dash', title: settings.menuDashName, icon: availableIcons[settings.menuDashIcon]?.icon || LayoutDashboard, items: [{ tab: 'dashboard', name: '營運儀表板' }] },
-                { id: 'group_books', title: '圖書與價格管理', icon: Database, items: [
-                    { tab: 'price_editor', name: '💰 書籍價格與設定雙向同步' },
-                    { tab: 'audit_logs', name: '📜 修改異動歷史紀錄' },
-                    { tab: 'books', name: '全部書籍庫存 (Book_ALL)' },
-                    { tab: 'choice', name: '編輯推薦書單 (Choice)' }
+                { id: 'group_marketing', title: settings.menuMarketingName, icon: availableIcons[settings.menuMarketingIcon]?.icon || Sparkles, items: [
+                    { tab: 'carousel', name: '首頁熱賣輪播 (Carousels)' },
+                    { tab: 'choice', name: '編輯推薦書單 (Choice)' } 
                 ]},
-                { id: 'group_marketing', title: settings.menuMarketingName, icon: Sparkles, items: [{ tab: 'carousel', name: '首頁熱賣輪播 (Carousels)' }] },
-                { id: 'group_orders', title: settings.menuOrdersName, icon: Truck, items: [{ tab: 'orders', name: '訂單處理中心 (Orders)' }] },
-                { id: 'group_cs', title: settings.menuCsName, icon: MessageSquare, items: [{ tab: 'ai', name: 'AI 客服信箱 (CS Logs)' }] },
+                { id: 'group_books', title: settings.menuBooksName, icon: availableIcons[settings.menuBooksIcon]?.icon || Database, items: [
+                    { tab: 'books', name: '全部書籍管理 (Book_ALL)' },
+                    { tab: 'price_editor', name: '💰 書籍價格與設定雙向同步' },
+                    { tab: 'audit_logs', name: '📜 修改異動歷史紀錄' }
+                ]},
+                { id: 'group_orders', title: settings.menuOrdersName, icon: availableIcons[settings.menuOrdersIcon]?.icon || Truck, items: [{ tab: 'orders', name: '訂單處理中心 (Orders)' }] },
+                { id: 'group_cs', title: settings.menuCsName, icon: availableIcons[settings.menuCsIcon]?.icon || Bot, items: [{ tab: 'ai', name: 'AI 客服信箱 (CS Logs)' }] },
                 { id: 'group_notes', title: settings.menuNotesName || '工作記事本', icon: FileText, items: [{ tab: 'notes', name: '雲端筆記中心 (Notes)' }] },
                 { id: 'group_settings', title: '系統外觀設定', icon: SettingsIcon, items: [{ tab: 'settings', name: '全域設定與顏色 (Setting)' }] }
+            ];
+
+            const settingSubTabs = [
+                { id: 'backend', label: '🖥️ 後台管理外觀' },
+                { id: 'frontend_colors', label: '🎨 前台視覺配色與字體' },
+                { id: 'frontend_text', label: '📝 前台選單與迎賓' },
+                { id: 'frontend_footer', label: '🏢 聯絡資訊與故事' },
+                { id: 'frontend_search', label: '🔍 檢索與狀態提示' }
             ];
 
             if (!isAuthenticated) {
                 return (
                     <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden transition-colors duration-500" style={{ backgroundColor: settings.loginBgColor }}>
-                        <div className="glass-card p-10 md:p-12 rounded-[2.5rem] w-full max-w-md shadow-2xl z-10" style={{ backgroundColor: settings.loginCardBgColor, color: settings.loginTextColor }}>
-                            <div className="text-center mb-8">
-                                <div className="bg-gradient-to-br from-zinc-800 to-zinc-950 w-20 h-20 rounded-[1.5rem] flex items-center justify-center text-white mx-auto mb-6 shadow-2xl border border-zinc-700 overflow-hidden">
-                                    <ShieldCheck size={36} className="text-indigo-400" />
+                        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/30 blur-[120px] rounded-full pointer-events-none"></div>
+                        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-600/20 blur-[120px] rounded-full pointer-events-none"></div>
+                        
+                        <div className="glass-card p-10 md:p-12 rounded-[2.5rem] w-full max-w-md shadow-[0_20px_60px_rgba(0,0,0,0.5)] animate-in z-10" style={{ backgroundColor: settings.loginCardBgColor, color: settings.loginTextColor }}>
+                            <div className="text-center mb-10">
+                                <div className="bg-gradient-to-br from-zinc-800 to-zinc-950 w-20 h-20 rounded-[1.5rem] flex items-center justify-center text-white mx-auto mb-6 shadow-2xl border border-zinc-700 overflow-hidden relative">
+                                    {settings.logoUrl ? (
+                                        <img src={formatImageUrl(settings.logoUrl)} className="w-full h-full object-cover absolute inset-0 z-10" alt="Logo" />
+                                    ) : (
+                                        <ShieldCheck size={36} className="text-indigo-400" />
+                                    )}
                                 </div>
-                                <h2 className="text-3xl font-black tracking-tight">{settings.systemName}</h2>
-                                <p className="text-xs mt-2 font-bold uppercase tracking-[0.3em] opacity-70">{settings.systemSubName}</p>
+                                <h2 className="text-3xl font-black tracking-tight" style={{ color: settings.loginTextColor }}>{settings.systemName}</h2>
+                                <p className="text-sm mt-3 font-bold uppercase tracking-[0.3em]" style={{ color: settings.loginTextColor, opacity: 0.85 }}>{settings.systemSubName}</p>
                             </div>
                             
-                            <form onSubmit={handleLogin} className="space-y-5">
-                                <div>
-                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-70">管理員帳號</label>
-                                    <input name="username" type="text" placeholder="您的帳號" className="w-full bg-transparent border p-4 rounded-2xl outline-none font-bold text-sm mt-1" required style={{ borderColor: 'rgba(128,128,128,0.2)' }} />
+                            <form onSubmit={handleLogin} className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1" style={{ color: settings.loginTextColor, opacity: 0.7 }}>管理員帳號</label>
+                                    <input name="username" type="text" placeholder="您的管理員用戶名稱" className="w-full bg-transparent border p-4 rounded-2xl outline-none font-bold transition-colors shadow-sm text-sm" required style={{ color: settings.loginTextColor, borderColor: 'rgba(128,128,128,0.2)' }} />
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-70">通行密碼</label>
-                                    <input name="password" type="password" placeholder="••••••••" className="w-full bg-transparent border p-4 rounded-2xl outline-none font-bold text-sm mt-1" required style={{ borderColor: 'rgba(128,128,128,0.2)' }} />
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1" style={{ color: settings.loginTextColor, opacity: 0.7 }}>通行密碼</label>
+                                    <input name="password" type="password" placeholder="••••••••" className="w-full bg-transparent border p-4 rounded-2xl outline-none font-bold transition-colors shadow-sm tracking-widest" required style={{ color: settings.loginTextColor, borderColor: 'rgba(128,128,128,0.2)' }} />
                                 </div>
-                                <button disabled={isLoggingIn} className="w-full text-white py-4 rounded-2xl font-bold transition-all shadow-xl flex justify-center items-center gap-2 text-base mt-2 hover:scale-105 disabled:opacity-50" style={{ backgroundColor: settings.sidebarActiveColor }}>
+
+                                <button disabled={isLoggingIn} className="w-full text-white py-4 rounded-2xl font-bold transition-all duration-300 shadow-xl flex justify-center items-center gap-2 text-lg mt-4 hover:scale-105 border border-white/10 disabled:opacity-50" style={{ backgroundColor: settings.sidebarActiveColor }}>
                                     {isLoggingIn ? <Clock className="animate-spin" size={18} /> : null}
-                                    {isLoggingIn ? '正在驗證身分...' : '安全登入 CMS'} <ChevronRight size={18}/>
+                                    {isLoggingIn ? '正在安全校驗身分...' : '安全登入'} <ChevronRight size={18}/>
                                 </button>
+                                
+                                <div className="text-center pt-4">
+                                    <button type="button" onClick={() => { window.open('index.html', '_self'); }} className="text-xs font-bold transition-colors hover:opacity-100" style={{ color: settings.loginTextColor, opacity: 0.6 }}>← 返回前台官網</button>
+                                </div>
                             </form>
                         </div>
+                        <div className="absolute bottom-6 text-[10px] font-bold tracking-widest uppercase" style={{ color: settings.loginTextColor, opacity: 0.5 }}>Secured by SSL with Session Tokens</div>
                     </div>
                 );
             }
@@ -810,41 +836,61 @@
             return (
                 <div className="flex h-screen overflow-hidden font-sans relative" style={{ backgroundColor: settings.mainBgColor, color: settings.mainTextColor }}>
                     {!isSidebarOpen && (
-                        <button type="button" onClick={() => setIsSidebarOpen(true)} className="fixed top-4 left-4 z-[60] w-12 h-12 rounded-full shadow-2xl flex items-center justify-center bg-indigo-600 text-white cursor-pointer hover:scale-105 transition-all">
-                            <Menu size={20} />
+                        <button type="button" onClick={() => setIsSidebarOpen(true)} className="fixed top-4 left-4 z-[60] w-14 h-14 rounded-full shadow-2xl flex items-center justify-center overflow-hidden hover:scale-105 transition-all border-2 border-white/20 cursor-pointer" style={{ backgroundColor: (settings.userAvatarUrl || settings.logoUrl) ? 'transparent' : settings.sidebarActiveColor }} title="展開側邊欄">
+                            {(settings.userAvatarUrl || settings.logoUrl) ? (
+                                <img src={formatImageUrl(settings.userAvatarUrl || settings.logoUrl)} className="w-full h-full object-cover" alt="Expand" />
+                            ) : (
+                                <Menu size={24} className="text-white" />
+                            )}
                         </button>
                     )}
 
-                    {/* Sidebar */}
                     <aside className={`flex-shrink-0 transition-all z-30 shadow-2xl flex flex-col ${isSidebarOpen ? '' : '-translate-x-full absolute md:relative'}`} style={{ width: isSidebarOpen ? '260px' : '0px', backgroundColor: settings.sidebarBgColor }}>
-                        <div className="flex items-center gap-3 h-20 shrink-0 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors px-4" onClick={() => setIsSidebarOpen(false)}>
-                            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0 font-black">
-                                文
+                        <div className="flex items-center gap-3 h-20 shrink-0 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors pr-4" onClick={() => setIsSidebarOpen(false)} title="點擊收起側邊欄">
+                            <div className="h-full aspect-square text-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm p-0" style={{ backgroundColor: settings.logoUrl ? 'transparent' : settings.sidebarActiveColor }}>
+                                {settings.logoUrl ? (
+                                    <img src={formatImageUrl(settings.logoUrl)} className="w-full h-full object-cover" alt="Logo" onError={(e)=>{e.target.style.display='none'}} />
+                                ) : (
+                                    <BookOpen size={24} className="text-white" />
+                                )}
                             </div>
-                            <div className="overflow-hidden flex flex-col justify-center">
-                                <span className="font-black tracking-widest uppercase text-sm text-white">{settings.adminPanelName}</span>
-                                <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400">{settings.sidebarSubText}</span>
+                            <div className="overflow-hidden flex flex-col justify-center gap-1 py-2">
+                                {settings.subLogoUrl ? (
+                                    <img src={formatImageUrl(settings.subLogoUrl)} className="h-6 object-contain object-left" alt="SubLogo" />
+                                ) : (
+                                    <span className="font-black tracking-widest uppercase text-base block truncate" style={{ color: settings.adminPanelColor || settings.sidebarTextColor }}>{settings.adminPanelName || 'ADMIN PANEL'}</span>
+                                )}
+                                <span className="text-xs font-bold tracking-widest uppercase mt-1" style={{ color: settings.sidebarTextColor, opacity: 0.85 }}>{settings.sidebarSubText || 'Digital CMS'}</span>
                             </div>
                         </div>
 
                         <nav className="p-4 space-y-2 overflow-y-auto flex-1 sidebar-scroll">
                             {adminMenuConfig.map(menuGroup => (
                                 <div key={menuGroup.id} className="mb-2">
-                                    <button type="button" onClick={() => toggleMenu(menuGroup.id)} className="w-full flex items-center justify-between p-3 rounded-xl transition-all hover:bg-white/5 text-zinc-300">
+                                    <button type="button" onClick={() => toggleMenu(menuGroup.id)} className="w-full flex items-center justify-between p-3 rounded-xl transition-all hover:bg-white/5" style={expandedMenus[menuGroup.id] ? { backgroundColor: 'rgba(255,255,255,0.05)', color: '#ffffff' } : { color: settings.sidebarTextColor }}>
                                         <div className="flex items-center gap-3">
-                                            <menuGroup.icon size={18} style={{ color: expandedMenus[menuGroup.id] ? settings.sidebarActiveColor : '#a1a1aa' }} />
-                                            <span className="font-bold text-xs tracking-wide">{menuGroup.title}</span>
+                                            <menuGroup.icon size={18} style={{ color: expandedMenus[menuGroup.id] ? settings.sidebarActiveColor : settings.sidebarTextColor }} />
+                                            <span className="font-bold text-sm tracking-wide">{menuGroup.title}</span>
                                         </div>
                                         {expandedMenus[menuGroup.id] ? <ChevronDown size={14} className="opacity-50"/> : <ChevronRight size={14} className="opacity-50"/>}
                                     </button>
                                     {expandedMenus[menuGroup.id] && (
-                                        <div className="mt-1 pl-4 space-y-1 animate-in">
+                                        <div className="mt-2 pl-4 space-y-1 animate-in">
                                             {menuGroup.items.map(item => {
                                                 const isActive = activeTab === item.tab;
                                                 return (
-                                                    <button type="button" key={item.tab} onClick={() => { setActiveTab(item.tab); setBookSearchQuery(''); }} className="w-full text-left py-2 px-3.5 rounded-lg transition-all text-xs font-bold flex items-center gap-2 hover:bg-white/5" style={isActive ? { backgroundColor: settings.sidebarActiveColor, color: '#ffffff' } : { color: settings.sidebarTextColor }}>
+                                                    <button type="button" key={item.tab || item.name} onClick={() => {
+                                                        if (item.isExternal) {
+                                                            setIframeModal({ isOpen: true, url: item.url, title: item.name });
+                                                        } else {
+                                                            setActiveTab(item.tab);
+                                                            setAdminVisibleCount(20);
+                                                            setBookSearchQuery('');
+                                                        }
+                                                    }} className="w-full text-left py-2.5 px-4 rounded-lg transition-all text-xs font-bold flex items-center gap-2 hover:bg-white/5" style={isActive ? { backgroundColor: settings.sidebarActiveColor, color: '#ffffff', boxShadow: `0 4px 14px 0 ${settings.sidebarActiveColor}50` } : { color: settings.sidebarTextColor }}>
                                                         {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
                                                         {item.name}
+                                                        {item.isExternal && <ExternalLink size={12} className="ml-auto opacity-50" />}
                                                     </button>
                                                 )
                                             })}
@@ -853,42 +899,48 @@
                                 </div>
                             ))}
                         </nav>
-
-                        <div className="p-4 border-t border-white/5 shrink-0 bg-black/20">
-                            <div className="flex items-center gap-3 px-2 mb-3">
-                                <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-xs text-white">
-                                    {activeUser.charAt(0).toUpperCase()}
+                        <div className="p-4 border-t border-white/5 shrink-0" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                            <div className="flex items-center gap-3 px-3 py-2 mb-3">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white border border-white/20 shrink-0 overflow-hidden shadow-sm" style={{ backgroundColor: settings.userAvatarUrl ? 'transparent' : settings.sidebarActiveColor }}>
+                                    {settings.userAvatarUrl ? (
+                                        <img src={formatImageUrl(settings.userAvatarUrl)} className="w-full h-full object-cover" alt="User" onError={(e)=>{e.target.style.display='none'}} />
+                                    ) : (
+                                        activeUser.charAt(0).toUpperCase()
+                                    )}
                                 </div>
                                 <div className="overflow-hidden">
-                                    <div className="text-xs font-bold text-white truncate">{activeUser}</div>
-                                    <div className="text-[10px] text-emerald-400 font-bold">{settings.onlineStatusText}</div>
+                                    <div className="text-xs font-bold leading-tight truncate" style={{ color: settings.sidebarUserColor || settings.sidebarTextColor }}>{activeUser}</div>
+                                    <div className="text-[10px] font-bold truncate tracking-widest mt-0.5" style={{ color: settings.onlineStatusColor || '#34d399' }}>{settings.onlineStatusText || 'Online'}</div>
                                 </div>
                             </div>
-                            <button type="button" onClick={handleLogout} className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition text-xs font-bold"><X size={14} /> 登出 CMS</button>
+                            <button type="button" onClick={handleLogout} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition text-xs font-bold shadow-sm mb-2"><X size={14} /> 登出 CMS</button>
+                            <button type="button" onClick={() => { window.open('index.html', '_blank'); }} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition text-xs font-bold shadow-sm" style={{ color: settings.sidebarTextColor }}><Globe size={14} /> 前往前台官網</button>
                         </div>
                     </aside>
-
-                    {/* Main Content Area */}
+                    
                     <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-                        <header className="h-20 backdrop-blur-xl border-b border-black/5 flex justify-between items-center px-6 lg:px-10 shrink-0">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-lg font-black tracking-tight">
-                                    {activeTab === 'dashboard' && '營運分析面板'}
-                                    {activeTab === 'price_editor' && '💰 書籍價格與設定雙重調控 (Choice & Book_ALL)'}
-                                    {activeTab === 'audit_logs' && '📜 修改異動歷史紀錄 (Audit Logs)'}
-                                    {activeTab === 'books' && '全部書籍庫存管理 (Book_ALL)'}
-                                    {activeTab === 'choice' && '編輯精選推薦書單 (Choice)'}
+                        <header className={`h-20 backdrop-blur-xl border-b border-black/5 flex justify-between items-center z-40 relative shrink-0 transition-all ${isSidebarOpen ? 'px-6 lg:px-10' : 'pl-20 pr-6 lg:pr-10'}`} style={{ backgroundColor: `${settings.mainBgColor}E6` }}>
+                            <div className="flex items-center gap-4">
+                                {isSidebarOpen && (
+                                    <button type="button" onClick={() => setIsSidebarOpen(false)} className="p-2.5 hover:bg-black/5 rounded-xl transition opacity-70 hover:opacity-100"><Menu size={20}/></button>
+                                )}
+                                <h2 className="text-xl font-black tracking-tight flex items-center gap-2" style={{ color: settings.mainTextColor }}>
+                                    {activeTab === 'dashboard' && settings.menuDashName}
                                     {activeTab === 'carousel' && '行銷輪播管理'}
-                                    {activeTab === 'orders' && '訂單處理中心'}
-                                    {activeTab === 'ai' && '智能客服回覆箱'}
-                                    {activeTab === 'notes' && '工作記事本'}
+                                    {activeTab === 'choice' && '編輯推薦書單'}
+                                    {activeTab === 'books' && settings.menuBooksName}
+                                    {activeTab === 'price_editor' && '💰 書籍價格與設定雙向同步 (Choice & Book_ALL)'}
+                                    {activeTab === 'audit_logs' && '📜 修改異動歷史紀錄 (Audit Logs)'}
+                                    {activeTab === 'orders' && settings.menuOrdersName}
+                                    {activeTab === 'ai' && settings.menuCsName}
+                                    {activeTab === 'notes' && (settings.menuNotesName || '雲端筆記中心')}
                                     {activeTab === 'settings' && '全域設定與外觀'}
                                 </h2>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-4 relative z-50">
                                 {activeTab === 'price_editor' && (
                                     <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700">
-                                        <ArrowRightLeft size={14} /> 同步目標: 
+                                        <ArrowRightLeft size={14} /> 同步目標分頁: 
                                         <select value={syncTargetSheet} onChange={e => setSyncTargetSheet(e.target.value)} className="bg-transparent outline-none cursor-pointer font-extrabold text-indigo-900">
                                             <option value="DUAL">⚡ Choice & Book_ALL (雙向同步)</option>
                                             <option value="Book_ALL">僅 Book_ALL (全館)</option>
@@ -896,14 +948,20 @@
                                         </select>
                                     </div>
                                 )}
+                                <div className="hidden sm:flex items-center gap-2 text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor, opacity: 0.8 }}><Clock size={12}/> 系統狀態正常</div>
+                                {activeTab === 'dashboard' && <button type="button" onClick={() => { setEditingKpi(null); setShowKpiModal(true); }} className="text-white px-5 py-2.5 rounded-full shadow-lg transition-colors active:scale-95 flex items-center gap-2 font-bold text-sm hover:opacity-80" style={{ backgroundColor: settings.sidebarActiveColor }}><Plus size={16} /> 新增 KPI 指標</button>}
+                                {activeTab === 'books' && <button type="button" onClick={() => { setModalType('book'); setEditingBook(null); setShowBookModal(true); }} className="text-white px-5 py-2.5 rounded-full shadow-lg transition-colors active:scale-95 flex items-center gap-2 font-bold text-sm hover:opacity-90" style={{ backgroundColor: settings.sidebarActiveColor }}><Plus size={16} /> 上架新書</button>}
+                                {activeTab === 'choice' && <button type="button" onClick={() => { setModalType('choice'); setEditingBook(null); setShowBookModal(true); }} className="text-white px-5 py-2.5 rounded-full shadow-lg transition-colors active:scale-95 flex items-center gap-2 font-bold text-sm hover:opacity-80" style={{ backgroundColor: settings.sidebarActiveColor }}><Plus size={16} /> 新增推薦書籍</button>}
+                                {activeTab === 'carousel' && <button type="button" onClick={() => { setEditingCarousel(null); setShowCarouselModal(true); }} className="text-white px-5 py-2.5 rounded-full shadow-lg transition-colors active:scale-95 flex items-center gap-2 font-bold text-sm hover:opacity-90" style={{ backgroundColor: settings.sidebarActiveColor }}><Plus size={16} /> 新增輪播項目</button>}
+                                {activeTab === 'notes' && <button type="button" onClick={() => { setEditingNote(null); setShowNoteModal(true); }} className="text-white px-5 py-2.5 rounded-full shadow-lg transition-colors active:scale-95 flex items-center gap-2 font-bold text-sm hover:opacity-90" style={{ backgroundColor: settings.sidebarActiveColor }}><Plus size={16} /> 新增記事</button>}
                             </div>
                         </header>
-
-                        <div className="p-6 lg:p-10 overflow-y-auto flex-1 sidebar-scroll">
-                            {/* 💰【NEW FEATURE 1】書籍與價格雙重調控 Tab */}
+                        
+                        <div className="p-6 lg:p-10 overflow-y-auto flex-1 z-10 sidebar-scroll">
+                            {}
+                            {/* 💰 書籍價格與設定雙向調控 Tab */}
                             {activeTab === 'price_editor' && (
                                 <div className="animate-in space-y-6">
-                                    {/* 批次操作區 */}
                                     <div className="p-6 rounded-[2rem] border border-black/5 shadow-sm space-y-4" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
                                         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/5 pb-4">
                                             <div className="flex items-center gap-2 font-black text-sm text-indigo-600">
@@ -949,7 +1007,6 @@
                                         </div>
                                     </div>
 
-                                    {/* 篩選與清單區 */}
                                     <div className="flex flex-wrap items-center justify-between gap-4">
                                         <div className="flex items-center gap-3 p-3 rounded-2xl border border-black/5 w-full max-w-md" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
                                             <Search size={18} className="opacity-50 ml-1 shrink-0" />
@@ -965,7 +1022,6 @@
                                         </div>
                                     </div>
 
-                                    {/* 表格清單 */}
                                     <div className="rounded-[2rem] border border-black/5 shadow-sm overflow-hidden" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
                                         <div className="overflow-x-auto sidebar-scroll">
                                             <table className="w-full text-left border-collapse min-w-[900px]">
@@ -1039,7 +1095,7 @@
                                 </div>
                             )}
 
-                            {/* 📜【NEW FEATURE 2】修改異動歷史紀錄 Tab */}
+                            {/* 📜 修改異動歷史紀錄 Tab */}
                             {activeTab === 'audit_logs' && (
                                 <div className="animate-in space-y-6">
                                     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1096,93 +1152,314 @@
                                 </div>
                             )}
 
-                            {/* 📊 儀表板視圖 */}
                             {activeTab === 'dashboard' && (
-                                <div className="animate-in space-y-6">
-                                    <h3 className="text-lg font-black flex items-center gap-2"><TrendingUp /> 營運核心指標 (KPI)</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="p-6 rounded-[2rem] border border-black/5 shadow-sm" style={{ backgroundColor: settings.kpiBgColor }}>
-                                            <p className="text-[10px] font-black uppercase opacity-60">總銷售金額</p>
-                                            <p className="text-3xl font-black mt-2 text-emerald-600">NT$ {orders.reduce((s,o)=>s+Number(o.total||0),0).toLocaleString()}</p>
-                                        </div>
-                                        <div className="p-6 rounded-[2rem] border border-black/5 shadow-sm" style={{ backgroundColor: settings.kpiBgColor }}>
-                                            <p className="text-[10px] font-black uppercase opacity-60">全館書籍總數</p>
-                                            <p className="text-3xl font-black mt-2 text-indigo-600">{allCombinedBooks.length} <span className="text-xs font-normal">品項</span></p>
-                                        </div>
-                                        <div className="p-6 rounded-[2rem] border border-black/5 shadow-sm" style={{ backgroundColor: settings.kpiBgColor }}>
-                                            <p className="text-[10px] font-black uppercase opacity-60">待處理訂單</p>
-                                            <p className="text-3xl font-black mt-2 text-amber-600">{orders.filter(o=>o.status==='處理中').length} <span className="text-xs font-normal">筆</span></p>
-                                        </div>
+                                <div className="animate-in">
+                                    <div className="flex justify-between items-end mb-6 border-b border-black/10 pb-4">
+                                        <h3 className="text-xl font-black flex items-center gap-2" style={{ color: settings.mainTextColor }}><TrendingUp style={{ color: settings.sidebarActiveColor }}/> 營運指標面板 (KPI)</h3>
                                     </div>
+                                    
+                                    {loadStatus.kpis ? (
+                                        <div className="text-sm font-bold animate-pulse opacity-60">載入指標中...</div>
+                                    ) : kpis.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                                            {kpis.map(k => {
+                                                let titleText = String(k.title || k.id || '');
+                                                let rawUnit = String(k.unit || '');
+                                                let displayUnit = rawUnit.includes('||') ? rawUnit.split('||')[0] : rawUnit;
+                                                let iconName = rawUnit.includes('||') ? rawUnit.split('||')[1] : '';
+                                                
+                                                if (!iconName) {
+                                                    if (titleText.includes('營收')) iconName = 'Database';
+                                                    else if (titleText.includes('待處理')) iconName = 'Truck';
+                                                    else if (titleText.includes('庫存警示')) iconName = 'BookOpen';
+                                                    else iconName = 'TrendingUp';
+                                                }
+
+                                                let iconDef = availableIcons[iconName] || availableIcons['TrendingUp'];
+                                                let Icon = iconDef.icon;
+                                                let iconColor = iconDef.color;
+
+                                                return (
+                                                    <div key={k.id} className="p-8 rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group" style={{ backgroundColor: settings.kpiBgColor }}>
+                                                        <div className={`absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform ${iconColor}`}>
+                                                            <Icon size={64}/>
+                                                        </div>
+                                                        <div className="flex justify-between items-start mb-3 z-10 relative">
+                                                            <p className="text-[11px] opacity-60 font-black uppercase tracking-widest" style={{ color: settings.cardTextColor }}>{titleText}</p>
+                                                            <div className="flex gap-2">
+                                                                <button type="button" onClick={() => { setEditingKpi(k); setShowKpiModal(true); }} className="opacity-40 hover:opacity-100 transition relative z-20 cursor-pointer" style={{ color: settings.cardTextColor }}><Edit2 size={12}/></button>
+                                                                <button type="button" onClick={() => openDeleteModal('kpi', k.id, k.title)} className="opacity-40 hover:opacity-100 text-red-500 transition relative z-20 cursor-pointer"><Trash2 size={12}/></button>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-4xl font-black tracking-tighter relative z-10" style={{ color: settings.cardTextColor }}>
+                                                            {k.value} <span className="text-sm font-bold opacity-50">{displayUnit}</span>
+                                                        </p>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="p-12 rounded-[2rem] border border-dashed border-black/10 text-center font-bold text-sm opacity-60" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
+                                            尚未設定自訂 KPI。請點擊右上角新增指標。
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
-                            {/* 📚 全部書籍與推薦書籍 (Book_ALL & Choice) */}
+                            {/* 📝 記事本視圖 */}
+                            {activeTab === 'notes' && (
+                                <div className="animate-in flex flex-col h-full space-y-6">
+                                    <div className="flex flex-wrap justify-between items-center gap-4">
+                                        <div className="flex items-center gap-3 p-3 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-black/5 w-full max-w-md" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
+                                            <Search size={18} className="opacity-50 ml-2 shrink-0" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="搜尋記事標題、內文或標籤..." 
+                                                value={noteSearchQuery} 
+                                                onChange={e => setNoteSearchQuery(e.target.value)} 
+                                                className="w-full bg-transparent outline-none text-sm font-bold placeholder-black/30 p-1"
+                                                style={{ color: 'inherit' }}
+                                            />
+                                            {noteSearchQuery && <button type="button" onClick={() => setNoteSearchQuery('')} className="opacity-50 hover:opacity-100 px-2"><X size={14}/></button>}
+                                        </div>
+
+                                        <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+                                            {noteCategories.map(cat => (
+                                                <button
+                                                    key={cat}
+                                                    type="button"
+                                                    onClick={() => setNoteCategoryFilter(cat)}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${noteCategoryFilter === cat ? 'bg-zinc-900 text-white shadow-sm' : 'bg-black/5 hover:bg-black/10 text-zinc-600'}`}
+                                                >
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {loadStatus.notes ? (
+                                        <div className="flex flex-col items-center justify-center p-20 opacity-50">
+                                            <FileText size={32} className="animate-bounce mb-4" style={{ color: settings.sidebarActiveColor }} />
+                                            <p className="font-bold text-xs">正在從雲端試算表同步記事本...</p>
+                                        </div>
+                                    ) : filteredNotes.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {filteredNotes.map(n => {
+                                                const isPinned = n.isPinned === 'TRUE' || n.isPinned === true;
+                                                return (
+                                                    <div 
+                                                        key={n.id} 
+                                                        className="p-6 rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col group transition-all hover:-translate-y-1"
+                                                        style={{ backgroundColor: n.color && n.color !== '#ffffff' ? n.color : settings.cardBgColor, color: settings.cardTextColor }}
+                                                    >
+                                                        <div className="flex justify-between items-start mb-3 gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="px-3 py-1 bg-black/10 rounded-full text-[10px] font-black uppercase tracking-wider">{n.category || '一般'}</span>
+                                                                {isPinned && <span className="p-1 text-amber-500" title="已置頂"><Pin size={14} className="fill-amber-500" /></span>}
+                                                            </div>
+                                                            <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                                <button type="button" onClick={() => togglePinNote(n)} className="p-1.5 rounded-lg hover:bg-black/10 text-zinc-600" title={isPinned ? '取消置頂' : '置頂記事'}>
+                                                                    <Pin size={14} className={isPinned ? 'fill-amber-500 text-amber-500' : ''} />
+                                                                </button>
+                                                                <button type="button" onClick={() => { setEditingNote(n); setShowNoteModal(true); }} className="p-1.5 rounded-lg hover:bg-black/10 text-indigo-600" title="編輯">
+                                                                    <Edit2 size={14} />
+                                                                </button>
+                                                                <button type="button" onClick={() => openDeleteModal('note', n.id, n.title)} className="p-1.5 rounded-lg hover:bg-black/10 text-red-500" title="刪除">
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        <h4 className="text-lg font-black mb-2 line-clamp-1">{n.title}</h4>
+                                                        <p className="text-xs opacity-80 whitespace-pre-wrap line-clamp-6 leading-relaxed flex-1 font-medium">{n.content || '（無內文）'}</p>
+
+                                                        {n.tags && (
+                                                            <div className="flex flex-wrap gap-1 mt-4 pt-3 border-t border-black/5">
+                                                                {String(n.tags).split(',').map((tag, idx) => (
+                                                                    <span key={idx} className="text-[10px] font-bold opacity-60 bg-black/5 px-2 py-0.5 rounded-md">#{tag.trim()}</span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="mt-4 pt-2 text-[10px] opacity-40 font-bold flex justify-between items-center border-t border-black/5">
+                                                            <span>作者: {n.author || activeUser}</span>
+                                                            <span>{formatDate(n.updatedAt || n.date)}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="p-20 text-center font-bold rounded-[2rem] border-dashed border-2 border-black/10 opacity-60 flex flex-col items-center justify-center gap-3">
+                                            <FileText size={36} className="opacity-30" />
+                                            <span>目前沒有任何記事內容，點擊右上角新增您的第一篇工作筆記！</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {(activeTab === 'books' || activeTab === 'choice') && (
-                                <div className="animate-in space-y-4">
-                                    <div className="flex justify-between items-center">
+                                <div className="animate-in flex flex-col relative h-full min-h-[500px]">
+                                    <div className="mb-6 flex flex-wrap justify-between items-center gap-4 shrink-0">
+                                        <div className="flex items-center gap-3 p-3 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-black/5 w-full max-w-md" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
+                                            <Search size={18} className="opacity-50 ml-2 shrink-0" />
+                                            <input 
+                                                type="text" 
+                                                placeholder={`在 ${activeTab === 'choice' ? '編輯推薦' : '全部庫存 (Book_ALL)'} 中搜尋書碼、書名...`} 
+                                                value={bookSearchQuery} 
+                                                onChange={e => {
+                                                    setBookSearchQuery(e.target.value);
+                                                    setAdminVisibleCount(20); 
+                                                }} 
+                                                className="w-full bg-transparent outline-none text-sm font-bold placeholder-black/30 p-1"
+                                                style={{ color: 'inherit' }}
+                                            />
+                                            {bookSearchQuery && <button type="button" onClick={()=>{setBookSearchQuery(''); setAdminVisibleCount(20);}} className="opacity-50 hover:opacity-100 px-2 bg-black/5 rounded-full p-1"><X size={12}/></button>}
+                                        </div>
                                         <div className="text-xs font-bold opacity-60">
-                                            管理清單: {activeTab === 'choice' ? 'Choice 分頁' : 'Book_ALL 分頁'} (共 {(activeTab === 'choice' ? choiceBooks : books).length} 筆)
+                                            共 {filteredAdminBooks.length} 筆書籍（已顯示 {visibleAdminBooks.length} 筆）
                                         </div>
                                     </div>
-                                    <div className="rounded-[2rem] border border-black/5 shadow-sm overflow-hidden" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
-                                        <div className="overflow-x-auto sidebar-scroll">
-                                            <table className="w-full text-left border-collapse min-w-[800px]">
-                                                <thead className="border-b border-black/10 bg-black/5 text-[10px] font-black uppercase opacity-60">
-                                                    <tr>
-                                                        <th className="p-4 pl-6 w-[25%]">書名 (ID)</th>
-                                                        <th className="p-4 w-[20%]">作者</th>
-                                                        <th className="p-4 w-[15%]">分類</th>
-                                                        <th className="p-4 w-[15%]">定價</th>
-                                                        <th className="p-4 w-[15%]">庫存</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="text-xs font-bold divide-y divide-black/5">
-                                                    {(activeTab === 'choice' ? choiceBooks : books).map(b => (
-                                                        <tr key={b.id} className="hover:bg-black/5 transition">
-                                                            <td className="p-4 pl-6 font-extrabold">{b.title} <span className="text-[10px] font-mono opacity-50">#{b.id}</span></td>
-                                                            <td className="p-4 opacity-80">{b.author}</td>
-                                                            <td className="p-4"><span className="bg-black/5 px-2.5 py-1 rounded-full text-[10px]">{b.category}</span></td>
-                                                            <td className="p-4 font-mono text-indigo-600">NT$ {b.price}</td>
-                                                            <td className="p-4 font-mono">{b.stock} 本</td>
+
+                                    {loadStatus.books && activeTab === 'books' ? (
+                                        <div className="flex flex-col items-center justify-center p-20 opacity-50"><Database size={32} className="animate-bounce mb-4" style={{ color: settings.sidebarActiveColor }} /><p className="font-bold text-xs" style={{ color: settings.mainTextColor }}>正在從雲端載入全館書籍...</p></div>
+                                    ) : (
+                                        <div className="rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
+                                            <div className="overflow-x-auto pb-4 sidebar-scroll">
+                                                <table className="w-full text-left border-collapse min-w-[850px] table-fixed">
+                                                    <thead className="border-b border-black/10" style={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
+                                                        <tr className="text-[10px] font-black uppercase tracking-[0.15em] opacity-60">
+                                                            <th className="p-4 pl-6 w-[18%]">操作</th>
+                                                            <th className="p-4 w-[28%]">書籍詳情 (書碼)</th>
+                                                            <th className="p-4 w-[18%]">作者 / 年份</th>
+                                                            <th className="p-4 w-[14%]">類別</th>
+                                                            <th className="p-4 w-[11%]">庫存</th>
+                                                            <th className="p-4 w-[11%] pr-6">價格</th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                                    </thead>
+                                                    <tbody className="text-sm font-bold divide-y divide-black/5">
+                                                        {visibleAdminBooks.map(b => (
+                                                            <tr key={b.id} className="hover:bg-black/5 transition-colors group">
+                                                                <td className="p-4 pl-6 whitespace-nowrap">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <button type="button" onClick={() => { setModalType(activeTab); setEditingBook(b); setShowBookModal(true); }} className="opacity-90 hover:opacity-100 p-2 px-3 rounded-xl transition-all bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center gap-1.5 text-xs shadow-sm font-bold" title="編輯並可使用 AI 生成介紹與心得">
+                                                                            <Wand2 size={14}/> AI 編輯
+                                                                        </button>
+                                                                        <button type="button" onClick={() => openDeleteModal(activeTab === 'choice' ? 'choice' : 'book', b.id, b.title)} className="opacity-50 hover:opacity-100 hover:text-red-500 p-2 rounded-xl transition-all bg-black/5" title="刪除"><Trash2 size={16}/></button>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-4 flex items-center gap-4 overflow-hidden">
+                                                                    <img src={formatImageUrl(b.cover)} className="w-10 h-14 object-cover rounded-lg shadow-sm border border-black/10 bg-white shrink-0 group-hover:scale-105 transition-transform" onError={(e)=>e.target.src='https://via.placeholder.com/40x50?text=?'}/>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="truncate text-sm font-black">{b.title}</div>
+                                                                        <div className="text-[10px] font-mono mt-1 bg-black/5 inline-block px-2 py-0.5 rounded opacity-70">#{b.id}</div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-4 whitespace-nowrap overflow-hidden">
+                                                                    <div className="text-sm opacity-90 truncate">{b.author || '-'}</div>
+                                                                    <div className="text-[10px] mt-0.5 opacity-50 truncate">{b.year || '-'} 年</div>
+                                                                </td>
+                                                                <td className="p-4 font-normal whitespace-nowrap overflow-hidden"><span className="bg-black/5 px-3 py-1.5 rounded-full text-[11px] font-bold border border-black/10 inline-block whitespace-nowrap truncate" style={{ color: 'inherit' }}>{b.category}</span></td>
+                                                                <td className="p-4 whitespace-nowrap overflow-hidden"><span className={`${b.stock < 10 ? 'text-red-500 bg-red-500/10 border-red-500/20' : 'opacity-80 bg-black/5 border-black/10'} px-3 py-1.5 rounded-full text-[11px] border inline-block whitespace-nowrap truncate`}>{b.stock} 本</span></td>
+                                                                <td className="p-4 font-mono whitespace-nowrap opacity-90 overflow-hidden pr-6">NT$ {b.price}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             )}
 
-                            {/* 📦 訂單管理 */}
                             {activeTab === 'orders' && (
-                                <div className="animate-in space-y-4">
-                                    <div className="rounded-[2rem] border border-black/5 shadow-sm overflow-hidden" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
-                                        <div className="overflow-x-auto sidebar-scroll">
-                                            <table className="w-full text-left border-collapse min-w-[850px]">
-                                                <thead className="border-b border-black/10 bg-black/5 text-[10px] font-black uppercase opacity-60">
-                                                    <tr>
-                                                        <th className="p-4 pl-6">單號</th>
-                                                        <th className="p-4">買家姓名</th>
-                                                        <th className="p-4">金額</th>
-                                                        <th className="p-4">付款方式</th>
-                                                        <th className="p-4">狀態</th>
+                                <div className="rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden animate-in flex flex-col relative h-full min-h-[500px]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
+                                    {loadStatus.orders ? (
+                                        <div className="flex justify-center items-center h-48 opacity-60"><Clock size={20} className="animate-spin mr-2"/> 載入訂單中...</div>
+                                    ) : (
+                                        <div className="overflow-x-auto pb-4 sidebar-scroll">
+                                            <table className="w-full text-left border-collapse min-w-[900px]">
+                                                <thead className="border-b border-black/10" style={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
+                                                    <tr className="text-[10px] font-black uppercase tracking-[0.15em] opacity-60">
+                                                        <th className="p-4 pl-6 w-[20%]">單號 / 日期</th>
+                                                        <th className="p-4 w-[20%]">客戶資訊</th>
+                                                        <th className="p-4 w-[30%]">購買摘要</th>
+                                                        <th className="p-4 w-[15%]">帳務明細</th>
+                                                        <th className="p-4 w-[15%] text-right pr-6">狀態管理</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="text-xs font-bold divide-y divide-black/5">
-                                                    {orders.map(o => (
-                                                        <tr key={o.id} className="hover:bg-black/5 transition">
-                                                            <td className="p-4 pl-6 font-mono">#{o.id}</td>
-                                                            <td className="p-4">{o.customer}</td>
-                                                            <td className="p-4 font-mono text-emerald-600">NT$ {o.total}</td>
-                                                            <td className="p-4">{o.payment}</td>
-                                                            <td className="p-4"><span className="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-[10px]">{o.status}</span></td>
-                                                        </tr>
-                                                    ))}
+                                                <tbody className="text-sm font-bold divide-y divide-black/5">{orders.map(o => (
+                                                    <tr key={o.id} className="hover:bg-black/5 transition-colors">
+                                                        <td className="p-4 pl-6 whitespace-nowrap">
+                                                            <button type="button" onClick={() => { setEditingOrder(o); setShowOrderModal(true); }} className="font-mono text-[13px] bg-black/5 hover:bg-black/10 opacity-80 hover:opacity-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 group whitespace-nowrap" style={{ color: 'inherit' }}>#{o.id} <FileEdit size={12} className="opacity-50 group-hover:opacity-100"/></button>
+                                                            <div className="text-[10px] opacity-60 mt-2 font-sans pl-1 whitespace-nowrap">{formatDate(o.date)}</div>
+                                                        </td>
+                                                        <td className="p-4 whitespace-nowrap">
+                                                            <div className="text-base opacity-90">{o.customer}</div>
+                                                            <div className="text-[11px] opacity-70 font-normal mt-1 flex items-center gap-1"><Phone size={10}/> {o.phone}</div>
+                                                            <div className="text-[11px] opacity-50 font-normal mt-0.5 flex items-center gap-1"><Mail size={10}/> {o.email || '未提供'}</div>
+                                                        </td>
+                                                        <td className="p-4 text-xs font-normal opacity-80 leading-relaxed max-w-[250px]">
+                                                            <div className="line-clamp-2" title={o.items}>{o.items}</div>
+                                                            {o.memo && <div className="mt-1 truncate font-bold" title={o.memo} style={{ color: settings.sidebarActiveColor }}>備註: {o.memo}</div>}
+                                                        </td>
+                                                        <td className="p-4 whitespace-nowrap">
+                                                            <div className="font-mono font-black text-base whitespace-nowrap" style={{ color: 'inherit' }}>NT$ {o.total}</div>
+                                                            <div className="text-[10px] font-bold mt-1 bg-black/5 opacity-80 inline-block px-2 py-0.5 rounded whitespace-nowrap">{o.payment || '未指定'}</div>
+                                                        </td>
+                                                        <td className="p-4 text-right pr-6 whitespace-nowrap">
+                                                            <select value={o.status} onChange={async (e)=>{ const ns = e.target.value; setOrders(orders.map(x=>x.id===o.id?{...x, status: ns}:x)); await syncWithGAS('UPDATE_ORDER_STATUS', {id: o.id, status: ns}); showMsg(`單號 ${o.id} 已切換為 ${ns}`); }} className="border-2 border-black/10 bg-transparent rounded-xl px-3 py-2 text-xs font-bold outline-none cursor-pointer transition-colors" style={{ color: 'inherit' }}>
+                                                                <option>處理中</option><option>已派送</option><option>已完成</option><option>已取消</option>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {orders.length === 0 && <tr><td colSpan="5" className="p-20 text-center opacity-50 border-dashed border-2 border-black/10 m-4 rounded-xl">尚無訂單紀錄</td></tr>}
                                                 </tbody>
                                             </table>
                                         </div>
-                                    </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === 'ai' && (
+                                <div className="animate-in">
+                                    {loadStatus.cs ? (
+                                        <div className="text-sm font-bold animate-pulse text-center p-10 opacity-60">同步客訴紀錄中...</div>
+                                    ) : aiLogs.length > 0 ? (
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                            {aiLogs.map(log => (
+                                                <div key={log.id} className="p-8 rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
+                                                    <div className={`absolute top-0 left-0 w-1.5 h-full ${log.status === '已回覆' ? 'bg-emerald-400' : 'bg-indigo-500'}`}></div>
+                                                    <div className="flex justify-between items-start mb-6 pl-2">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="bg-black/5 w-12 h-12 rounded-2xl flex items-center justify-center opacity-60 border border-black/10"><User size={20}/></div>
+                                                            <div><p className="font-black text-lg opacity-90">{log.user}</p><p className="text-[10px] font-bold opacity-50 tracking-wider uppercase mt-0.5">{formatDate(log.timestamp)} • {log.platform}</p></div>
+                                                        </div>
+                                                        <span className={`text-[10px] font-black px-4 py-1.5 rounded-full tracking-widest border ${log.status === '已回覆' ? 'border-emerald-500/50 text-emerald-500 bg-emerald-500/10' : 'border-red-500/50 text-red-500 bg-red-500/10 animate-pulse shadow-sm shadow-red-500/20'}`}>{log.status}</span>
+                                                    </div>
+                                                    <div className="text-sm bg-black/5 p-5 rounded-2xl mb-6 font-bold border border-black/10 leading-relaxed opacity-80 relative ml-2 whitespace-pre-wrap">
+                                                        <div className="absolute -left-2 -top-2 text-zinc-400 rounded-full" style={{ backgroundColor: settings.cardBgColor }}><MessageSquare size={16}/></div>
+                                                        {log.query}
+                                                    </div>
+                                                    <div className="mt-auto ml-2">
+                                                        {log.response ? (
+                                                            <div className="text-xs bg-indigo-50 text-indigo-900 p-5 rounded-2xl border border-indigo-100 font-bold leading-relaxed relative group whitespace-pre-wrap">
+                                                                {log.response}
+                                                                <button type="button" onClick={() => { setEditingCSLog(log); setCsResponseText(log.response); setShowCSModal(true); }} className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 bg-white border border-indigo-100 px-3 py-1.5 rounded-lg shadow-sm text-[10px] text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1"><Edit2 size={10}/> 修改回覆</button>
+                                                            </div>
+                                                        ) : (
+                                                            <button type="button" onClick={() => { setEditingCSLog(log); setCsResponseText(''); setShowCSModal(true); }} className="w-full text-white py-3.5 rounded-2xl text-xs font-bold shadow-lg opacity-90 hover:opacity-100 transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: settings.sidebarActiveColor }}>
+                                                                <MessageSquare size={14}/> 擬定回覆
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="p-20 text-center font-bold rounded-[2rem] border-dashed border-2 border-black/10 opacity-50" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>目前沒有任何讀者反映。</div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -1190,11 +1467,11 @@
 
                     {/* Notifications */}
                     {notification && (
-                        <div className="fixed bottom-10 right-10 bg-zinc-900 text-white px-6 py-4 rounded-2xl shadow-2xl animate-in font-bold text-xs z-[200] flex items-center gap-2 border border-zinc-700">
-                            <CheckCircle size={18} className="text-emerald-400" /> {notification}
+                        <div className="fixed bottom-12 right-12 bg-zinc-900 text-white px-8 py-5 rounded-2xl shadow-2xl animate-in font-bold text-sm z-[200] flex items-center gap-3 border border-zinc-700">
+                            <CheckCircle size={20} className="text-emerald-400" /> {notification}
                         </div>
                     )}
-                </div>
+                </div> 
             );
         }
 
