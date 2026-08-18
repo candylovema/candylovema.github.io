@@ -262,6 +262,7 @@
             const [quickNewPrice, setQuickNewPrice] = useState('');
             const [quickNote, setQuickNote] = useState('');
             const [isSavingQuickModify, setIsSavingQuickModify] = useState(false);
+            const [quickBookSearchQuery, setQuickBookSearchQuery] = useState(''); // 🔍 書籍快速修改關鍵字搜尋 state
             
             const [logSearchQuery, setLogSearchQuery] = useState('');
             const [logCategoryFilter, setLogCategoryFilter] = useState('全部'); 
@@ -327,7 +328,7 @@
                         setActiveUser(username);
                         showMsg('身分驗證通過， Session 令牌已安全儲存！');
                     } else {
-                        showMsg('登入失敗：' + (res.msg || '帳號或密碼錯誤'));
+                        showMsg('登入失敗：' + (res && res.msg ? res.msg : '帳號或密碼錯誤。請確認 Google 試算表「account」分頁是否有對應帳密。'));
                     }
                 } catch (err) {
                     showMsg('驗證發生異常：' + err.toString());
@@ -916,6 +917,18 @@
                 return [...new Set(cats)].sort();
             }, [books]);
 
+            // 🔍 快速修改書籍過濾索引 (Filtered QuickBooks for Selection)
+            const filteredQuickBooks = useMemo(() => {
+                const list = quickTargetSheet === 'Choice' ? (choiceBooks || []) : (books || []);
+                const q = (quickBookSearchQuery || '').toLowerCase().trim();
+                if (!q) return list;
+                return list.filter(b => 
+                    String(b.id || '').toLowerCase().includes(q) ||
+                    String(b.title || '').toLowerCase().includes(q) ||
+                    String(b.author || '').toLowerCase().includes(q)
+                );
+            }, [quickTargetSheet, choiceBooks, books, quickBookSearchQuery]);
+
             const noteCategories = useMemo(() => {
                 const cats = (notes || []).map(n => n.category).filter(c => c && c.trim() !== "");
                 return ['全部', ...new Set(cats)];
@@ -1010,6 +1023,11 @@
                             </div>
                             
                             <form onSubmit={handleLogin} className="space-y-6">
+                                <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-xs font-bold leading-relaxed text-indigo-900/90">
+                                    🔑 <strong>管理員身分驗證說明：</strong><br/>
+                                    請使用您於 Google 試算表中 <code className="bg-white/80 px-1.5 py-0.5 rounded text-indigo-700 font-mono">account</code> 分頁內設定之「帳號」與「密碼」進行登入。
+                                </div>
+
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest ml-1" style={{ color: settings.loginTextColor, opacity: 0.7 }}>管理員帳號</label>
                                     <input 
@@ -1249,14 +1267,14 @@
                                             <div className="flex items-center gap-2 bg-black/5 p-1.5 rounded-2xl border border-black/10">
                                                 <button
                                                     type="button"
-                                                    onClick={() => { setQuickTargetSheet('Book_ALL'); setQuickTargetBook(null); }}
+                                                    onClick={() => { setQuickTargetSheet('Book_ALL'); setQuickTargetBook(null); setQuickBookSearchQuery(''); }}
                                                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${quickTargetSheet === 'Book_ALL' ? 'bg-indigo-600 text-white shadow-md' : 'text-zinc-600 hover:bg-black/5'}`}
                                                 >
                                                     📚 全館庫存 (Book_ALL)
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() => { setQuickTargetSheet('Choice'); setQuickTargetBook(null); }}
+                                                    onClick={() => { setQuickTargetSheet('Choice'); setQuickTargetBook(null); setQuickBookSearchQuery(''); }}
                                                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${quickTargetSheet === 'Choice' ? 'bg-amber-600 text-white shadow-md' : 'text-zinc-600 hover:bg-black/5'}`}
                                                 >
                                                     ⭐ 編輯推薦 (Choice)
@@ -1266,36 +1284,68 @@
 
                                         <form onSubmit={handleQuickModifyBook} className="space-y-6">
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                {/* 選擇與快速索引區塊 */}
                                                 <div className="space-y-2 md:col-span-3">
-                                                    <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">選擇要修改的書籍 (從 {quickTargetSheet})</label>
-                                                    <select
-                                                        value={quickSelectedBook ? quickSelectedBook.id : ''}
-                                                        onChange={(e) => {
-                                                            const bookId = e.target.value;
-                                                            const list = quickTargetSheet === 'Choice' ? choiceBooks : books;
-                                                            const found = list.find(b => String(b.id).trim() === String(bookId).trim());
-                                                            if (found) {
-                                                                setQuickTargetBook(found);
-                                                                setQuickNewBookId(String(found.id));
-                                                                setQuickNewTitle(String(found.title));
-                                                                setQuickNewPrice(String(found.price));
-                                                            } else {
-                                                                setQuickTargetBook(null);
-                                                                setQuickNewBookId('');
-                                                                setQuickNewTitle('');
-                                                                setQuickNewPrice('');
-                                                            }
-                                                        }}
-                                                        className="w-full bg-black/5 border border-black/10 p-4 rounded-2xl text-sm font-bold outline-none cursor-pointer"
-                                                        style={{ color: 'inherit' }}
-                                                    >
-                                                        <option value="">-- 請選擇書籍 --</option>
-                                                        {(quickTargetSheet === 'Choice' ? choiceBooks : books).map((b, idx) => (
-                                                            <option key={(b.id || 'book') + '-' + idx} value={b.id}>
-                                                                [書碼: {b.id}] {b.title} (NT$ {b.price}) - 作者: {b.author || '未知'}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                    <div className="flex justify-between items-center">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">選擇要修改的書籍 (從 {quickTargetSheet})</label>
+                                                        {quickBookSearchQuery && (
+                                                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                                                                已索引符合 {filteredQuickBooks.length} 筆書籍
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                        {/* 🔍 快速關鍵字/書碼搜尋索引輸入框 */}
+                                                        <div className="md:col-span-1 flex items-center gap-2 p-3.5 rounded-2xl bg-black/5 border border-black/10 shadow-inner">
+                                                            <Search size={16} className="opacity-50 shrink-0 ml-1" />
+                                                            <input
+                                                                type="text"
+                                                                placeholder="輸入書碼 / 書名 / 作者關鍵字..."
+                                                                value={quickBookSearchQuery}
+                                                                onChange={e => setQuickBookSearchQuery(e.target.value)}
+                                                                className="w-full bg-transparent outline-none text-xs font-bold placeholder-black/40"
+                                                                style={{ color: 'inherit' }}
+                                                            />
+                                                            {quickBookSearchQuery && (
+                                                                <button type="button" onClick={() => setQuickBookSearchQuery('')} className="opacity-50 hover:opacity-100 p-1">
+                                                                    <X size={14}/>
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        {/* 下拉選單 (顯示過濾後的選項) */}
+                                                        <div className="md:col-span-2">
+                                                            <select
+                                                                value={quickSelectedBook ? quickSelectedBook.id : ''}
+                                                                onChange={(e) => {
+                                                                    const bookId = e.target.value;
+                                                                    const list = quickTargetSheet === 'Choice' ? choiceBooks : books;
+                                                                    const found = list.find(b => String(b.id).trim() === String(bookId).trim());
+                                                                    if (found) {
+                                                                        setQuickTargetBook(found);
+                                                                        setQuickNewBookId(String(found.id));
+                                                                        setQuickNewTitle(String(found.title));
+                                                                        setQuickNewPrice(String(found.price));
+                                                                    } else {
+                                                                        setQuickTargetBook(null);
+                                                                        setQuickNewBookId('');
+                                                                        setQuickNewTitle('');
+                                                                        setQuickNewPrice('');
+                                                                    }
+                                                                }}
+                                                                className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none cursor-pointer"
+                                                                style={{ color: 'inherit' }}
+                                                            >
+                                                                <option value="">-- 請選擇書籍 ({filteredQuickBooks.length} 筆) --</option>
+                                                                {filteredQuickBooks.map((b, idx) => (
+                                                                    <option key={(b.id || 'book') + '-' + idx} value={b.id}>
+                                                                        [書碼: {b.id}] {b.title} (NT$ {b.price}) - 作者: {b.author || '未知'}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
                                                 <div className="space-y-2">
