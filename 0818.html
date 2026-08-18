@@ -165,7 +165,7 @@
             csTitle: '客服與建議', csNamePlaceholder: '您的稱呼', csPhonePlaceholder: '聯絡電話', csEmailPlaceholder: '電子信箱 (Email)',
             csMessagePlaceholder: '請問您有什麼建議或問題想反映？', csSubmitBtn: '送出反映', csSubmittingBtn: '傳送中...',
             aboutStoryTitle: '品牌故事', aboutCloseBtn: '關閉', aboutIntroTitle: '出版社簡介',
-            aboutIntroP1: '「文史哲出版社」創立於1971年8月1日，主要致力於出版大學院校研究論著及文史相關書籍。出版範圍涵蓋總類、哲學類、宗教類、社會科學類、史地類、語文類以及美術史類等領域，為華文學術出版的重要推手之一。1992年3月11日改組為「文史哲出版社有限公司」，持續深耕學術出版市場。',
+            aboutIntroP1: '「文史哲出版社」創立於1971年8月1日，主要致力於出版大學院校研究論著及文史相關書籍。出版範圍涵蓋總類、哲學類、宗教類、社會科學類、史地類、語文類以及美術史類等領域，為華文學術出版 Important 推手之一。1992年3月11日改組為「文史哲出版社有限公司」，持續深耕學術出版市場。',
             aboutIntroP2: '本社創辦人彭正雄先生，曾師事台大教授吳相湘，並多次向毛子水、鄭騫、高明等學者請益，亦獲嚴靈峰、戴君仁、夏德儀、昌彼得、林尹等名師指導。在諸位學者的薰陶與傳授之下，逐步培養出對古籍整理的深厚興趣，並奠定投身文化出版事業的志向。',
             aboutConceptTitle: '經營理念',
             aboutConceptP1: '文史哲出版社以出版「文史圖書」及「學術專業圖書」為核心宗旨，目前已累積出版書籍約2500種，其中約2100種仍可供讀者選購。由於學術出版品在海外行銷較具挑戰，本社現正積極拓展網路通路與電子書市場，期望進一步打開華文地區之出版版圖。',
@@ -700,6 +700,8 @@
 
                     const payload = {
                         targetSheet: quickTargetSheet,
+                        target: quickTargetSheet === 'Choice' ? 'choice' : 'Book_ALL',
+                        id: quickNewBookId.trim(),
                         bookId: quickNewBookId.trim(),
                         title: quickNewTitle.trim(),
                         price: parseInt(quickNewPrice) || 0,
@@ -776,7 +778,7 @@
                     } catch (err) {
                         console.error('快速新增失敗:', err);
                         showMsg('新增出錯：' + err.toString());
-                    } finally {
+                    } fontFinally: {
                         setIsSavingQuickModify(false);
                     }
                     return;
@@ -823,6 +825,8 @@
                 try {
                     const payload = {
                         targetSheet: quickTargetSheet,
+                        target: quickTargetSheet === 'Choice' ? 'choice' : 'Book_ALL',
+                        id: String(quickSelectedBook.id).trim(),
                         bookId: String(quickSelectedBook.id).trim(),
                         newBookId: quickNewBookId.trim(),
                         newTitle: quickNewTitle.trim(),
@@ -1436,8 +1440,8 @@
                                                             style={{ color: 'inherit' }}
                                                         >
                                                             <option value="">-- 請選擇書籍 --</option>
-                                                            {(quickTargetSheet === 'Choice' ? choiceBooks : books).map(b => (
-                                                                <option key={b.id} value={b.id}>
+                                                            {(quickTargetSheet === 'Choice' ? choiceBooks : books).map((b, idx) => (
+                                                                <option key={(b.id || 'book') + '-' + idx} value={b.id}>
                                                                     [書碼: {b.id}] {b.title} (NT$ {b.price}) - 作者: {b.author || '未知'}
                                                                 </option>
                                                             ))}
@@ -2693,7 +2697,7 @@
                         </div>
                     )}
 
-                    {/* 🌟 🆕 GAS 後端程式碼部署說明視窗 */}
+                    {/* 🌟 GAS 後端程式碼部署說明視窗 */}
                     {showGasCodeModal && (
                         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 p-4 py-8 flex items-center justify-center">
                             <div className="bg-zinc-900 text-white rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col border border-zinc-700 overflow-hidden animate-in">
@@ -2886,14 +2890,19 @@ function processAdminAction(action, payload, currentUser) {
   }
 
   if (action === "QUICK_UPDATE_BOOK_LOG") {
-    const targetSheetName = payload.targetSheet === "Choice" ? "Choice" : "Book_ALL";
+    const isChoice = payload.targetSheet === "Choice" || payload.target === "choice" || payload.target === "Choice";
+    const targetSheetName = isChoice ? "Choice" : "Book_ALL";
     const sheet = ss.getSheetByName(targetSheetName);
     if (!sheet) return { status: "error", msg: "找不到 " + targetSheetName + " 分頁" };
 
     const rawData = sheet.getDataRange().getValues();
     let targetRow = -1;
-    let bookTitle = payload.bookTitle || "";
-    const targetId = String(payload.bookId).trim();
+    let bookTitle = payload.bookTitle || payload.newTitle || "";
+    const targetId = String(payload.bookId || payload.id || "").trim();
+
+    if (!targetId) {
+      return { status: "error", msg: "傳遞的書碼為空，請重新選擇書籍" };
+    }
 
     for (let i = 1; i < rawData.length; i++) {
       if (String(rawData[i][0]).trim() === targetId) {
@@ -2930,7 +2939,7 @@ function processAdminAction(action, payload, currentUser) {
       "'" + nowStr,
       sanitizeForSpreadsheet(payload.operator || currentUser || "Admin"),
       targetSheetName,
-      sanitizeForSpreadsheet(payload.newBookId || payload.bookId),
+      sanitizeForSpreadsheet(payload.newBookId || payload.bookId || payload.id),
       sanitizeForSpreadsheet(bookTitle),
       sanitizeForSpreadsheet(payload.changeType || "快速修改"),
       sanitizeForSpreadsheet(payload.oldValue || ""),
@@ -2942,11 +2951,12 @@ function processAdminAction(action, payload, currentUser) {
   }
 
   if (action === "QUICK_ADD_BOOK_LOG") {
-    const targetSheetName = payload.targetSheet === "Choice" ? "Choice" : "Book_ALL";
+    const isChoice = payload.targetSheet === "Choice" || payload.target === "choice" || payload.target === "Choice";
+    const targetSheetName = isChoice ? "Choice" : "Book_ALL";
     const sheet = getOrCreateSheet(ss, targetSheetName, ["編號", "書名", "作者", "年份", "定價", "isbn", "庫存", "分類", "newyn", "lastyn", "照片"]);
 
     const newRow = new Array(15).fill("");
-    const bookId = sanitizeForSpreadsheet(payload.bookId || Date.now());
+    const bookId = sanitizeForSpreadsheet(payload.bookId || payload.id || Date.now());
     const bookTitle = sanitizeForSpreadsheet(payload.title || "未命名書籍");
     const price = parseInt(payload.price) || 0;
 
