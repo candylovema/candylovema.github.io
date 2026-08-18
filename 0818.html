@@ -110,7 +110,7 @@
             ExternalLink: { icon: ExternalLink, color: 'opacity-70' }
         };
 
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbw50BLFcwgfOWHQqTm9UGpolgH8FqFE7NOacMBIcUc4MKnoiwVVH0HHB8mLe0kJkv4QnQ/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycby-Z5ZqmC9EEf55dk--ysye0shSyVfqBWDCcSwN8YTGKBBWkKtoDO67kpfGKtH-D2H4/exec";
 
         const formatImageUrl = (url) => {
             const transparentFallback = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -592,6 +592,98 @@
                 });
 
                 if (hasChanges) setKpis(updatedKpis);
+            }, [orders, books, kpis, loadStatus.kpis, isAuthenticated]);
+
+            const excelCategories = useMemo(() => {
+                const cats = (books || []).map(b => b.category).filter(c => c && c.trim() !== "");
+                return [...new Set(cats)].sort();
+            }, [books]);
+
+            const noteCategories = useMemo(() => {
+                const cats = (notes || []).map(n => n.category).filter(c => c && c.trim() !== "");
+                return ['全部', ...new Set(cats)];
+            }, [notes]);
+
+            const filteredNotes = useMemo(() => {
+                const query = (noteSearchQuery || '').toLowerCase().trim();
+                return (notes || []).filter(n => {
+                    const matchQuery = !query || 
+                        (n.title && n.title.toLowerCase().includes(query)) ||
+                        (n.content && n.content.toLowerCase().includes(query)) ||
+                        (n.tags && n.tags.toLowerCase().includes(query));
+                    const matchCategory = noteCategoryFilter === '全部' || n.category === noteCategoryFilter;
+                    return matchQuery && matchCategory;
+                }).sort((a, b) => {
+                    if (a.isPinned && !b.isPinned) return -1;
+                    if (!a.isPinned && b.isPinned) return 1;
+                    return new Date(b.updatedAt || b.date || 0) - new Date(a.updatedAt || a.date || 0);
+                });
+            }, [notes, noteSearchQuery, noteCategoryFilter]);
+
+            const filteredAdminBooks = useMemo(() => {
+                const query = (bookSearchQuery || '').toLowerCase().trim();
+                const targetList = activeTab === 'choice' ? (choiceBooks || []) : (books || []); 
+                if (!query) return targetList;
+                return targetList.filter(b => 
+                    (b.title && b.title.toLowerCase().includes(query)) ||
+                    (b.id && b.id.toString().toLowerCase().includes(query)) ||
+                    (b.category && b.category.toLowerCase().includes(query))
+                );
+            }, [books, choiceBooks, bookSearchQuery, activeTab]);
+
+            const visibleAdminBooks = useMemo(() => {
+                return (filteredAdminBooks || []).slice(0, adminVisibleCount);
+            }, [filteredAdminBooks, adminVisibleCount]);
+
+            // 🌟 計算與過濾書籍變更歷史紀錄 (Filtered Change Logs)
+            const filteredChangeLogs = useMemo(() => {
+                const query = (logSearchQuery || '').toLowerCase().trim();
+                return (changeLogs || []).filter(log => {
+                    const matchQuery = !query ||
+                        (log.bookTitle && log.bookTitle.toLowerCase().includes(query)) ||
+                        (log.bookId && log.bookId.toLowerCase().includes(query)) ||
+                        (log.operator && log.operator.toLowerCase().includes(query)) ||
+                        (log.note && log.note.toLowerCase().includes(query));
+                    
+                    const matchCat = logCategoryFilter === '全部' || log.changeType === logCategoryFilter;
+                    return matchQuery && matchCat;
+                });
+            }, [changeLogs, logSearchQuery, logCategoryFilter]);
+
+            const handleSaveBook = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const bookData = {
+                    title: sanitizeForSpreadsheet(formData.get('title')), 
+                    category: sanitizeForSpreadsheet(formData.get('category')), 
+                    price: parseInt(formData.get('price')) || 0, 
+                    stock: parseInt(formData.get('stock')) || 0,
+                    cover: sanitizeForSpreadsheet(formData.get('cover') || ''), 
+                    author: sanitizeForSpreadsheet(formData.get('author') || ''), 
+                    year: sanitizeForSpreadsheet(formData.get('year') || ''),
+                    intro: sanitizeForSpreadsheet(modalBookIntro || formData.get('intro') || ''),
+                    "心得": sanitizeForSpreadsheet(modalBookReview || formData.get('心得') || '')
+                };
+                
+                const isChoice = modalType === 'choice';
+                const currentList = isChoice ? choiceBooks : books;
+                const setList = isChoice ? setChoiceBooks : setBooks;
+                const updateAction = isChoice ? 'UPDATE_CHOICE' : 'UPDATE_BOOK';
+                const addAction = isChoice ? 'ADD_CHOICE' : 'ADD_BOOK';
+
+                const res = await syncWithGAS(editingBook ? updateAction : addAction, editingBook ? { ...editingBook, ...bookData } : { ...bookData, id: Date.now() });
+                
+                if (res.status === 'success') {
+                    if (editingBook) {
+                        setList(currentList.map(b => b.id === editingBook.id ? { ...editingBook, ...bookData } : b));
+                    } else {
+                        setList([{ ...bookData, id: Date.now() }, ...currentList]);
+                    }
+                    setShowBookModal(false); setEditingBook(null);
+                    showMsg(`${isChoice ? '精選推薦' : '書籍庫存'}已更新至雲端`);
+                }
+            };
+
             // 🌟 處理「書籍快速修改與變更紀錄」提交 (修改與新增)
             const handleQuickModifyBook = async (e) => {
                 e.preventDefault();
@@ -1000,7 +1092,7 @@
                 ]},
                 { id: 'group_books', title: settings.menuBooksName, icon: availableIcons[settings.menuBooksIcon]?.icon || Database, items: [
                     { tab: 'books', name: '全部書籍管理 (Book_ALL)' },
-                    { tab: 'book_logs', name: '書籍快速修改與變更紀錄 (Modify & Logs)' } // 🌟 新增功能分頁
+                    { tab: 'book_logs', name: '書籍快速修改與變更紀錄 (Modify & Logs)' }
                 ]},
                 { id: 'group_orders', title: settings.menuOrdersName, icon: availableIcons[settings.menuOrdersIcon]?.icon || Truck, items: [{ tab: 'orders', name: '訂單處理中心 (Orders)' }] },
                 { id: 'group_cs', title: settings.menuCsName, icon: availableIcons[settings.menuCsIcon]?.icon || Bot, items: [{ tab: 'ai', name: 'AI 客服信箱 (CS Logs)' }] },
@@ -1097,6 +1189,7 @@
                         </button>
                     )}
 
+                    {}
                     <aside className={`flex-shrink-0 transition-all z-30 shadow-2xl flex flex-col ${isSidebarOpen ? '' : '-translate-x-full absolute md:relative'}`} style={{ width: isSidebarOpen ? '260px' : '0px', backgroundColor: settings.sidebarBgColor }}>
                         <div className="flex items-center gap-3 h-20 shrink-0 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors pr-4" onClick={() => setIsSidebarOpen(false)} title="點擊收起側邊欄">
                             <div className="h-full aspect-square text-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm p-0" style={{ backgroundColor: settings.logoUrl ? 'transparent' : settings.sidebarActiveColor }}>
@@ -1259,7 +1352,6 @@
                                 </div>
                             )}
 
-                            {/* 🌟 🆕 獨家新增功能頁面：書籍快速修改與變更紀錄 (Book Modify & Change Logs) */}
                             {}
                             {activeTab === 'book_logs' && (
                                 <div className="animate-in space-y-10">
@@ -1653,7 +1745,6 @@
                                 </div>
                             )}
 
-                            {/* 📝 記事本視圖 */}
                             {}
                             {activeTab === 'notes' && (
                                 <div className="animate-in flex flex-col h-full space-y-6">
@@ -1743,100 +1834,6 @@
                                             <span>目前沒有任何記事內容，點擊右上角新增您的第一篇工作筆記！</span>
                                         </div>
                                     )}
-                                </div>
-                            )}
-
-                            {/* 📝 記事本新增/編輯彈窗 */}
-                            {showNoteModal && (
-                                <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-4 py-10 flex items-center justify-center">
-                                    <div className={`w-full shadow-2xl overflow-hidden animate-in border border-black/10 flex flex-col transition-all duration-300 ${modalMaximized['note'] ? 'w-full h-full max-w-none max-h-none rounded-none' : 'max-w-xl max-h-[90vh] rounded-[2.5rem]'}`} style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
-                                        <div className="p-5 border-b border-black/5 flex justify-between items-center font-bold tracking-tight bg-black/5">
-                                            <div className="flex items-center gap-2">
-                                                <FileText size={18} style={{ color: settings.sidebarActiveColor }}/> {editingNote ? '編輯工作記事' : '新增工作記事'}
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <button type="button" onClick={() => toggleMaximize('note')} className="p-1.5 rounded-lg hover:bg-black/10 transition text-zinc-500 hover:text-zinc-800" title={modalMaximized['note'] ? "復原" : "放大"}>
-                                                    {modalMaximized['note'] ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                                                </button>
-                                                <button type="button" onClick={() => setShowNoteModal(false)} className="p-1.5 rounded-lg hover:bg-red-500 hover:text-white transition text-zinc-500" title="關閉"><X size={16}/></button>
-                                            </div>
-                                        </div>
-                                        <form onSubmit={handleSaveNote} className="p-6 space-y-4 overflow-y-auto sidebar-scroll">
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">記事標題</label>
-                                                <input 
-                                                    name="title" 
-                                                    defaultValue={editingNote?.title || ''} 
-                                                    required 
-                                                    className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" 
-                                                    placeholder="輸入記事標題..." 
-                                                    style={{ color: 'inherit' }}
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-1">
-                                                    <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">分類類別</label>
-                                                    <input 
-                                                        name="category" 
-                                                        defaultValue={editingNote?.category || '日常交辦'} 
-                                                        className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" 
-                                                        placeholder="例如: 出版進度, 財務備忘" 
-                                                        style={{ color: 'inherit' }}
-                                                    />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">標籤 (逗號隔開)</label>
-                                                    <input 
-                                                        name="tags" 
-                                                        defaultValue={editingNote?.tags || ''} 
-                                                        className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none" 
-                                                        placeholder="加急, 重要, 校稿" 
-                                                        style={{ color: 'inherit' }}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">卡片底色 (標記色彩)</label>
-                                                <input 
-                                                    type="color" 
-                                                    name="color" 
-                                                    defaultValue={editingNote?.color || '#ffffff'} 
-                                                    className="w-full border border-black/10 rounded-xl"
-                                                />
-                                            </div>
-
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-black opacity-60 uppercase tracking-widest ml-1">記事完整內文</label>
-                                                <textarea 
-                                                    name="content" 
-                                                    defaultValue={editingNote?.content || ''} 
-                                                    required 
-                                                    className="w-full bg-black/5 border border-black/10 p-3.5 rounded-2xl text-sm font-bold outline-none h-44 resize-none leading-relaxed" 
-                                                    placeholder="寫下詳細工作進度、會議紀錄或靈感..." 
-                                                    style={{ color: 'inherit' }}
-                                                />
-                                            </div>
-
-                                            <div className="flex items-center gap-2 p-2">
-                                                <input 
-                                                    type="checkbox" 
-                                                    name="isPinned" 
-                                                    id="isPinned" 
-                                                    defaultChecked={editingNote?.isPinned === 'TRUE' || editingNote?.isPinned === true} 
-                                                    className="w-4 h-4 rounded text-indigo-600 focus:ring-0 cursor-pointer"
-                                                />
-                                                <label htmlFor="isPinned" className="text-xs font-bold cursor-pointer select-none">📌 置頂此記事在最前列</label>
-                                            </div>
-
-                                            <div className="pt-4 pb-2">
-                                                <button className="w-full text-white py-4 rounded-2xl font-bold shadow-xl transition-all active:scale-95 hover:opacity-90 flex items-center justify-center gap-2" style={{ backgroundColor: settings.sidebarActiveColor }}>
-                                                    <Save size={16}/> 儲存並同步至試算表
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
                                 </div>
                             )}
 
@@ -2073,6 +2070,7 @@
                                 </div>
                             )}
 
+                            {}
                             {activeTab === 'carousel' && (
                                 <div className="animate-in">
                                     {loadStatus.carousels ? (
@@ -2100,6 +2098,7 @@
                                 </div>
                             )}
 
+                            {}
                             {(activeTab === 'books' || activeTab === 'choice') && (
                                 <div className="animate-in flex flex-col relative h-full min-h-[500px]">
                                     <div className="mb-6 flex flex-wrap justify-between items-center gap-4 shrink-0">
@@ -2187,6 +2186,7 @@
                                 </div>
                             )}
 
+                            {}
                             {activeTab === 'orders' && (
                                 <div className="rounded-[2rem] border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden animate-in flex flex-col relative h-full min-h-[500px]" style={{ backgroundColor: settings.cardBgColor, color: settings.cardTextColor }}>
                                     {loadStatus.orders ? (
@@ -2237,6 +2237,7 @@
                                 </div>
                             )}
 
+                            {}
                             {activeTab === 'ai' && (
                                 <div className="animate-in">
                                     {loadStatus.cs ? (
@@ -2280,6 +2281,7 @@
                         </div>
                     </main>
 
+                    {}
                     {/* 安全刪除確認視窗 */}
                     {deleteModal.isOpen && (
                         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
